@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/script.js}" defer></script>
+
+</head>
+<body>
+
+<main>
+    <div class="loader"></div>
+<div id="register-window" class="login active">
+    <form id="register-form" th:action="@{/register}" th:object="${users}" method="post">
+        <h1>Rejestracja</h1>
+        <label>Login</label>
+        <input type="text" required th:field="*{username}">
+        <label>Imię</label>
+        <input type="text" required th:field="*{firstName}">
+        <label>Nazwisko</label>
+        <input type="text" required th:field="*{lastName}">
+        <label>Adres Email</label>
+        <input type="email" required th:field="*{email}">
+        <label>Hasło</label>
+        <input type="password" required th:field="*{password}">
+        <div class="radio-item">
+            <input type="radio" name="user" id="user" th:field="*{id_role}" th:value="4" required>
+            <label for="user">Użytkownik</label>
+        </div>
+        <button type="submit">Utwórz konto</button> <br/>
+        <label>Masz już konto? -- <a th:href="@{/login}">Zaloguj się</a></label>
+    </form>
+</div>
+</main>
+
+<footer>
+    <p>&copy; Statystyka 2024</p>
+</footer>
+
+</body>
+</html>

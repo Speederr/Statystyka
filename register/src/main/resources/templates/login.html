@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script th:src="@{/js/script.js}" defer></script>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+</head>
+
+<body>
+
+<div class="popup">
+    <div class="container" id="container">
+      <p th:if="${param.logout}" class="message">
+                <span class="message-content">
+                    <strong>Sukces!</strong> Pomyślnie wylogowano ze statystyki.
+                    <a href="/login">Zaloguj się ponownie</a>.
+                </span>
+          <i class='bx bx-x-circle' onclick="hideError()"></i>
+      </p>
+    </div>
+
+    <div class="container" id="err-container">
+      <p th:if="${param.error}" class="error">
+                <span class="error-content">
+                    <strong>Uwaga!</strong> Błędne dane logowania, spróbuj ponownie.
+                    <a href="/login">Zaloguj się ponownie</a>.
+                </span>
+          <i class='bx bx-x-circle' onclick="hideError()"></i>
+      </p>
+    </div>
+</div>
+<main>
+    <div class="loader"></div>
+  <div id="login-window" class="login active">
+    <form id="login-form" th:action="@{/login}" method="post">
+        <h1>Logowanie</h1>
+        <label for="username">Nazwa użytkownika</label>
+        <div class="input-box">
+            <input type="text" id="username" name="username" required autofocus>
+        </div>
+        <label for="password">Hasło</label>
+        <div class="input-box">
+            <input type="password" id="password" name="password" required>
+            <i class="fa-solid fa-eye-slash" id="show-password"></i>
+        </div>
+      <button>Zaloguj</button>
+      <label>Pierwszy raz? -- <a th:href="@{/firstLogin}">Pierwsze logowanie</a></label>
+    </form>
+  </div>
+</main>
+<footer>
+  <p>&copy; Statystyka 2024</p>
+</footer>
+
+</body>
+
+</html>
