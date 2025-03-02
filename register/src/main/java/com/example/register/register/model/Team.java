@@ -6,18 +6,26 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+
 @Entity
-public class SavedItem {
+@Table(name = "team")
+public class Team {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private long id;
 
-    @Column(name = "item_name", nullable = false)
-    private String itemName;
+    @Column(name = "team_name", nullable = false, unique = true)
+    private String teamName;
 
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Section> sections;
 }
+
+

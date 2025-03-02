@@ -1,18 +1,22 @@
 package com.example.register.register.controller;
 
-import com.example.register.register.model.FormUsers;
+import com.example.register.register.model.BusinessProcess;
+import com.example.register.register.model.Team;
 import com.example.register.register.model.User;
+import com.example.register.register.repository.ProcessRepository;
+import com.example.register.register.repository.TeamRepository;
 import com.example.register.register.repository.UserRepository;
 import com.example.register.register.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+import java.security.Principal;
 import java.util.List;
 
 @Controller
@@ -23,10 +27,16 @@ public class PageController {
     final private UserService userService;
 
     @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    public PageController(UserService userService) {
+    @Autowired
+    private final ProcessRepository processRepository;
+
+
+    public PageController(UserService userService, UserRepository userRepository, ProcessRepository processRepository) {
         this.userService = userService;
+        this.userRepository = userRepository;
+        this.processRepository = processRepository;
     }
 
     @Autowired
@@ -39,40 +49,85 @@ public class PageController {
 
     @GetMapping("/register")
     public String showRegisterForm(Model model) {
-        // Add an empty User object to the model to bind the form
         model.addAttribute("users", new User());
-        return "register";  // Thymeleaf template name (register.html)
+        return "register";
     }
 
     @PostMapping("/register")
-    public String registerUser(@ModelAttribute("users") User user) {
-        // Encrypt the password and save the user (same logic as before)
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
+    public ResponseEntity<Void> createUser(
+                @RequestParam String firstName,
+                @RequestParam String lastName,
+                @RequestParam String username,
+                @RequestParam String email,
+                @RequestParam Long id_role,
+                @RequestParam Long teamId,
+                @RequestParam Long sectionId) {
 
-        return "redirect:/login";  // Redirect after successful registration
+            userService.createUser(firstName, lastName, username, email, id_role, teamId, sectionId);
+
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create("/login"))
+                    .build();
     }
 
 
-    @GetMapping("/settings")
+    @GetMapping("/processes")
+    public String showProcesses(Model model, Principal principal) {
+        if (principal != null) {
+            String username = principal.getName();
+            Long userId = userRepository.findUserIdByUsername(username);
+
+            if (userId != null) {
+                model.addAttribute("userId", userId);
+            } else {
+                System.out.println("Użytkownik nie został znaleziony w bazie.");
+                model.addAttribute("userId", "");
+            }
+        } else {
+            model.addAttribute("userId", "");
+        }
+        return "processes";
+    }
+
+
+    @GetMapping("/adminPanel")
     public String showSettingsPage(Model model) {
-        List<FormUsers> users = userService.getAllUsersWithRoles();
-        model.addAttribute("form_users", users);
-        return "settings";
+        List<User> users = userService.getAllUsers();
+        model.addAttribute("users", users);
+        return "adminPanel";
     }
 
-    @GetMapping("/index")
-    public String showWelcomePage() {
-        return "index"; // Zwraca widok strony głównej (index.html)
-    }
     @GetMapping("/firstLogin")
     public String showFirstLoginForm() {
         return "firstLogin";
     }
 
-    @GetMapping("/efficiency")
-    public String showEfficiencyPage() {
-        return "efficiency";
+    @GetMapping("/restorePassword")
+    public String showRestorePasswordPage(){
+        return "restorePassword";
+    }
+
+    @GetMapping("/settings")
+    public String showSettingsPage() {
+        return "settings";
+    }
+
+    @GetMapping("/profile")
+    public String showProfile() {
+        return "profile";
+    }
+
+    @GetMapping("/averageTime")
+    public String showAverageTime(Model model) {
+        List<BusinessProcess> processes = processRepository.findAll();
+        model.addAttribute("processes", processes);
+        model.addAttribute("process", new BusinessProcess()); // ✅ Dodaj pusty obiekt
+        return "averageTime";
+    }
+
+    @GetMapping("/notifications")
+    public String getAllNotifications() {
+        return "notifications";
     }
 
 }

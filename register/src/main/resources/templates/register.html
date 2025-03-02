@@ -5,34 +5,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+    <title>Rejestracja</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+
     <script th:src="@{/js/script.js}" defer></script>
 
 </head>
 <body>
-
+<div class="loader"></div>
 <main>
-    <div class="loader"></div>
 <div id="register-window" class="login active">
-    <form id="register-form" th:action="@{/register}" th:object="${users}" method="post">
-        <h1>Rejestracja</h1>
-        <label>Login</label>
-        <input type="text" required th:field="*{username}">
-        <label>Imię</label>
-        <input type="text" required th:field="*{firstName}">
-        <label>Nazwisko</label>
-        <input type="text" required th:field="*{lastName}">
-        <label>Adres Email</label>
-        <input type="email" required th:field="*{email}">
-        <label>Hasło</label>
-        <input type="password" required th:field="*{password}">
+    <form id="register-form" th:action="@{/register}" th:object="${form_users}" method="post">
+        <div class="inputs">
+            <h1>Rejestracja</h1>
+            <label>Login</label>
+            <input type="text" required th:field="*{username}">
+            <label>Imię</label>
+            <input type="text" required th:field="*{firstName}">
+            <label>Nazwisko</label>
+            <input type="text" required th:field="*{lastName}">
+            <label>Adres Email</label>
+            <input type="email" required th:field="*{email}">
+        </div>
         <div class="radio-item">
             <input type="radio" name="user" id="user" th:field="*{id_role}" th:value="4" required>
             <label for="user">Użytkownik</label>
         </div>
-        <button type="submit">Utwórz konto</button> <br/>
+        <div class="btnContainer">
+            <button type="submit" class="mainBtn">Utwórz konto</button> <br/>
+        </div>
         <label>Masz już konto? -- <a th:href="@{/login}">Zaloguj się</a></label>
     </form>
 </div>

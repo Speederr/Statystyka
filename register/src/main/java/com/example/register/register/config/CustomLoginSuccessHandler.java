@@ -1,6 +1,7 @@
 package com.example.register.register.config;
 
-import com.example.register.register.repository.FormUsersRepository;
+import com.example.register.register.repository.UserRepository;
+import com.example.register.register.service.AttendanceService;
 import com.example.register.register.service.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 
 import java.io.IOException;
+import java.time.LocalDate;
 
 @Component
 public class CustomLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -19,10 +21,18 @@ public class CustomLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private AttendanceService attendanceService;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         // Sprawdź, czy użytkownik loguje się po raz pierwszy
         boolean isFirstLogin = checkIfFirstLogin(authentication);
+
+        String username = authentication.getName();
+        if(!attendanceService.hasAttendanceForToday(username)) {
+            attendanceService.recordAttendance(username, LocalDate.now(), "present");
+        }
 
         // Jeśli to pierwsze logowanie, przekieruj na stronę zmiany hasła
         if (isFirstLogin) {

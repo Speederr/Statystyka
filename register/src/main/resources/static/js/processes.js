@@ -19,49 +19,45 @@ function updateButtonsState() {
         console.error("Wystąpił błąd w updateButtonsState:", error);
     }
 }
+
 // Funkcja do zaznaczania pojedynczych elementów z użyciem delegacji
 function attachClickEventsToItems() {
     const leftList = document.getElementById('left-list');
     const rightList = document.getElementById('right-list');
 
+    // Funkcja do zmiany klasy i ikony
+    function toggleItemState(item) {
+        if (item.tagName === 'LI') {
+            let icon = item.querySelector('i'); // Pobierz ikonę wewnątrz <li>
+
+            if (!icon) {
+                // Jeśli nie ma jeszcze ikony, dodaj nową
+                icon = document.createElement('i');
+                item.appendChild(icon);
+            }
+
+            if (item.classList.contains('checked')) {
+                item.classList.replace('checked', 'unchecked'); // Zmiana na "unchecked"
+                icon.className = 'bx bx-x'; // Ustaw ikonę "x"
+                icon.style.color = 'red'; // Czerwony kolor dla X
+            } else {
+                item.classList.replace('unchecked', 'checked'); // Zmiana na "checked"
+                icon.className = 'bx bx-check'; // Ustaw ikonę "check"
+                icon.style.color = 'green';
+            }
+
+            updateButtonsState(); // Aktualizacja przycisków, jeśli to konieczne
+        }
+    }
+
     // Dodaj event listener do lewej listy
     leftList.addEventListener('click', function (event) {
-        const item = event.target;
-
-        // Sprawdź, czy kliknięty element to <li>
-        if (item.tagName === 'LI') {
-            try {
-                // Zmieniamy 'unchecked' na 'checked' lub odwrotnie
-                if (item.classList.contains('checked')) {
-                    item.classList.replace('checked', 'unchecked'); // Zastępujemy 'checked' na 'unchecked'
-                } else {
-                    item.classList.replace('unchecked', 'checked'); // Zastępujemy 'unchecked' na 'checked'
-                }
-                updateButtonsState();
-            } catch (error) {
-                console.error("Wystąpił błąd w selectedItems:", error);
-            }
-        }
+        toggleItemState(event.target);
     });
 
     // Dodaj event listener do prawej listy
     rightList.addEventListener('click', function (event) {
-        const item = event.target;
-
-        // Sprawdź, czy kliknięty element to <li>
-        if (item.tagName === 'LI') {
-            try {
-                // Zmieniamy 'unchecked' na 'checked' lub odwrotnie
-                if (item.classList.contains('checked')) {
-                    item.classList.replace('checked', 'unchecked'); // Zastępujemy 'checked' na 'unchecked'
-                } else {
-                    item.classList.replace('unchecked', 'checked'); // Zastępujemy 'unchecked' na 'checked'
-                }
-                updateButtonsState();
-            } catch (error) {
-                console.error("Wystąpił błąd w selectedItems:", error);
-            }
-        }
+        toggleItemState(event.target);
     });
 }
 
@@ -94,6 +90,7 @@ function toggleSelectAll(list, shouldCheck) {
         console.error("Wystąpił błąd w toggleSelectAll:", error);
     }
 }
+
 // Funkcja do zaznaczania wszystkich elementów
 selectAllBtn.addEventListener('click', () => {
     try {
@@ -126,6 +123,31 @@ removeAllBtn.addEventListener('click', () => {
     }
 });
 
+// Uniwersalna funkcja do zmiany stanu zaznaczenia dla wszystkich elementów listy
+function toggleSelectAll(list, isChecked) {
+    list.querySelectorAll('li').forEach(item => {
+        let icon = item.querySelector('i'); // Pobierz ikonę, jeśli już istnieje
+
+        if (!icon) {
+            // Jeśli ikona nie istnieje, utwórz nową
+            icon = document.createElement('i');
+            item.appendChild(icon);
+        }
+
+        if (isChecked) {
+            item.classList.add('checked');
+            item.classList.remove('unchecked');
+            icon.className = 'bx bx-check'; // Ikona ✓
+            icon.style.color = 'green'; // Zielony kolor
+        } else {
+            item.classList.add('unchecked');
+            item.classList.remove('checked');
+            icon.className = 'bx bx-x'; // Ikona ❌
+            icon.style.color = 'red'; // Czerwony kolor
+        }
+    });
+}
+
 // Event listeners dla przycisków przenoszenia
 moveRightBtn.addEventListener('click', () => {
     try {
@@ -142,3 +164,125 @@ moveLeftBtn.addEventListener('click', () => {
         console.error("Wystąpił błąd w moveLeftBtn:", error);
     }
 });
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    document.getElementById("save").addEventListener("click", function() {
+        const userId = document.getElementById("userId")?.value.trim();
+
+        if (!userId) {
+            console.error("Błąd: userId jest pusty!");
+            alert("Nie znaleziono userId. Upewnij się, że jesteś zalogowany.");
+            return;
+        }
+
+        const rightList = document.getElementById("right-list");
+        if (!rightList) {
+            console.error("Błąd: Element right-list nie istnieje w DOM.");
+            return;
+        }
+
+
+        const selectedIds = [...rightList.querySelectorAll("li")]
+            .map(li => li.dataset.id)
+            .filter(id => id); // Usuwa puste wartości
+
+
+        fetch(`/api/processes/favorites/${userId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(selectedIds)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Błąd HTTP: ${response.status}`);
+            }
+            return response.json();
+        })
+          .then(data => displayMessage("success", "Zapisano ulubione procesy!")) // ✅ Użycie nowej funkcji
+          .catch(error => displayMessage("error", "Błąd podczas zapisu. Spróbuj ponownie."));
+
+    });
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+document.addEventListener("DOMContentLoaded", function () {
+    const userId = document.getElementById("userId")?.value.trim();
+
+    if (!userId) {
+        console.warn("Brak userId – użytkownik niezalogowany?");
+        return;
+    }
+
+    const leftList = document.getElementById("left-list");
+    const rightList = document.getElementById("right-list");
+
+    // Pobierz ulubione procesy, a potem wszystkie procesy
+    fetch(`/api/processes/favorites/${userId}`)
+        .then(response => response.json())
+        .then(favorites => {
+            rightList.innerHTML = ''; // Wyczyść listę przed dodaniem nowych elementów
+            const favoriteIds = new Set();
+
+            favorites.forEach(favProcess => {
+                // Stwórz element <li>
+                const favLi = document.createElement('li');
+                favLi.classList.add('unchecked');
+                favLi.dataset.id = favProcess.id;
+                favLi.textContent = favProcess.processName;
+
+                // Stwórz ikonę "bx-check"
+                const icon = document.createElement('i');
+                icon.classList.add('bx', 'bx-x'); // Dodaj klasę ikony
+                icon.style.color = 'red'; // Ustaw kolor na zielony
+
+                // Dodaj ikonę do <li>
+                favLi.appendChild(icon);
+
+                // Dodaj element do listy ulubionych
+                rightList.appendChild(favLi);
+
+                // Dodaj ID do zestawu (do usunięcia z lewej listy)
+                favoriteIds.add(favProcess.id);
+            });
+
+            // Pobierz wszystkie procesy i odfiltruj ulubione
+            return fetch('/api/processes')
+                .then(response => response.json())
+                .then(data => {
+                    leftList.innerHTML = ''; // Wyczyść listę przed dodaniem nowych elementów
+
+                    data.forEach(process => {
+                        if (!favoriteIds.has(process.id)) { // Usunięcie ulubionych
+                            const li = document.createElement('li');
+                            li.classList.add('unchecked');
+                            li.dataset.id = process.id;
+                            li.textContent = process.processName;
+
+                            // Stwórz ikonę "bx-x"
+                            const icon = document.createElement('i');
+                            icon.classList.add('bx', 'bx-x'); // Dodaj klasę ikony
+                            icon.style.color = 'red'; // Ustaw kolor na czerwony
+
+                            // Dodaj ikonę do <li>
+                            li.appendChild(icon);
+
+                            // Dodaj do lewej listy
+                            leftList.appendChild(li);
+                        }
+                    });
+                });
+        })
+        .catch(error => console.error("Błąd podczas pobierania procesów:", error));
+});
+
+
+function displayMessage(type, message) {
+    Swal.fire({
+        icon: type, // 'success' lub 'error'
+        title: message,
+        showConfirmButton: false,
+        timer: 3000 // Popup znika po 3 sekundach
+    });
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+console.log("Skrypt PROCESESS został załadowany.")

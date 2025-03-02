@@ -1,0 +1,147 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.dashboard-container {
+    display: flex;
+    flex-wrap: wrap; /* Zapewnia przenoszenie kart do nowego wiersza, jeśli brakuje miejsca */
+    gap: 20px; /* Odstęp między kartami */
+    justify-content: center; /* Wyśrodkowanie kart */
+}
+
+.card {
+    flex: 1; /* Zapewnia, że karty rosną równomiernie */
+    min-width: 300px; /* Minimalna szerokość karty */
+    max-width: 500px; /* Maksymalna szerokość karty */
+    width: 500px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+.card h2 {
+    margin-top: 0;
+}
+
+.chart {
+    height: 150px;
+    background: #e4e4e4;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+.modalsBtn {
+    display: flex;
+}
+/*
+.chart-container {
+    width: 100%;
+    max-width: 300px;
+    height: 300px;
+    margin: 0 auto;
+}
+*/
+canvas {
+    max-width: 100%; /* Zapobiega rozciąganiu */
+    max-height: 100%;
+}
+
+
+.chart-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+/* Kontener wykresu */
+.chart-container {
+    width: 240px; /* Zmniejszony rozmiar wykresu */
+    height: 240px;
+}
+
+/* Stylizacja legendy */
+.legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+#legendPresentCount, #legendOnLeaveCount {
+    margin-left: 3px;
+}
+.color-box {
+    width: 12px;
+    height: 12px;
+    display: inline-block;
+    margin-right: 8px;
+    border-radius: 50%;
+}
+
+
+/* Ustawienie flexboxa dla tabel */
+.table-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between; /* Rozkłada tabele równomiernie */
+    gap: 20px; /* Odstęp między tabelami */
+}
+
+/* Każda tabela zajmuje 50% szerokości */
+.half-table {
+    width: 48%; /* Połowa szerokości z lekkim odstępem */
+    border-collapse: collapse;
+}
+
+.half-table th, .half-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+        transition: background-color 0.3s ease; /* Animacja zmiany koloru */
+
+}
+
+.half-table th {
+    background-color: #f4f4f4;
+}
+/* Efekt hover na cały wiersz */
+.half-table tbody tr:hover {
+    background-color: #c0c0c0; /* Zmiana tła na jaśniejszy */
+    cursor: pointer;
+}
+
+input {
+    background: rgba(255, 255, 255, 0.9);
+    height: 40px;
+    line-height: 40px;
+    border-radius: 20px;
+    padding: 0 20px;
+    border: none;
+    color: black;
+    width: 100%;
+}
+.process-name {
+    color: black;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding-left: 10px;
+}
+/* Usunięcie strzałek w przeglądarkach WebKit (Chrome, Safari, Edge) */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}

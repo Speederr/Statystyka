@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml" lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Efektywność</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" th:href="@{/css/efficiency.css}">
+    <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+
+
+    <script th:src="@{/js/json.js}" defer></script>
+    <script th:src="@{/js/script.js}" defer></script>
+    <script th:src="@{/js/charts.js}" defer></script>
+
+<!--        <link rel="stylesheet" href="../static/css/efficiency.css">-->
+<!--        <link rel="stylesheet" href="../static/css/sidebarCSS.css">-->
+<!--        <script src="../static/js/json.js" defer></script>-->
+<!--        <script src="../static/js/script.js" defer></script>-->
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="top">
+        <div class="logo">
+            <i class='bx bx-bar-chart-alt-2'></i>
+            <span>Statystyka</span>
+        </div>
+        <i class="bx bx-menu" id="btn"></i>
+
+        <div class="user">
+            <img src="" alt="User Image" class="user-img" id="user-avatar">
+            <div>
+                <p class="bold"></p>
+                <p class="role"></p>
+            </div>
+        </div>
+        <ul>
+            <li>
+                <a th:href="@{/index}">
+                    <i class="bx bx-home"></i>
+                    <span class="nav-item">Dashboard</span>
+                </a>
+                <span class="tooltip">Dashboard</span>
+            </li>
+            <li>
+                <a th:href="@{/processes}">
+                    <i class="bx bx-windows"></i>
+                    <span class="nav-item">Procesy</span>
+                </a>
+                <span class="tooltip">Procesy</span>
+            </li>
+            <li>
+                <a th:href="@{/settings}">
+                    <i class="bx bx-cog"></i>
+                    <span class="nav-item">Ustawienia</span>
+                </a>
+                <span class="tooltip">Ustawienia</span>
+            </li>
+            <li class="notification-item">
+                <a th:href="@{/notifications}">
+                    <i class='bx bx-message'></i>
+                    <span class="nav-item">Powiadomienia</span>
+                    <span id="notification-counter" class="notification-counter" style="display: none;">0</span>
+                </a>
+                <span class="tooltip">Powiadomienia</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
+                <a th:href="@{/efficiency}">
+                    <i class="bx bx-stats"></i>
+                    <span class="nav-item">Efektywność</span>
+                </a>
+                <span class="tooltip">Efektywność</span>
+            </li>
+            <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                <a th:href="@{/adminPanel}">
+                    <i class='bx bx-user-check'></i>
+                    <span class="nav-item">Panel Admina</span>
+                </a>
+                <span class="tooltip">Panel Admina</span>
+            </li>
+        </ul>
+    </div>
+    <ul>
+        <li>
+            <a th:href="@{/logout}">
+                <i class="bx bx-log-out"></i>
+                <span class="nav-item">Wyloguj</span>
+            </a>
+            <span class="tooltip">Wyloguj</span>
+        </li>
+    </ul>
+</div>
+
+
+<div class="main-content">
+    <div class="loader"></div>
+    <div class="error-container" id="err-container">
+        <p th:if="${error}" class="error">
+                <span class="error-content" th:text="${error}">
+                </span>
+            <i class='bx bx-x-circle' onclick="hideError()"></i>
+        </p>
+    </div>
+
+
+    <header class="title-container">
+        <h1>Dashboard</h1>
+        <span id="currentDate"></span>
+    </header>
+
+    <div class="modalsBtn">
+        <button class="mainBtn" th:onclick="|window.location.href='@{/details}'|">Szczegółowe informacje</button>
+        <button class="mainBtn" th:onclick="|window.location.href='@{/backlog}'|">Backlog</button>
+    </div>
+
+    <div class="dashboard-container">
+            <section class="card">
+                <h2>Dostępność</h2>
+
+                <p id="presentCount" th:text="${presentCount}" style="display: none;"></p>
+                <p id="onLeaveCount" th:text="${onLeaveCount}" style="display: none;"></p>
+
+                <ul id="presentList" style="display: none;">
+                    <li th:each="emp : ${presentEmployees}" th:data-name="${emp.firstName + ' ' + emp.lastName}"></li>
+                </ul>
+                <ul id="onLeaveList" style="display: none;">
+                    <li th:each="emp : ${onLeaveEmployees}" th:data-name="${emp.firstName + ' ' + emp.lastName}"></li>
+                </ul>
+                <div class="chart-wrapper">
+                    <div class="legend">
+                        <div class="legend-item">
+                            <span class="color-box" style="background-color: #4CAF50;"></span>
+                            Obecni: <strong><span id="legendPresentCount" th:text="${presentCount}">0</span></strong>
+                        </div>
+                        <div class="legend-item">
+                            <span class="color-box" style="background-color: #FF5733;"></span>
+                            Nieobecni: <strong><span id="legendOnLeaveCount" th:text="${onLeaveCount}">0</span></strong>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="availabilityChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+        <section class="card">
+            <h2>Backlog - Trend</h2>
+            <div class="chart-container">
+                <canvas id="backlogTrendChart"></canvas>
+            </div>
+        </section>
+
+
+        <section class="card">
+            <h2>Efektywność</h2>
+            <div class="chart">Productivity Chart Placeholder</div>
+        </section>
+
+        <section class="card">
+            <h2>Nieoperacyjne</h2>
+            <div class="chart">Utilization Chart Placeholder</div>
+        </section>
+    </div>
+
+
+
+</div>
+
+</body>
+</html>

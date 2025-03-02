@@ -1,0 +1,23 @@
+.input-container {
+            position: relative;
+        }
+.input-container i {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6c757d;
+}
+.input-container i:hover {
+    color: #0d6efd;
+}
+
+/* Usunięcie strzałek w przeglądarkach WebKit (Chrome, Safari, Edge) */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+

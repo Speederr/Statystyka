@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml" lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admina</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/adminPanel.css}">
+    <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+    <script th:src="@{/js/json.js}" defer></script>
+    <script th:src="@{/js/script.js}" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+<!--    <link rel="stylesheet" href="../static/css/button.css">-->
+<!--    <link rel="stylesheet" href="../static/css/adminPanel.css">-->
+<!--    <link rel="stylesheet" href="../static/css/sidebarCSS.css">-->
+<!--    <script src="../static/js/json.js" defer></script>-->
+<!--    <script src="../static/js/script.js" defer></script>-->
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="top">
+        <div class="logo">
+            <i class='bx bx-bar-chart-alt-2'></i>
+            <span>Statystyka</span>
+        </div>
+        <i class="bx bx-menu" id="btn"></i>
+
+        <div class="user">
+            <img src="" alt="User Image" class="user-img" id="user-avatar">
+            <div>
+                <p class="bold"></p>
+                <p class="role"></p>
+            </div>
+        </div>
+        <ul>
+            <li>
+                <a th:href="@{/index}">
+                    <i class="bx bx-home"></i>
+                    <span class="nav-item">Dashboard</span>
+                </a>
+                <span class="tooltip">Dashboard</span>
+            </li>
+            <li>
+                <a th:href="@{/processes}">
+                    <i class="bx bx-windows"></i>
+                    <span class="nav-item">Procesy</span>
+                </a>
+                <span class="tooltip">Procesy</span>
+            </li>
+            <li>
+                <a th:href="@{/settings}">
+                    <i class="bx bx-cog"></i>
+                    <span class="nav-item">Ustawienia</span>
+                </a>
+                <span class="tooltip">Ustawienia</span>
+            </li>
+            <li class="notification-item">
+                <a th:href="@{/notifications}">
+                    <i class='bx bx-message'></i>
+                    <span class="nav-item">Powiadomienia</span>
+                    <span id="notification-counter" class="notification-counter" style="display: none;">0</span>
+                </a>
+                <span class="tooltip">Powiadomienia</span>
+            </li>
+
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
+                <a th:href="@{/efficiency}">
+                    <i class="bx bx-stats"></i>
+                    <span class="nav-item">Efektywność</span>
+                </a>
+                <span class="tooltip">Efektywność</span>
+            </li>
+            <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                <a th:href="@{/adminPanel}">
+                    <i class='bx bx-user-check'></i>
+                    <span class="nav-item">Panel Admina</span>
+                </a>
+                <span class="tooltip">Panel Admina</span>
+            </li>
+        </ul>
+    </div>
+    <ul>
+        <li>
+            <a th:href="@{/logout}">
+                <i class="bx bx-log-out"></i>
+                <span class="nav-item">Wyloguj</span>
+            </a>
+            <span class="tooltip">Wyloguj</span>
+        </li>
+    </ul>
+</div>
+
+
+<div class="main-content">
+    <div class="loader"></div>
+
+    <div class="error-container" id="err-container">
+        <p th:if="${error}" class="error">
+                <span class="error-content" th:text="${error}">
+                </span>
+            <i class='bx bx-x-circle' onclick="hideError()"></i>
+        </p>
+    </div>
+
+    <header class="title-container">
+        <h1>Uprawnienia</h1>
+        <span id="currentDate"></span>
+    </header>
+
+    <!-- Przycisk do otwarcia modala -->
+    <div class="mainContainer">
+        <div class="modalsBtn">
+            <button class="mainBtn" id="openModalBtn">Dodaj Użytkownika</button>
+            <button class="mainBtn" id="newTeamModalBtn">Dodaj Zespół</button>
+            <button class="mainBtn" id="newSectionModalBtn">Dodaj Sekcję</button>
+            <button class="mainBtn" th:onclick="|window.location.href='@{/averageTime}'|">Edytuj Czasy</button>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="search-user-messages" placeholder="Wyszukaj...">
+            <i class='bx bx-x clear-icon' id="clear-search"></i>
+        </div>
+    </div>
+    <!-- Modal -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <form th:action="@{/api/user/addUser}" th:object="${user}" method="post" id="form-container">
+                <div id="title">
+                    <h3>Dodaj Użytkownika</h3>
+                    <span class="close" id="closeModalBtn">&times;</span>
+                </div>
+                <label for="firstName">Imię</label>
+                <input type="text" name="firstName" id="firstName" required>
+
+                <label for="lastName">Nazwisko</label>
+                <input type="text" name="lastName" id="lastName" required>
+
+                <label for="username">Login</label>
+                <input type="text" name="username" id="username" required>
+
+                <label for="email">Email</label>
+                <input type="text" name="email" id="email" required>
+                <div id="usernameFeedback"></div> <!-- This is where the validation userMessage will appear -->
+
+                <label for="team">Zespół:</label>
+                <select id="team" name="teamId">
+                    <option value="">Wybierz zespół</option>
+                </select>
+
+                <label for="section">Sekcja:</label>
+                <select id="section" name="sectionId">
+                    <option value="">Wybierz sekcję</option>
+                </select>
+
+                <label>Rola</label>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" id="admin" name="id_role" value="1" required>
+                        <label for="admin">Admin</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="manager" name="id_role" value="2" required>
+                        <label for="manager">Kierownik</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="coordinator" name="id_role" value="3" required>
+                        <label for="coordinator">Koordynator</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="uzytkownik" name="id_role" value="4" required>
+                        <label for="uzytkownik">Użytkownik</label>
+                    </div>
+                </div>
+                <div class="btnContainer">
+                    <button type="submit" class="formBtn" id="submit-button">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+        <br />
+
+<!--        <h1 class="settings-header">Uprawnienia</h1>-->
+    <div class="role">
+    <form th:action="@{/api/user/saveUsers}" method="post" id="users-form">
+        <table id="user-table">
+            <thead>
+            <th>Zaznacz</th>
+<!--            <th>ID</th>-->
+            <th>Imię</th>
+            <th>Nazwisko</th>
+            <th>Login</th>
+            <th>Email</th>
+            <th>Sekcja</th>
+            <th>Rola</th>
+            </thead>
+            <tbody>
+            <tr th:each="user : ${users}">
+                <td class="checkbox-cell">
+                    <input type="checkbox" class="checkbox-button" th:if="${!user.isSuperAdmin}" name="selectedUsers" th:value="${user.id}">
+
+                </td>
+                <td th:text="${user.firstName}">Imię</td>
+                <td th:text="${user.lastName}">Nazwisko</td>
+                <td th:text="${user.username}">Login</td>
+                <td th:text="${user.email}">Email</td>
+                <td class="select-cell">
+                    <select class="select-section" th:attr="name='sections[' + ${user.id} + ']'" th:if="${user.team != null}">
+                        <option th:each="section : ${user.team.sections}"
+                                th:value="${section.id}"
+                                th:text="${section.sectionName}"
+                                th:selected="${user.section != null && user.section.id == section.id}">
+                        </option>
+                    </select>
+                </td>
+                <td class="select-cell">
+                        <select class="select-role" th:attr="name='roles[' + ${user.id} + ']'" th:value="${user.role.roleName}" th:if="${!user.isSuperAdmin}">
+                            <option value="Admin" th:selected="${user.role.roleName == 'Admin'}">Admin</option>
+                            <option value="Manager" th:selected="${user.role.roleName == 'Manager'}">Manager</option>
+                            <option value="Coordinator" th:selected="${user.role.roleName == 'Coordinator'}">Coordinator</option>
+                            <option value="User" th:selected="${user.role.roleName == 'User'}">User</option>
+                    </select>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="new-form-button-container">
+            <button type="submit" class="mainBtn">Zapisz</button>
+            <button id="deleteButton" class="mainBtn" formaction="/api/user/deleteUsers" formmethod="post">Usuń</button>
+        </div>
+    </form>
+        <p id="statusMessage"></p>
+    </div>
+<!--    Modal do dodania nowego zespołu -->
+    <div id="teamModal" class="modal">
+        <div class="modal-content">
+            <form id="teamForm">
+                <div class="title">
+                    <h4>Nowy Zespół</h4>
+                    <span class="close" id="closeTeamModalBtn">&times;</span>
+                </div>
+                <label for="teamName">Nazwa Zespołu</label>
+                <input class="formInput" type="text" id="teamName" required>
+
+                <div class="btnContainer">
+                    <button type="submit" class="mainBtn">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<!--    Modal do dodania nowej sekcji   -->
+<div id="sectionModal" class="modal">
+    <div class="modal-content">
+        <form id="sectionForm">
+            <div class="title">
+                <h4>Nowa Sekcja</h4>
+                <span class="close" id="closeSectionModalBtn">&times;</span>
+            </div>
+
+            <label for="sectionTeam">Zespół:</label>
+            <select id="sectionTeam" name="teamId">
+                <option value="">Wybierz zespół</option>
+            </select>
+
+            <label for="sectionName">Nazwa Sekcji</label>
+            <input class="formInput" type="text" id="sectionName" required>
+
+            <div class="btnContainer">
+                <button type="submit" class="mainBtn">Dodaj</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+
+
+</div>
+
+</body>
+</html>

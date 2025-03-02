@@ -8,49 +8,59 @@
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script th:src="@{/js/script.js}" defer></script>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 
 <body>
 
 <div class="popup">
-    <div class="container" id="container">
-      <p th:if="${param.logout}" class="message">
-                <span class="message-content">
-                    <strong>Sukces!</strong> Pomyślnie wylogowano ze statystyki.
-                    <a href="/login">Zaloguj się ponownie</a>.
-                </span>
-          <i class='bx bx-x-circle' onclick="hideError()"></i>
-      </p>
+    <!-- Komunikat sukcesu -->
+    <div class="message" th:if="${param.success}">
+        <span>
+            <strong>Sukces!</strong>
+            <span th:if="${param.success[0] == 'logout'}"> Pomyślnie wylogowano ze statystyki. <a href="/login">Zaloguj się ponownie</a>.</span>
+        </span>
+        <i class='bx bx-x-circle' onclick="this.parentElement.style.display='none'"></i>
     </div>
 
-    <div class="container" id="err-container">
-      <p th:if="${param.error}" class="error">
-                <span class="error-content">
-                    <strong>Uwaga!</strong> Błędne dane logowania, spróbuj ponownie.
-                    <a href="/login">Zaloguj się ponownie</a>.
-                </span>
-          <i class='bx bx-x-circle' onclick="hideError()"></i>
-      </p>
+    <!-- Komunikaty błędów -->
+    <div class="error" th:if="${param.error}">
+        <span>
+            <strong>Uwaga!</strong>
+            <span th:if="${param.error[0] == 'invalidCredentials'}"> Błędne dane logowania, spróbuj ponownie. <a href="/login">Zaloguj się ponownie</a>.</span>
+        </span>
+        <i class='bx bx-x-circle' onclick="this.parentElement.style.display='none'"></i>
     </div>
 </div>
+
 <main>
     <div class="loader"></div>
+
   <div id="login-window" class="login active">
     <form id="login-form" th:action="@{/login}" method="post">
-        <h1>Logowanie</h1>
-        <label for="username">Nazwa użytkownika</label>
-        <div class="input-box">
-            <input type="text" id="username" name="username" required autofocus>
+        <div class="inputs">
+            <h1 class="loginTitle">Logowanie</h1>
+            <label for="username">Nazwa użytkownika</label>
+            <div class="input-box">
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            <label for="password">Hasło</label>
+            <div class="input-box">
+                <input type="password" id="password" name="password" required>
+                <i class="fa-solid fa-eye-slash" id="show-password"></i>
+            </div>
         </div>
-        <label for="password">Hasło</label>
-        <div class="input-box">
-            <input type="password" id="password" name="password" required>
-            <i class="fa-solid fa-eye-slash" id="show-password"></i>
+        <div class="btnContainer">
+            <button class="formBtn">Zaloguj</button>
         </div>
-      <button>Zaloguj</button>
       <label>Pierwszy raz? -- <a th:href="@{/firstLogin}">Pierwsze logowanie</a></label>
+        <div class="restore-password">
+            <a th:href="@{/restorePassword}">Nie pamiętasz hasła?</a>
+        </div>
     </form>
   </div>
 </main>
