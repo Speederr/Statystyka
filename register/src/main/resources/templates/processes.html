@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Procesy</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
@@ -41,7 +43,7 @@
 
         <div class="user">
             <img src="" alt="User Image" class="user-img" id="user-avatar">
-            <div>
+            <div class="information">
                 <p class="bold"></p>
                 <p class="role"></p>
             </div>
@@ -110,7 +112,7 @@
         <!-- Komunikat dynamiczny -->
         <div id="popup-userMessage" class="userMessage" style="display: none;">
             <span></span>
-<!--            <i class='bx bx-x-circle' onclick="this.parentElement.style.display='none'"></i>-->
+            <i class='bx bx-x-circle' onclick="this.parentElement.style.display='none'"></i>
         </div>
     </div>
 
@@ -121,6 +123,17 @@
         <h1>Procesy</h1>
         <span id="currentDate"></span>
     </header>
+
+    <div class="main-container">
+        <div class="filter-container">
+            <div class="modalsBtn">
+                <button class="mainBtn" type="button" th:onclick="|window.location.href='@{/index}'|">Powrót</button>
+                <button class="mainBtn" type="button" th:onclick="|window.location.href='@{/matrix}'|">
+                    Matryca Kompetencji
+                </button>
+
+            </div>
+        </div>
 
     <div class="content-wrapper">
         <!-- Lewy kontener -->
@@ -155,7 +168,7 @@
         </div>
     </div>
 </div>
-
+</div>
 <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
 
 </body>

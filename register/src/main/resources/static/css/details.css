@@ -1,0 +1,126 @@
+.filter-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+.filter-data-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+.inputs {
+    background: rgba(255, 255, 255, 0.3);
+    height: 50px;
+    line-height: 40px;
+    border-radius: 10px;
+    padding: 0 20px;
+    border: 1px solid #8F9092;
+    color: black;
+    width: 100%;
+}
+.inputs:hover {
+    cursor: pointer;
+    background: rgb(224, 224, 226);
+    transition: 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 12px; /* Większe odstępy */
+    text-align: center;
+    transition: background-color 0.3s ease;
+    white-space: nowrap;
+    min-width: 120px;
+    font-size: 14px;
+}
+th {
+    background: #007bff; /* Niebieski nagłówek */
+    color: white; /* Biały tekst w nagłówku */
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    text-align: center;
+    z-index: 2;
+    padding: 14px;
+}
+table thead {
+   background: #0056b3; /* Ciemniejszy niebieski dla lepszej separacji */
+}
+table tbody tr:nth-child(odd) {
+    background-color: #f9f9f9; /* Jasnoszare naprzemienne wiersze */
+}
+table tbody tr:nth-child(even) {
+   background-color: #ffffff; /* Białe naprzemienne wiersze */
+}
+table tbody tr:hover {
+    background-color: #d0e4ff; /* Lekko niebieskie podświetlenie na hover */
+}
+table tbody tr td i {
+    font-size: 1.8rem;
+    color: black;
+}
+table tbody tr td i:hover {
+    cursor: pointer;
+    color: #007bff;
+    transition: color 0.3s ease;
+
+}
+
+.multiselect-container {
+  position: relative;
+  display: inline-block;
+  width: 250px;
+}
+.select-box {
+  height: 50px;
+  border: 1px solid #8F9092;
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+.select-box:hover {
+    cursor: pointer;
+    background: rgb(224, 224, 226);
+    transition: 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.select-box #selectedLabel {
+    line-height: 28px;
+}
+.select-box::after {
+  content: "\25BE"; /* strzałka */
+  position: absolute;
+  right: 15px;
+  top: 12px;
+  font-size: 14px;
+}
+.checkbox-dropdown {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 0 0 10px 10px;
+  z-index: 1000;
+  margin-top: 5px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.checkbox-dropdown label {
+  display: block;
+  padding: 8px;
+  cursor: pointer;
+}
+.checkbox-dropdown label:hover {
+  background-color: #efefef;
+}
+

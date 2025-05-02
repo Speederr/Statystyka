@@ -13,51 +13,34 @@ document.querySelectorAll("input[name='quantity']").forEach(input => {
         this.value = this.value.replace(/[^0-9]/g, ""); // Usuwa wszystko poza liczbami
     });
 });
-// ✅ Funkcja dodająca ikonkę do pola input
-function addIcon(input, iconClass) {
-    // Jeśli już istnieje ikona, nie dodawaj kolejnej
-    if (input.parentNode.querySelector(".bx")) return;
-
-    const icon = document.createElement("i");
-    icon.className = `bx ${iconClass} edit-icon`;
-    input.parentNode.appendChild(icon);
-}
-// ✅ Funkcja zamieniająca ikonę na inną (np. z bx-edit na bx-check)
-function replaceIcon(input, newIconClass) {
-    const icon = input.parentNode.querySelector(".bx");
-    if (icon) {
-        icon.className = `bx ${newIconClass} edit-icon`;
-    }
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-document.addEventListener('DOMContentLoaded', function() {
-    fetch('/api/user/info')
-        .then(response => response.json())
-        .then(user => {
-            if (user && user.firstName && user.lastName) {
-                document.querySelector('.user .bold').textContent = `${user.firstName} ${user.lastName}`; // Set name
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const response = await fetch('/api/user/info');
+        if (!response.ok) throw new Error('Błąd odpowiedzi z serwera');
 
-                // Map role ID to role name (example mapping)
-                const roleNames = {
-                    1: 'Admin',
-                    2: 'Manager',
-                    3: 'Koordynator',
-                    4: 'Użytkownik'
-                    // Add other role mappings here
-                };
+        const user = await response.json();
 
-                // Get role name based on role ID
-                const roleName = roleNames[user.roleId] || 'Nieznana rola'; // Default if ID not found
-                document.querySelector('.role').textContent = roleName; // Set role name
-            }
-        })
-        .catch(error => console.error('Błąd podczas pobierania danych użytkownika:', error));
+        if (user?.firstName && user?.lastName) {
+            document.querySelector('.user .bold').textContent = `${user.firstName} ${user.lastName}`;
+
+            const roleNames = {
+                1: 'Admin',
+                2: 'Manager',
+                3: 'Koordynator',
+                4: 'Użytkownik'
+            };
+
+            document.querySelector('.role').textContent = roleNames[user.roleId] || 'Nieznana rola';
+        }
+
+    } catch (error) {
+        console.error('Błąd podczas pobierania danych użytkownika:', error);
+    }
 });
-
 /////////////////////////////////////////////////////////////////////////////////////////////
 document.addEventListener("DOMContentLoaded", function () {
-    // Sprawdzenie, czy jesteśmy na stronie /averageTime
     if (!window.location.pathname.includes("/averageTime")) {
         return;
     }
@@ -65,24 +48,69 @@ document.addEventListener("DOMContentLoaded", function () {
     const editButton = document.getElementById("editButton");
     let isEditing = false;
 
-    // Po załadowaniu strony ustaw ikony "bx-check"
-    const inputs = document.querySelectorAll("tbody input");
-    inputs.forEach(input => addIcon(input, "bx-check"));
+    const minuteInputs = document.querySelectorAll(".time-input.minutes");
+    const secondInputs = document.querySelectorAll(".time-input.seconds");
+
+    function addIcon(input, iconClass) {
+        const icon = document.createElement("i");
+        icon.classList.add("bx", iconClass);
+        input.parentElement.appendChild(icon);
+    }
+
+    function replaceIcon(input, newIconClass) {
+        const icon = input.parentElement.querySelector("i");
+        if (icon) {
+            icon.classList.replace(icon.classList[1], newIconClass);
+        }
+    }
+
+    function toggleEditMode(enable) {
+        minuteInputs.forEach(input => {
+            input.readOnly = !enable;
+            input.classList.toggle("disabled-cursor", !enable);
+            input.classList.toggle("enabled-cursor", enable);
+            replaceIcon(input, enable ? "bx-edit" : "bx-check");
+        });
+
+        secondInputs.forEach(input => {
+            input.readOnly = !enable;
+            input.classList.toggle("disabled-cursor", !enable);
+            input.classList.toggle("enabled-cursor", enable);
+            replaceIcon(input, enable ? "bx-edit" : "bx-check");
+        });
+    }
+
+    function syncMinutesAndSeconds(input, type) {
+        const processId = input.id.split("_")[1];
+        const minuteInput = document.getElementById(`minutes_${processId}`);
+        const secondInput = document.getElementById(`seconds_${processId}`);
+
+        if (type === "minutes") {
+            secondInput.value = (parseFloat(minuteInput.value) * 60).toFixed(0);
+        } else if (type === "seconds") {
+            minuteInput.value = (parseFloat(secondInput.value) / 60).toFixed(2);
+        }
+    }
+
+    minuteInputs.forEach(input => {
+        input.addEventListener("input", () => syncMinutesAndSeconds(input, "minutes"));
+        addIcon(input, "bx-check");
+        input.classList.add("disabled-cursor");
+    });
+
+    secondInputs.forEach(input => {
+        input.addEventListener("input", () => syncMinutesAndSeconds(input, "seconds"));
+        addIcon(input, "bx-check");
+        input.classList.add("disabled-cursor");
+    });
 
     editButton.addEventListener("click", function () {
         if (!isEditing) {
-            // Tryb edycji: Odblokowujemy inputy i zmieniamy ikonki na "bx-edit"
-            inputs.forEach(input => {
-                input.removeAttribute("readonly");
-                replaceIcon(input, "bx-edit");
-            });
-
+            toggleEditMode(true);
             editButton.textContent = "Zapisz";
-
         } else {
-            // Tryb zapisu: Wysyłamy dane do backendu
-            const updatePromises = Array.from(inputs).map(input => {
-                const processId = input.id.split("_")[1]; // Pobieramy ID procesu
+            const updatePromises = Array.from(minuteInputs).map(input => {
+                const processId = input.id.split("_")[1];
                 const newTime = input.value;
 
                 return fetch(`/api/processes/update`, {
@@ -96,30 +124,31 @@ document.addEventListener("DOMContentLoaded", function () {
                     })
                 }).then(response => {
                     if (response.ok) {
-                        replaceIcon(input, "bx-check"); // Zmieniamy ikonę na "check" po zapisaniu
+                        replaceIcon(input, "bx-check");
                     }
                     return response;
                 });
             });
 
-            // Obsługa zapisania danych
             Promise.all(updatePromises)
                 .then(responses => {
                     if (responses.every(response => response.ok)) {
                         displayMessage("success", "Zapisano pomyślnie!");
+                        setTimeout(() => location.reload(), 3000);
                     } else {
                         displayMessage("error", "Wystąpił błąd podczas zapisu.");
                     }
                 })
                 .catch(() => displayMessage("error", "Błąd podczas komunikacji z serwerem."));
 
-            // Tryb wyjścia z edycji
-            inputs.forEach(input => input.setAttribute("readonly", "true"));
+            toggleEditMode(false);
             editButton.textContent = "Edytuj";
         }
         isEditing = !isEditing;
     });
 });
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -155,7 +184,7 @@ async function calculateAndSave() {
     });
 
     if (Object.keys(processVolumes).length === 0) {
-        displayMessage("error", "Brak wprowadzonych danych.");
+        displayMessage("error", "Brak wprowadzonych danych!");
         return;
     }
 
@@ -185,7 +214,7 @@ async function calculateAndSave() {
         });
 
         if (saveResponse.ok) {
-            displayMessage("success", "Wolumen zapisany pomyślnie!");
+            displayMessage("success", "Zapisano wolumen!");
             clearInputFields();
         } else {
             throw new Error("Błąd podczas zapisywania wolumenów.");
@@ -195,35 +224,62 @@ async function calculateAndSave() {
         displayMessage("error", "Wystąpił błąd podczas operacji. Spróbuj ponownie.");
     }
 }
+
 document.addEventListener("DOMContentLoaded", function () {
     const exportButton = document.getElementById('exportToXLSX');
     if (exportButton) {
-        exportButton.addEventListener('click', function () {
-            fetch('/export/processes')
-                .then(response => {
-                    if (response.ok) {
-                        return response.blob();
-                    }
-                    throw new Error('Failed to export data');
-                })
-                .then(blob => {
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = 'processes.xlsx';
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                })
-                .catch(error => console.error('Error:', error));
+        exportButton.addEventListener("click", function () {
+            const selectedTeamId = document.getElementById("timeTeam").value;
+            const rows = document.querySelectorAll("#processTable tr");
+            let filteredData = [];
+
+            rows.forEach(row => {
+                const processName = row.cells[0].textContent;
+                const averageTimeMinutes = row.cells[1].querySelector("input").value;
+                const averageTimeSeconds = row.cells[2].querySelector("input")
+                    ? row.cells[2].querySelector("input").value
+                    : (parseFloat(averageTimeMinutes) * 60).toFixed(0); // Jeśli nie ma inputa, obliczamy
+
+                const processTeamId = row.getAttribute("data-team");
+
+                // ✅ Filtrujemy dane na podstawie wybranego teamId
+                if (!selectedTeamId || processTeamId === selectedTeamId) {
+                    filteredData.push({
+                        processName,
+                        averageTimeMinutes,
+                        averageTimeSeconds
+                    });
+                }
+            });
+
+            if (filteredData.length === 0) {
+                alert("Brak procesów do eksportu dla wybranego zespołu.");
+                return;
+            }
+                console.log("Dane do eksportu:", JSON.stringify(filteredData, null, 2));
+
+            fetch("/export/processes", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(filteredData)
+
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "filtered_processes.xlsx";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            })
+            .catch(error => console.error("Błąd eksportu:", error));
         });
-    } else {
-        //console.warn('Warning: Element with ID "exportToXLSX" not found.');
-        return;
     }
 });
-
 
 document.addEventListener("DOMContentLoaded", function () {
     const saveAllBtn = document.getElementById('saveAllBtn');
@@ -369,11 +425,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const stompClient = Stomp.over(socket);
 
     stompClient.connect({}, function () {
-        console.log("✅ Połączono z WebSocket!");
+//        console.log("✅ Połączono z WebSocket!");
 
         // 🎯 Subskrybuj temat powiadomień
         stompClient.subscribe("/topic/notifications", function (message) {
-            console.log("📩 Nowa wiadomość!");
+//            console.log("📩 Nowa wiadomość!");
 
             // 🔄 Odśwież licznik wiadomości
             fetchNotificationCount();
@@ -387,7 +443,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const notificationCounter = document.getElementById('notification-counter');
 
                 if (!notificationCounter) {
-                    console.warn("⚠️ Element #notification-counter nie został znaleziony w DOM.");
+//                    console.warn("⚠️ Element #notification-counter nie został znaleziony w DOM.");
                     return;
                 }
 
@@ -439,18 +495,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (typeof fetchNotificationCount === "function") {
                     fetchNotificationCount(); // 🔄 Zaktualizuj licznik nieprzeczytanych wiadomości
                 } else {
-                    console.warn("fetchNotificationCount is not defined.");
+                    return;
+//                    console.warn("fetchNotificationCount is not defined.");
                 }
             })
             .catch(error => console.error("Błąd:", error));
         });
     } else {
-        console.warn("Element #markAsReadBtn nie istnieje.");
+        return;
+//        console.warn("Element #markAsReadBtn nie istnieje.");
     }
 });
-
-
-
 
 document.addEventListener("DOMContentLoaded", function () {
     // Pobranie elementów z DOM
@@ -517,10 +572,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
-
-
-
-
 //////////////////////////////////////////////////////////////// NOTIFICATIONS END ///////////////////////////////////////////
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -597,6 +648,27 @@ function displayMessage(type, message) {
     });
 }
 
+function displayMyMessage(type, message) {
+    const popup = document.querySelector('.popup');
+
+    const div = document.createElement('div');
+    div.className = type === 'success' ? 'message' : 'error';
+    div.innerHTML = `
+        <span>
+            <strong>${type === 'success' ? 'Sukces!' : 'Uwaga!'}</strong>
+            <span>${message}</span>
+        </span>
+        <i class='bx bx-x-circle' onclick="this.parentElement.style.display='none'"></i>
+    `;
+
+    popup.appendChild(div);
+
+    setTimeout(() => {
+        div.style.display = 'none';
+    }, 3000);
+}
+
+
     // 📌 Funkcja do formatowania daty w stylu "2 dni temu"
     function formatTimeAgo(date) {
         const now = new Date();
@@ -656,7 +728,8 @@ document.addEventListener("DOMContentLoaded", function () {
             filterMessages(searchTerm);
         });
     } else {
-        console.warn("Element #search-userMessages nie istnieje.");
+        return;
+//        console.warn("Element #search-userMessages nie istnieje.");
     }
 
     function filterMessages(searchTerm) {
@@ -744,7 +817,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 if (!messageList) {
-                    console.warn("⚠️ Brak elementu #message-list w DOM. Przerywam renderowanie wiadomości.");
+//                    console.warn("⚠️ Brak elementu #message-list w DOM. Przerywam renderowanie wiadomości.");
                     return;
                 }
 
@@ -924,7 +997,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const teamForm = document.getElementById("teamForm");
 
     if (!teamForm) {
-        console.warn("Błąd: Element #teamForm nie istnieje!");
+//        console.warn("Błąd: Element #teamForm nie istnieje!");
         return; // Przerywamy działanie skryptu
     }
 
@@ -1025,9 +1098,564 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("sectionModal").addEventListener("click", loadTeams);
     }
 });
+document.addEventListener("DOMContentLoaded", function () {
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
+
+    if (!startDateInput || !endDateInput) {
+//        console.warn("Nie znaleziono pól daty!");
+        return;
+    }
+
+    function validateDates() {
+        if (!startDateInput.value || !endDateInput.value) {
+//            console.warn("Jedno z pól daty jest puste!");
+            return;
+        }
+
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+
+        console.log(`Sprawdzanie dat: startDate = ${startDate.toISOString()}, endDate = ${endDate.toISOString()}`);
+
+        if (endDate < startDate) {
+            console.log("🔹 endDate jest wcześniejsze niż startDate → ustawiam oba na endDate");
+            startDateInput.value = endDateInput.value;
+        } else if (startDate > endDate) {
+            console.log("🔹 startDate jest późniejsze niż endDate → ustawiam oba na startDate");
+            endDateInput.value = startDateInput.value;
+        }
+    }
+
+    startDateInput.addEventListener("change", validateDates);
+    endDateInput.addEventListener("change", validateDates);
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Pobieramy selektory dla filtrowania zespołów
+    const teamSelect = document.getElementById("timeTeam");
+    const processRows = document.querySelectorAll("#processTable tr");
+    const userRows = document.querySelectorAll("#user-table tbody tr");
+
+    function filterTableRows(selectElement, rows) {
+        const selectedTeamId = selectElement.value;
+
+        rows.forEach(row => {
+            const rowTeamId = row.getAttribute("data-team"); // Pobiera team z atrybutu
+
+            if (!selectedTeamId || rowTeamId === selectedTeamId) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+
+    // Filtrowanie procesów
+    if (teamSelect) {
+        teamSelect.addEventListener("change", function () {
+            filterTableRows(teamSelect, processRows);
+        });
+    }
+
+});
+////////////////////////////////////////// ZAPISYWANIE BACKLOGU ///////////////////////////////////////////////////////
+document.addEventListener("DOMContentLoaded", function () {
+    const backlogForm = document.getElementById("backlog-form");
+    if (!backlogForm) return; // Jeśli nie ma formularza, zakończ funkcję
+
+    backlogForm.addEventListener("submit", function (event) {
+        event.preventDefault(); // Zatrzymaj domyślną akcję formularza
+
+        const formData = new FormData(backlogForm); // Pobierz dane z formularza
+
+        fetch("/backlog/save", {
+            method: "POST",
+            body: new URLSearchParams(formData), // Konwersja na format application/x-www-form-urlencoded
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Błąd podczas zapisywania backlogu!");
+            }
+            return response.json(); // Parsowanie JSON
+        })
+        .then(data => {
+            displayMessage("success", "Pomyślnie zapisano backlog!");
+            setTimeout(() => location.reload(), 3000);
+        })
+        .catch(error => displayMessage("error", "Wystąpił błąd podczas zapisywania backlogu!"));
+    });
+});
+
+////////////////////////////////////// ZMIANA I ZAPISANIE OBECNOŚCI ///////////////////////////////////////////////////
+document.addEventListener("change", function (event) {
+    if (event.target.classList.contains("attendance-status")) {
+        let userId = event.target.getAttribute("data-user-id");
+        let newStatus = event.target.value;
+
+        let requestData = new URLSearchParams();
+        requestData.append("userId", userId);
+        requestData.append("status", newStatus);
+
+        fetch("/api/attendance/update", { // 🔹 Dostosuj URL do swojego API
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: requestData
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log("✅ Status zaktualizowany:", data);
+            displayMessage("success", "Status zapisany!");
+        })
+        .catch(error => console.error("❌ Błąd aktualizacji statusu:", error));
+    }
+});
+////////////////////////////////// ZAPISYWANIE WOLUMENU PO KLIKNIĘCIU NA PLUS + ///////////////////////////////////////
+document.addEventListener("DOMContentLoaded", function () {
+    // Pobranie userId z ukrytego pola input, jeśli istnieje
+    const userIdElement = document.getElementById('userId');
+    const userId = userIdElement ? userIdElement.value.trim() : null;
+
+    if (!userId) {
+//        console.warn("⚠️ Brak ID użytkownika – funkcjonalność zapisu może być ograniczona.");
+        return; // Jeśli userId nie istnieje, przerywamy dalsze operacje, ale nie blokujemy całego skryptu
+    }
+
+    // Znajdź wszystkie przyciski "+"
+    document.querySelectorAll(".add-efficiency").forEach(button => {
+        button.addEventListener("click", function () {
+            let input = this.closest(".form-floating").querySelector("input");
+            let processId = input.getAttribute("data-process-id");
+            let quantity = input.value;
+
+            if (!quantity || quantity <= 0) {
+                displayMessage("error", "Brak wprowadzonych danych!");
+                return;
+            }
+
+            let requestData = new URLSearchParams();
+            requestData.append("userId", userId);  // Używamy dynamicznego userId
+            requestData.append("processId", processId);
+            requestData.append("quantity", quantity);
+
+            fetch("/api/saved-data/save-single", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: requestData
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log(data);
+                displayMessage("success", "Zapisano wolumen!");
+
+                // 🔄 Odświeżenie strony po 3 sekundach
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
+            })
+            .catch(error => console.error("❌ Błąd zapisu:", error));
+        });
+    });
+});
+
+
+////////////////////////////////////////////////////// WCZYTAJ WYKRES I FILTRUJ ///////////////////////////////////////
+document.addEventListener("DOMContentLoaded", function () {
+    if (!window.location.pathname.includes("/efficiency")) return;
+
+    const sectionSelect = document.getElementById("sectionFilter");
+
+function loadAvailability(sectionId = "all") {
+    fetch(`/api/sections/availability/${sectionId}`)
+        .then(response => response.json())
+        .then(data => {
+            const presentCount = data.presentCount || 0;
+            const onLeaveCount = data.onLeaveCount || 0;
+            const notLoggedCount = data.notLoggedCount || 0;
+            const presentNames = data.presentEmployees || [];
+            const onLeaveNames = data.onLeaveEmployees || [];
+            const notLoggedNames = data.notLoggedEmployees || [];
+            const totalEmployees = data.totalEmployees || (presentCount + onLeaveCount + notLoggedCount);
+
+            const officeCount = data.officeCount || 0;
+            const homeofficeCount = data.homeofficeCount || 0;
+            const officeNames = data.officeEmployees || [];
+            const homeofficeNames = data.homeofficeEmployees || [];
+
+            updateRemoteChart(officeCount, homeofficeCount, officeNames, homeofficeNames);
+
+            updateChart(
+                presentCount,
+                onLeaveCount,
+                notLoggedCount,
+                presentNames,
+                onLeaveNames,
+                notLoggedNames,
+                totalEmployees
+            );
+        })
+        .catch(error => console.error("❌ Błąd ładowania dostępności:", error));
+}
+
+
+    function populateSectionSelect() {
+        fetch('/api/sections')
+            .then(response => response.json())
+            .then(data => {
+                sectionSelect.innerHTML = `<option value="all">Wszyscy użytkownicy</option>`;
+                data.forEach(section => {
+                    let option = document.createElement("option");
+                    option.value = section.id;
+                    option.textContent = section.sectionName;
+                    sectionSelect.appendChild(option);
+                });
+
+                loadAvailability("all");
+            })
+            .catch(error => console.warn(`⚠️ Błąd ładowania sekcji`));
+    }
+
+    sectionSelect.addEventListener("change", () => {
+        const sectionId = sectionSelect.value;
+        loadAvailability(sectionId);
+    });
+
+    populateSectionSelect();
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  if (!window.location.pathname.includes("/details")) return;
+
+  // --- ZMIENNE
+  const sectionSelect = document.getElementById("sectionDetailsFilter");
+  const checkboxContainer = document.getElementById("checkboxDropdown");
+  const tableBody = document.querySelector("#employeeTable tbody");
+  const selectedLabel = document.getElementById("selectedLabel");
+
+  // --- FUNKCJE
+  function getSelectedUserIds() {
+    return Array.from(document.querySelectorAll(".employee-checkbox:checked")).map(cb => cb.value);
+  }
+
+  function renderUserTable(users) {
+    tableBody.innerHTML = "";
+    users.forEach(user => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>
+            <a href="/userDetails/${user.id}" title="Szczegóły użytkownika">
+              <i class='bx bxs-user-detail'></i>
+            </a>
+        </td>
+        <td>${user.firstName}</td>
+        <td>${user.lastName}</td>
+        <td>${user.efficiency !== null ? user.efficiency + "%" : "Brak danych"}</td>
+        <td>${user.nonOperational !== null ? user.nonOperational + " godz." : "Brak danych"}</td>
+        <td>${user.positionName ?? "Brak"}</td>
+        <td>
+          <select class="attendance-status" data-user-id="${user.id}">
+            <option value="present" ${user.attendanceStatus === "present" ? "selected" : ""}>Obecny</option>
+            <option value="leave" ${user.attendanceStatus === "leave" ? "selected" : ""}>Urlop</option>
+            <option value="notloggedin" ${user.attendanceStatus === "notloggedin" ? "selected" : ""}>Niezalogowany</option>
+          </select>
+        </td>`;
+      tableBody.appendChild(row);
+    });
+  }
+
+  function handleFilterChange() {
+    const sectionId = sectionSelect.value;
+    const selectedUserIds = getSelectedUserIds();
+    selectedLabel.textContent = selectedUserIds.length > 0 ? `${selectedUserIds.length} wybranych` : "Wszyscy pracownicy";
+
+    if (selectedUserIds.length > 0) {
+      fetch(`/api/user/filter-by-ids?ids=${selectedUserIds.join(",")}`)
+        .then(res => res.json())
+        .then(users => renderUserTable(users));
+    } else if (sectionId !== "all") {
+      fetch(`/api/user/by-section/${sectionId}`)
+        .then(res => res.json())
+        .then(users => renderUserTable(users));
+    } else {
+      fetch(`/api/user/all-users`)
+        .then(res => res.json())
+        .then(users => renderUserTable(users));
+    }
+  }
+
+  function renderEmployeeCheckboxes(users) {
+    checkboxContainer.innerHTML = "";
+    users.forEach(user => {
+      const wrapper = document.createElement("label");
+      wrapper.innerHTML = `
+        <input type="checkbox" class="employee-checkbox" value="${user.id}">
+        ${user.firstName} ${user.lastName}
+      `;
+      checkboxContainer.appendChild(wrapper);
+    });
+  }
+
+    function loadEmployeesForSection(sectionId) {
+      if (sectionId === "all" || !sectionId) {
+        checkboxContainer.innerHTML = "";
+        handleFilterChange();
+        return;
+      }
+
+      fetch(`/api/user/by-section/${sectionId}`)
+        .then(res => res.json())
+        .then(users => {
+          renderEmployeeCheckboxes(users); // ładuje checkboxy (ID, imię, nazwisko)
+
+          // teraz pobieramy pełne dane do tabeli
+          const ids = users.map(u => u.id);
+
+          return Promise.all(
+            ids.map(id =>
+              fetch(`/api/user/${id}`).then(res => res.json())
+            )
+          );
+        })
+        .then(fullUsers => {
+          renderUserTable(fullUsers); // wyświetl pełne dane
+        })
+        .catch(err => console.error("❌ Błąd ładowania pracowników z pełnymi danymi:", err));
+    }
+
+
+  function populateSectionSelect() {
+    fetch('/api/sections')
+      .then(res => res.json())
+      .then(data => {
+        sectionSelect.innerHTML = `<option value="all">Wszyscy użytkownicy</option>`;
+        data.forEach(section => {
+          const option = document.createElement("option");
+          option.value = section.id;
+          option.textContent = section.sectionName;
+          sectionSelect.appendChild(option);
+        });
+        loadEmployeesForSection("all");
+      });
+  }
+
+  // --- EVENTY
+  document.getElementById("customSelect").addEventListener("click", function (e) {
+    checkboxContainer.style.display = checkboxContainer.style.display === "block" ? "none" : "block";
+    e.stopPropagation();
+  });
+
+  document.addEventListener("click", function () {
+    checkboxContainer.style.display = "none";
+  });
+
+  checkboxContainer.addEventListener("change", handleFilterChange);
+  sectionSelect.addEventListener("change", () => loadEmployeesForSection(sectionSelect.value));
+
+  document.querySelector(".btnContainer .mainBtn").addEventListener("click", function () {
+    sectionSelect.value = "all";
+    document.querySelectorAll(".employee-checkbox").forEach(cb => cb.checked = false);
+    selectedLabel.textContent = "Kliknij, aby wybrać";
+    handleFilterChange();
+  });
+
+  // START
+  populateSectionSelect();
+});
+/////////////////////////////// EXPORT RAPORTU WYKONANIA //////////////////////////////////////////////
+const exportBtn = document.getElementById("exportXlsxBtn");
+
+if (exportBtn) {
+    exportBtn.addEventListener("click", function () {
+        const form = document.getElementById("reportForm");
+        if (!form) return; // zabezpieczenie na wypadek braku formularza
+
+        const startDate = form.startDate?.value;
+        const endDate = form.endDate?.value;
+
+        const params = new URLSearchParams();
+        if (startDate) params.append("startDate", startDate);
+        if (endDate) params.append("endDate", endDate);
+
+        window.location.href = `/api/saved-data/get-report/export?${params.toString()}`;
+    });
+}
+
+
+//////////////////////////////////////// PAGINACJA FILTROWANIE I WYŚWIETLANIE STRON ////////////////////////////////////
+document.addEventListener("DOMContentLoaded", function () {
+    if (!document.getElementById("report-table")) return;
+
+    const pageSize = 100;
+    let currentPage = 1;
+    let allData = [];
+
+    const tableBody = document.querySelector("#report-table tbody");
+    const recordCountInfo = document.getElementById("recordCountInfo");
+    const currentPageIndicator = document.getElementById("currentPageIndicator");
+
+    const prevBtn = document.getElementById("prevPage");
+    const nextBtn = document.getElementById("nextPage");
+
+    const form = document.getElementById("reportForm");
+
+    // 🔄 Pobieranie danych z API
+    function fetchData(startDate = null, endDate = null) {
+        const query = new URLSearchParams();
+        if (startDate) query.append("startDate", startDate);
+        if (endDate) query.append("endDate", endDate);
+
+        fetch(`/api/saved-data/get-report?${query.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                allData = data;
+                currentPage = 1;
+                renderTablePage();
+            })
+            .catch(err => console.error("❌ Błąd pobierania danych:", err));
+    }
+
+    // 🧾 Renderowanie strony tabeli
+    function renderTablePage() {
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const pagedData = allData.slice(start, end);
+
+        tableBody.innerHTML = "";
+        pagedData.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${row.process}</td>
+                <td>${row.quantity}</td>
+                <td>${row.date}</td>
+                <td>${row.employee}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+
+        recordCountInfo.textContent = `Wyświetlono ${Math.min(end, allData.length)} z ${allData.length} rekordów`;
+        currentPageIndicator.textContent = `Strona ${currentPage} z ${Math.ceil(allData.length / pageSize)}`;
+
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = end >= allData.length;
+    }
+
+    // 🧭 Nawigacja
+    prevBtn.addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderTablePage();
+        }
+    });
+
+    nextBtn.addEventListener("click", () => {
+        if ((currentPage * pageSize) < allData.length) {
+            currentPage++;
+            renderTablePage();
+        }
+    });
+
+    // 📅 Obsługa formularza filtrowania
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const startDate = document.getElementById("startDate").value;
+        const endDate = document.getElementById("endDate").value;
+        fetchData(startDate, endDate);
+    });
+
+    // 🔄 Inicjalne pobranie danych
+    fetchData();
+});
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const allRadios = document.querySelectorAll('input[type="radio"][data-process-id]');
+    const userId = document.getElementById('userId')?.value;
+
+    allRadios.forEach(radio => {
+        radio.addEventListener('change', function () {
+            const processId = this.dataset.processId;
+            const level = this.value;
+
+            fetch('/matrix/saveSingle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userId: userId,
+                    processId: processId,
+                    level: level
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    displayMyMessage('success', 'Zapisano zmiany!');
+                } else {
+                    displayMyMessage('error', 'Błąd podczas zapisu.');
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                displayMyMessage('error', 'Błąd sieci.');
+            });
+        });
+    });
+});
 
 
 
+document.addEventListener('DOMContentLoaded', function () {
+    const userLevelsInput = document.getElementById('userLevelsData');
 
+    if (userLevelsInput) {
+        const userLevelsData = userLevelsInput.value;
 
-console.log("Skrypt JSON został załadowany.");
+        if (userLevelsData) {
+            const userLevels = JSON.parse(userLevelsData);
+
+            userLevels.forEach(levelEntry => {
+                const processId = levelEntry.processId;
+                const level = levelEntry.level;
+
+                const selector = `input[name="level_${processId}"][value="${level}"]`;
+                const radioButton = document.querySelector(selector);
+
+                if (radioButton) {
+                    radioButton.checked = true;
+                    const td = radioButton.parentElement;
+                    td.classList.add(`level-${level}`);
+                }
+            });
+        }
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const radios = document.querySelectorAll('input[type="radio"][data-process-id]');
+
+    radios.forEach(radio => {
+        radio.addEventListener('change', function () {
+            const processId = this.dataset.processId;
+            const level = this.value;
+
+            // Usuń stare klasy z wszystkich TD w tym wierszu
+            const row = this.closest('tr');
+            for (let i = 1; i <= 5; i++) {
+                const cell = row.children[i];
+                cell.classList.remove('level-0', 'level-1', 'level-2', 'level-3', 'level-4');
+            }
+
+            // Dodaj nową klasę do aktywnej komórki
+            const activeCell = this.parentElement;
+            activeCell.classList.add(`level-${level}`);
+        });
+    });
+});
+

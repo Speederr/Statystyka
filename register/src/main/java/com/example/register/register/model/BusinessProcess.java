@@ -2,6 +2,7 @@ package com.example.register.register.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,17 +24,17 @@ public class BusinessProcess {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-//    @Column(name = "team")
-//    private String team;
-
     @Column(name = "process_name")
     private String processName;
 
     @Column(name = "average_time")
     private Double averageTime;
 
+    @Column(name = "is_non_operational", nullable = false)
+    private boolean nonOperational; // ✅ Zmiana nazwy pola na `nonOperational`
+
     @ManyToMany(mappedBy = "favoriteProcesses")
-    @JsonIgnore
+    @JsonIgnore  // ⬅️ Ignorowanie serializacji w Jacksonie
     private Set<User> users = new HashSet<>();
 
     @ManyToOne

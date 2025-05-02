@@ -1,0 +1,108 @@
+.chart-grid {
+  display: grid;
+  grid-template-columns: 69% 30%;
+  gap: 1rem;
+  align-items: start;
+
+}
+
+/* Karty wykresów */
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+}
+
+/* Nagłówki w kartach */
+.chartsTitle {
+  font-weight: normal;
+}
+
+/* Responsywność: układ jeden pod drugim na małych ekranach */
+@media (max-width: 900px) {
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.summary-cards {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.summary-card {
+    background: #f8f9fa;
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.summary-card h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.summary-card p {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #007bff;
+}
+.modalsBtn {
+    display: flex;
+}
+
+/* --------------------------------------------------------------------------------- */
+  table.competencyMatrix {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    table.competencyMatrix th, table.competencyMatrix td {
+        border: 1px solid #7f7e7e;
+        padding: 10px;
+        text-align: center;
+    }
+    table.competencyMatrix tr:hover {
+        background-color: #ebebeb;
+    }
+    table.competencyMatrix th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+    }
+
+    table.competencyMatrix td:first-child {
+        text-align: left;
+    }
+
+    table.competencyMatrix input {
+    cursor: pointer;
+    }
+
+/* Kolory dla poziomów z delikatnym obramowaniem */
+.level-0 {
+    background-color: #f8d7da; /* jasny czerwony */
+    border: 1px solid #f5c2c7;
+}
+
+.level-1 {
+    background-color: #fff3cd; /* jasny żółty */
+}
+
+.level-2 {
+    background-color: #dbead5; /* jasny zielony */
+}
+
+.level-3 {
+    background-color: #b7d5ac; /* zielony */
+}
+
+.level-4 {
+    background-color: #93bf85; /* ciemny zielony */
+    color: white;
+}

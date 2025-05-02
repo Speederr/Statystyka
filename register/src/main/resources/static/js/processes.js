@@ -214,64 +214,56 @@ document.addEventListener("DOMContentLoaded", function () {
     const leftList = document.getElementById("left-list");
     const rightList = document.getElementById("right-list");
 
-    // Pobierz ulubione procesy, a potem wszystkie procesy
+    let favoriteIds = new Set(); // 🔹 Przeniesienie zmiennej do szerszego zakresu
+
+    // Pobierz ulubione procesy
     fetch(`/api/processes/favorites/${userId}`)
         .then(response => response.json())
         .then(favorites => {
-            rightList.innerHTML = ''; // Wyczyść listę przed dodaniem nowych elementów
-            const favoriteIds = new Set();
+            rightList.innerHTML = '';
 
             favorites.forEach(favProcess => {
-                // Stwórz element <li>
                 const favLi = document.createElement('li');
                 favLi.classList.add('unchecked');
                 favLi.dataset.id = favProcess.id;
                 favLi.textContent = favProcess.processName;
 
-                // Stwórz ikonę "bx-check"
                 const icon = document.createElement('i');
-                icon.classList.add('bx', 'bx-x'); // Dodaj klasę ikony
-                icon.style.color = 'red'; // Ustaw kolor na zielony
+                icon.classList.add('bx', 'bx-x');
+                icon.style.color = 'red';
 
-                // Dodaj ikonę do <li>
                 favLi.appendChild(icon);
-
-                // Dodaj element do listy ulubionych
                 rightList.appendChild(favLi);
 
-                // Dodaj ID do zestawu (do usunięcia z lewej listy)
-                favoriteIds.add(favProcess.id);
+                favoriteIds.add(favProcess.id); // ✅ Teraz dostępne w całej funkcji
             });
 
-            // Pobierz wszystkie procesy i odfiltruj ulubione
-            return fetch('/api/processes')
-                .then(response => response.json())
-                .then(data => {
-                    leftList.innerHTML = ''; // Wyczyść listę przed dodaniem nowych elementów
+            // 🔹 Pobierz procesy tylko dla zespołu użytkownika
+            return fetch(`/api/processes/team/${userId}`);
+        })
+        .then(response => response.json())
+        .then(processes => {
+            leftList.innerHTML = '';
 
-                    data.forEach(process => {
-                        if (!favoriteIds.has(process.id)) { // Usunięcie ulubionych
-                            const li = document.createElement('li');
-                            li.classList.add('unchecked');
-                            li.dataset.id = process.id;
-                            li.textContent = process.processName;
+            processes.forEach(process => {
+                if (!favoriteIds.has(process.id)) { // ✅ Teraz favoriteIds jest dostępne!
+                    const li = document.createElement('li');
+                    li.classList.add('unchecked');
+                    li.dataset.id = process.id;
+                    li.textContent = process.processName;
 
-                            // Stwórz ikonę "bx-x"
-                            const icon = document.createElement('i');
-                            icon.classList.add('bx', 'bx-x'); // Dodaj klasę ikony
-                            icon.style.color = 'red'; // Ustaw kolor na czerwony
+                    const icon = document.createElement('i');
+                    icon.classList.add('bx', 'bx-x');
+                    icon.style.color = 'red';
 
-                            // Dodaj ikonę do <li>
-                            li.appendChild(icon);
-
-                            // Dodaj do lewej listy
-                            leftList.appendChild(li);
-                        }
-                    });
-                });
+                    li.appendChild(icon);
+                    leftList.appendChild(li);
+                }
+            });
         })
         .catch(error => console.error("Błąd podczas pobierania procesów:", error));
 });
+
 
 
 function displayMessage(type, message) {
@@ -285,4 +277,4 @@ function displayMessage(type, message) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-console.log("Skrypt PROCESESS został załadowany.")
+//console.log("Skrypt PROCESESS został załadowany.")

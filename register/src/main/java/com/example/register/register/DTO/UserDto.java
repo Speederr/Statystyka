@@ -1,9 +1,7 @@
-package com.example.register.register.model;
-
+package com.example.register.register.DTO;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import jakarta.persistence.Column;
-import jakarta.persistence.Lob;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,6 +15,8 @@ import jakarta.validation.constraints.*;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDto {
+
+    private Long id;
 
     @NotBlank(message = "Imię nie może być puste")
     private String firstName;
@@ -38,5 +38,11 @@ public class UserDto {
         this.lastName = lastName;
         this.username = username;
         this.email = email;
+    }
+
+    public UserDto(Long id, String firstName, String lastName) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 }

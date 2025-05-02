@@ -7,13 +7,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-
 @Entity
 @Table(name = "efficiency")
 public class Efficiency {
@@ -22,14 +21,22 @@ public class Efficiency {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id",  nullable = false)
-    private Long user_id;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "efficency",  nullable = false)
+    @Column(name = "efficiency", nullable = false)
     private Double efficiency;
 
-    @CreationTimestamp // Automatycznie ustawia bieżącą datę
+    @CreationTimestamp
     @Temporal(TemporalType.DATE)
     @Column(name = "todays_date", updatable = false)
-    private Date todaysDate;
+    private LocalDate todaysDate;
+
+
+    public Efficiency(User user, LocalDate todaysDate, Double efficiency) {
+        this.user = user;
+        this.todaysDate = todaysDate;
+        this.efficiency = efficiency;
+    }
 }

@@ -32,6 +32,7 @@ public class ViewController {
 
         // Przekazanie userId i ulubionych procesów do widoku
         model.addAttribute("userId", user.getId());
+//        model.addAttribute("user", user); // <--- dodaj cały obiekt User
         model.addAttribute("favoriteProcesses", favoriteProcesses);
 
         return "index"; // Nazwa pliku Thymeleaf (index.html)

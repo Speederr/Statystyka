@@ -1,3 +1,13 @@
+function displayMessage(type, message) {
+    Swal.fire({
+        icon: type, // 'success' lub 'error'
+        title: message,
+        showConfirmButton: false,
+        timer: 3000 // Popup znika po 3 sekundach
+    });
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
     const infoIcon = document.getElementById("info-icon");
     const tooltipText = document.getElementById("tooltipText");
@@ -273,119 +283,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
-function displayMessage(type, message) {
-    Swal.fire({
-        icon: type, // 'success' lub 'error'
-        title: message,
-        showConfirmButton: false,
-        timer: 3000 // Popup znika po 3 sekundach
-    });
-}
 
-document.addEventListener("DOMContentLoaded", function () {
-    const teamSelect = document.getElementById("team");
-
-    if (!teamSelect) {
-//        console.warn("Element #team nie istnieje w DOM.");
-        return; // ❌ Przerwij działanie skryptu, jeśli `teamSelect` nie istnieje
-    }
-
-    // Pobranie listy zespołów
-    fetch("/api/teams")
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (!Array.isArray(data) || data.length === 0) {
-                console.warn("Brak danych zespołów.");
-                return;
-            }
-
-            data.forEach(team => {
-                let option = document.createElement("option");
-                option.value = team.id;
-                option.textContent = team.teamName;
-                teamSelect.appendChild(option);
-            });
-        })
-        .catch(error => {
-            console.error("Błąd pobierania zespołów:", error);
-        });
-});
-
-
-   document.addEventListener("DOMContentLoaded", function () {
-       const teamSelect = document.getElementById("team");
-       const sectionSelect = document.getElementById("section");
-
-       if (teamSelect && sectionSelect) { // ✅ Sprawdzenie, czy elementy istnieją
-           teamSelect.addEventListener("change", function () {
-               let teamId = this.value;
-               sectionSelect.innerHTML = '<option value="">Ładowanie...</option>';
-
-               if (teamId) {
-                   fetch(`/api/sections/${teamId}`)
-                       .then(response => {
-                           if (!response.ok) {
-                               throw new Error(`HTTP error! Status: ${response.status}`);
-                           }
-                           return response.json();
-                       })
-                       .then(data => {
-                           sectionSelect.innerHTML = '<option value="">Wybierz sekcję</option>';
-                           data.forEach(section => {
-                               let option = document.createElement("option");
-                               option.value = section.id;
-                               option.textContent = section.sectionName;
-                               sectionSelect.appendChild(option);
-                           });
-                       })
-                       .catch(error => {
-                           sectionSelect.innerHTML = '<option value="">Błąd ładowania</option>';
-                           console.error("Błąd pobierania sekcji:", error);
-                       });
-               } else {
-                   sectionSelect.innerHTML = '<option value="">Wybierz sekcję</option>';
-               }
-           });
-       } else {
-           console.warn("Elementy #team lub #section nie istnieją w DOM.");
-       }
-   });
-
-
-document.addEventListener("DOMContentLoaded", function () {
-    const addUserForm = document.getElementById("addUserForm");
-
-    if (addUserForm) { // ✅ Sprawdzenie, czy formularz istnieje
-        addUserForm.addEventListener("submit", function (event) {
-            event.preventDefault();
-
-            let formData = new URLSearchParams(new FormData(this)).toString();
-
-            fetch("/api/users/addUser", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: formData
-            })
-            .then(response => {
-                if (response.status === 302) {
-                    window.location.href = "/adminPanel";
-                } else {
-                    alert("Błąd podczas dodawania użytkownika.");
-                }
-            })
-            .catch(error => console.error("Błąd:", error));
-        });
-    } else {
-        console.warn("Element #addUserForm nie istnieje.");
-    }
-});
 
 document.addEventListener("DOMContentLoaded", function () {
     const currentDateElement = document.getElementById("currentDate");
@@ -397,7 +295,103 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+
+    const teamSelect = document.getElementById("team");
+    const sectionSelect = document.getElementById("section");
+    const positionSelect = document.getElementById("position");
+    const setupForm = document.getElementById("setupForm");
+    const modal = document.getElementById("firstLoginModal");
+
+    const teamSectionMap = {};
+
+    // 🔽 Pobranie danych zespołów, sekcji i stanowisk
+    fetch("/api/user/setup-data")
+        .then(res => res.json())
+        .then(data => {
+            // Zespoły
+            data.teams.forEach(team => {
+                const option = new Option(team.teamName, team.id);
+                teamSelect.appendChild(option);
+                teamSectionMap[team.id] = team.sections; // przypisz sekcje do zespołu
+            });
+
+            // Stanowiska
+            data.positions.forEach(pos => {
+                const option = new Option(pos.positionName, pos.id);
+                positionSelect.appendChild(option);
+            });
+        })
+        .catch(err => console.error("❌ Błąd ładowania danych setupu:", err));
+
+    // 🔁 Dynamiczna zmiana sekcji przy zmianie zespołu
+    teamSelect.addEventListener("change", function () {
+        const selectedTeamId = this.value;
+        sectionSelect.innerHTML = "<option value=''>Wybierz sekcję</option>";
+
+        if (teamSectionMap[selectedTeamId]) {
+            teamSectionMap[selectedTeamId].forEach(section => {
+                const option = new Option(section.sectionName, section.id);
+                sectionSelect.appendChild(option);
+            });
+        }
+    });
+
+    // 🔁 Sprawdzenie, czy pokazać modal (pierwsze logowanie)
+    fetch("/api/user/whoami")
+        .then(res => res.json())
+        .then(user => {
+            if (user.firstLogin && !user.isCreateByAdmin) {
+                modal?.classList.remove("hidden");
+            }
+        })
+        .catch(err => console.error("❌ Błąd pobierania danych użytkownika:", err));
+
+    // 🔁 Obsługa formularza zapisu danych
+    setupForm?.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(setupForm);
+
+        fetch("/api/user/complete-setup", {
+            method: "POST",
+            body: formData
+        })
+            .then(res => {
+                if (res.ok) {
+                    displayMessage('success', 'Dane zostały zaktualizowane!');
+                    modal?.classList.add("hidden");
+                    setTimeout(() => location.reload(), 3000);
+                } else {
+                    displayMessage('error', 'Błąd zapisu danych.');
+                }
+            })
+            .catch(err => {
+                console.error("❌ Błąd wysyłki danych:", err);
+                displayMessage('error', 'Wystąpił błąd połączenia.');
+            });
+    });
+});
+
+
+function handleBack() {
+    const path = window.location.pathname;
+
+    if (path.startsWith("/matrix")) {
+        if (path === "/matrix") {
+            // Jesteś na /matrix => wróć na /index
+            window.location.href = "/processes";
+        } else {
+            // Jesteś na /matrix/{userId} => wróć na /userDetails/{userId}
+            const userId = path.split("/")[2]; // wyciągnij userId z URL
+            window.location.href = `/userDetails/${userId}`;
+        }
+    } else {
+        // Bezpiecznik: jakby coś było nie tak, wracamy na index
+        window.location.href = "/index";
+    }
+}
 
 
 
-console.log("Skrypt SCRIPT został załadowany");
+//console.log("Skrypt SCRIPT został załadowany");

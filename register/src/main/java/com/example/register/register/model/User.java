@@ -1,4 +1,5 @@
 package com.example.register.register.model;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -44,6 +45,10 @@ public class User {
     @Column(name = "is_first_login", nullable = false)
     private boolean firstLogin;
 
+    @ManyToOne
+    @JoinColumn(name = "position_id", nullable = false)
+    private Position position;
+
     @Lob
     @Column(columnDefinition = "LONGBLOB")
     private byte[] avatarUrl;
@@ -51,8 +56,11 @@ public class User {
     @Column(name = "is_super_admin", nullable = false)
     private boolean isSuperAdmin;
 
+    @Column(name = "is_create_by_admin", nullable = false)
+    private boolean isCreateByAdmin;
+
     @ManyToMany
-    @JsonManagedReference // ✅ Odpowiada za główną stronę relacji
+    @JsonBackReference
     @JoinTable(
             name = "user_favorites",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -67,4 +75,6 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "section_id", nullable = false)
     private Section section;
+
+
 }

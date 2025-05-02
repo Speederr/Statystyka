@@ -25,23 +25,28 @@ public class CustomLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private AttendanceService attendanceService;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        // Sprawdź, czy użytkownik loguje się po raz pierwszy
-        boolean isFirstLogin = checkIfFirstLogin(authentication);
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
+            throws IOException, ServletException {
 
         String username = authentication.getName();
-        if(!attendanceService.hasAttendanceForToday(username)) {
-            attendanceService.recordAttendance(username, LocalDate.now(), "present");
+
+        if (!attendanceService.hasAttendanceForToday(username)) {
+            String clientIp = request.getRemoteAddr();
+            attendanceService.recordAttendanceWithIp(username, clientIp);
         }
 
-        // Jeśli to pierwsze logowanie, przekieruj na stronę zmiany hasła
+        boolean isFirstLogin = userService.isFirstLogin(username);
+
         if (isFirstLogin) {
+            // 🔁 Nie zmieniamy flagi tutaj – użytkownik musi najpierw zmienić hasło
             getRedirectStrategy().sendRedirect(request, response, "/firstLogin");
         } else {
-            // W przeciwnym razie, przekieruj na domyślną stronę
             getRedirectStrategy().sendRedirect(request, response, "/index");
         }
     }
+
+
+
 
     private boolean checkIfFirstLogin(Authentication authentication) {
 

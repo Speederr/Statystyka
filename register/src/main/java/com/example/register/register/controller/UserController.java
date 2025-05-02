@@ -1,54 +1,69 @@
 package com.example.register.register.controller;
 
-import com.example.register.register.model.User;
-import com.example.register.register.model.UserDto;
-import com.example.register.register.repository.UserRepository;
+import com.example.register.register.DTO.UserDto;
+import com.example.register.register.DTO.UserSummaryDTO;
+import com.example.register.register.DTO.UserTableDto;
+import com.example.register.register.model.*;
+import com.example.register.register.repository.*;
 import com.example.register.register.service.EmailService;
 import com.example.register.register.service.UserService;
+import com.example.register.register.service.UserSummaryService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/user/")
 public class UserController {
 
-    @Autowired
     private final UserService userService;
-
-    @Autowired
     private final UserRepository userRepository;
-
-    @Autowired
     private final PageController pageController;
-
-    @Autowired
     private final PasswordEncoder passwordEncoder;
-
-    @Autowired
     private final EmailService emailService;
+    private final PositionRepository positionRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final EfficiencyRepository efficiencyRepository;
+    private final ProcessRepository processRepository;
+    private final SavedDataRepository savedDataRepository;
+    private final TeamRepository teamRepository;
+    private final SectionRepository sectionRepository;
 
 
-    public UserController(UserService userService, UserRepository userRepository, PageController pageController, PasswordEncoder passwordEncoder, EmailService emailService) {
+    public UserController(UserService userService, UserRepository userRepository, PageController pageController, PasswordEncoder passwordEncoder, EmailService emailService, PositionRepository positionRepository, AttendanceRepository attendanceRepository, EfficiencyRepository efficiencyRepository, ProcessRepository processRepository, SavedDataRepository savedDataRepository, TeamRepository teamRepository, SectionRepository sectionRepository) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.pageController = pageController;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.positionRepository = positionRepository;
+        this.attendanceRepository = attendanceRepository;
+        this.efficiencyRepository = efficiencyRepository;
+        this.processRepository = processRepository;
+        this.savedDataRepository = savedDataRepository;
+        this.teamRepository = teamRepository;
+        this.sectionRepository = sectionRepository;
     }
 
+    @Autowired
+    private UserSummaryService userSummaryService;
 
     @PostMapping("/addUser")
     public ResponseEntity<Void> createUser(
@@ -58,9 +73,10 @@ public class UserController {
             @RequestParam String email,
             @RequestParam Long id_role,
             @RequestParam Long teamId,
-            @RequestParam Long sectionId) {
+            @RequestParam Long sectionId,
+            @RequestParam Long positionId) {
 
-        userService.createUser(firstName, lastName, username, email, id_role, teamId, sectionId);
+        userService.createUser(firstName, lastName, username, email, id_role, teamId, sectionId, positionId);
 
         // Return a ResponseEntity with a redirect header
         return ResponseEntity.status(HttpStatus.FOUND)
@@ -119,36 +135,44 @@ public class UserController {
                 .build();
     }
 
-
     @PostMapping("/deleteUsers")
     @Transactional
-    public ResponseEntity<Void> deleteSelectedUsers(@RequestParam(value = "selectedUsers", required = false) List<Long> selectedUsers, Model model) {
+    public ResponseEntity<Void> deleteSelectedUsers(
+            @RequestParam(value = "selectedUsers", required = false) List<Long> selectedUsers) {
+
         if (selectedUsers == null || selectedUsers.isEmpty()) {
-            model.addAttribute("error", "Nie zaznaczono żadnych użytkowników do usunięcia.");
-            return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("/adminPanel")).build();
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create("/error?message=" + URLEncoder.encode("Nie zaznaczono żadnych użytkowników do usunięcia.", StandardCharsets.UTF_8)))
+                    .build();
         }
 
         for (Long userId : selectedUsers) {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono użytkownika o ID: " + userId));
-
-            if (user.isSuperAdmin()) {
-                model.addAttribute("error", "Nie można usunąć użytkownika Super Admin.");
-                return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("/adminPanel")).build();
-            }
-
             try {
+                User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono użytkownika o ID: " + userId));
+
+                if (user.isSuperAdmin()) {
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .location(URI.create("/error?message=" + URLEncoder.encode("Nie można usunąć użytkownika Super Admin.", StandardCharsets.UTF_8)))
+                            .build();
+                }
+
                 userService.deleteUserById(userId);
                 System.out.println("Deleted user ID: " + userId);
+
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(URI.create("/error?message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8)))
+                        .build();
             } catch (Exception e) {
-                model.addAttribute("error", "Nie udało się usunąć użytkownika o ID: " + userId);
-                return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("/adminPanel")).build();
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(URI.create("/error?message=" + URLEncoder.encode("Wystąpił błąd podczas usuwania użytkownika o ID: " + userId, StandardCharsets.UTF_8)))
+                        .build();
             }
         }
 
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("/adminPanel")).build();
     }
-
 
 
     @GetMapping("/info")
@@ -178,15 +202,15 @@ public class UserController {
             @RequestParam("confirmPassword") String confirmPassword,
             Authentication authentication) {
 
-        if(!newPassword.equals(confirmPassword)) {
+        if (!newPassword.equals(confirmPassword)) {
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create("redirect:/changePassword?error=mismatch")) // Set the redirect location
+                    .location(URI.create("redirect:/changePassword?error=mismatch"))
                     .build();
         }
         String username = authentication.getName();
 
         userService.updateUserPassword(username, newPassword);
-        userService.updateFirstLoginStatus(username);
+//        userService.updateFirstLoginStatus(username);
 
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create("/index")) // Set the redirect location
@@ -236,7 +260,7 @@ public class UserController {
 
 
     @PostMapping("/avatar")
-    public ResponseEntity<String> uploadAvatar(@RequestParam("avatar")MultipartFile file, Principal principal) {
+    public ResponseEntity<String> uploadAvatar(@RequestParam("avatar") MultipartFile file, Principal principal) {
 
         String username = principal.getName();
 
@@ -289,6 +313,7 @@ public class UserController {
 
         return ResponseEntity.ok(Collections.singletonMap("success", "Hasło zostało pomyślnie zmienione!"));
     }
+
     @GetMapping("/users")
     public String getUsers(Model model) {
         List<User> users = userRepository.findAll();
@@ -296,5 +321,163 @@ public class UserController {
         return "users"; // Nazwa pliku HTML w folderze templates
     }
 
+//    @GetMapping("/all-users")
+//    public List<UserTableDto> getAllUsers() {
+//        LocalDate today = LocalDate.now(); // Pobieramy dzisiejszą datę
+//
+//        return userRepository.findAll().stream()
+//                .map(user -> new UserTableDto(
+//                        user.getId(),
+//                        user.getFirstName(),
+//                        user.getLastName(),
+//                        getUserEfficiency(user, today), // ✅ Pobieramy efektywność tylko dla dzisiejszej daty
+//                        getNonOperationalTime(user, today), // ✅ Pobieramy czas nieoperacyjny tylko dla dzisiejszej daty
+//                        positionRepository.findById(user.getPosition().getId())
+//                                .map(Position::getPositionName).orElse("Brak"), // ✅ Pobieramy nazwę stanowiska
+//                        getAttendanceStatus(user, today) // ✅ Pobieramy status obecności tylko dla dzisiejszej daty
+//                ))
+//                .toList();
+//    }
+@GetMapping("/all-users")
+public List<UserTableDto> getAllUsers(Principal principal) {
+    LocalDate today = LocalDate.now();
+
+    // 1. Pobierz zalogowanego użytkownika
+    User currentUser = userRepository.findByUsername(principal.getName())
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+    Long teamId = currentUser.getTeam().getId();
+
+    // 2. Pobierz tylko użytkowników z tego samego zespołu
+    return userRepository.findByTeamId(teamId).stream()
+            .map(user -> new UserTableDto(
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    getUserEfficiency(user, today),
+                    getNonOperationalTime(user, today),
+                    positionRepository.findById(user.getPosition().getId())
+                            .map(Position::getPositionName).orElse("Brak"),
+                    getAttendanceStatus(user, today)
+            ))
+            .toList();
 }
 
+    private String getAttendanceStatus(User user, LocalDate date) {
+        return attendanceRepository.findByUserAndAttendanceDate(user, date)
+                .map(Attendance::getStatus) // 🟢 Pobiera bez zmian ("present" lub "leave")
+                .orElse("leave"); // Domyślnie "leave", jeśli brak wpisu
+    }
+
+
+    private Double getUserEfficiency(User user, LocalDate todaysDate) {
+        List<Efficiency> efficiencies = efficiencyRepository.findAllByUserAndTodaysDate(user, todaysDate);
+
+        // Jeśli lista nie jest pusta, zwróć efektywność z pierwszego rekordu, inaczej zwróć 0.0
+        return efficiencies.isEmpty() ? 0.0 : efficiencies.get(0).getEfficiency();
+    }
+
+    private Double getNonOperationalTime(User user, LocalDate date) {
+        double totalMinutes = savedDataRepository.findNonOperationalSavedDataByUserIdAndDate(user.getId(), date).stream()
+                .mapToDouble(sd -> sd.getProcess().getAverageTime() * sd.getQuantity())
+                .sum();
+
+        double totalHours = totalMinutes / 60.0; // Konwersja minut na godziny
+        return Math.round(totalHours * 100.0) / 100.0; // Zaokrąglenie do 2 miejsc po przecinku
+    }
+
+    @GetMapping("/by-section/{sectionId}")
+    public ResponseEntity<List<UserDto>> getEmployeesBySection(@PathVariable Long sectionId) {
+        List<User> users = userRepository.findBySection_Id(sectionId);
+        List<UserDto> result = users.stream()
+                .map(user -> new UserDto(user.getId(), user.getFirstName(), user.getLastName()))
+                .toList();
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserTableDto> getUserById(@PathVariable Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Użytkownik nie istnieje"));
+
+        LocalDate today = LocalDate.now();
+
+        UserTableDto userTableDto = new UserTableDto(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                getUserEfficiency(user, today),
+                getNonOperationalTime(user, today),
+                positionRepository.findById(user.getPosition().getId())
+                        .map(Position::getPositionName).orElse("Brak"),
+                getAttendanceStatus(user, today)
+        );
+
+        return ResponseEntity.ok(userTableDto);
+    }
+
+    @GetMapping("/filter-by-ids")
+    public List<UserTableDto> getUsersByIds(@RequestParam List<Long> ids) {
+        LocalDate today = LocalDate.now();
+
+        // Pobieramy użytkowników na podstawie listy ID
+        return userRepository.findAllById(ids).stream()
+                .map(user -> new UserTableDto(
+                        user.getId(),
+                        user.getFirstName(),
+                        user.getLastName(),
+                        getUserEfficiency(user, today),  // Metoda do pobierania efektywności
+                        getNonOperationalTime(user, today),  // Metoda do pobierania czasu nieoperacyjnego
+                        positionRepository.findById(user.getPosition().getId()).map(Position::getPositionName).orElse("Brak"),
+                        getAttendanceStatus(user, today)  // Metoda do pobierania statusu obecności
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/setup-data")
+    public ResponseEntity<Map<String, Object>> getSetupData() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("teams", teamRepository.findAll());
+        response.put("sections", sectionRepository.findAll());
+        response.put("positions", positionRepository.findAll());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/complete-setup")
+    public ResponseEntity<Void> completeSetup(
+            Principal principal,
+            @RequestParam Long teamId,
+            @RequestParam Long sectionId,
+            @RequestParam Long positionId) {
+
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setTeam(teamRepository.findById(teamId).orElseThrow());
+        user.setSection(sectionRepository.findById(sectionId).orElseThrow());
+        user.setPosition(positionRepository.findById(positionId).orElseThrow());
+        user.setFirstLogin(false);
+
+        userRepository.save(user);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/whoami")
+    public ResponseEntity<Map<String, Object>> whoAmI(Principal principal) {
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("username", user.getUsername());
+        data.put("firstLogin", user.isFirstLogin());
+        data.put("isCreateByAdmin", user.isCreateByAdmin()); // ⬅️ Dodane
+
+        return ResponseEntity.ok(data);
+    }
+
+    @GetMapping("/summary/{userId}")
+    public UserSummaryDTO getUserSummary(@PathVariable Long userId) {
+        return userSummaryService.getUsersSummary(userId);
+    }
+
+}

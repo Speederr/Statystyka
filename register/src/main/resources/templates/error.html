@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml" lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strona Błędu</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
+
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+    <link rel="stylesheet" th:href="@{/css/error.css}">
+
+<!--    <link rel="stylesheet" href="../static/css/button.css">-->
+<!--    <link rel="stylesheet" href="../static/css/error.css">-->
+
+
+</head>
+<body>
+
+<!--<div class="error-container">-->
+<!--    <div class="error-container-header">-->
+<!--        <h1 class="error-title">Błąd <span th:text="${errorCode}">500</span></h1>-->
+<!--        <p th:text="${errorMessage}">Coś poszło nie tak...</p>-->
+<!--    </div>-->
+<!--    <div class="editBtn">-->
+<!--        <a href="/index" class="mainBtn">Powrót do strony głównej</a>-->
+<!--    </div>-->
+<!--</div>-->
+
+<div class="error-container">
+    <div class="error-container-header">
+        <h1 class="error-title">Błąd <span th:text="${errorCode} ?: 'Nieznany'">500</span></h1>
+        <p th:text="${errorMessage} ?: 'Coś poszło nie tak...'"></p> <!-- ✅ Pobiera dynamicznie komunikat -->
+    </div>
+    <div class="editBtn">
+        <a href="/index" class="mainBtn">Powrót do strony głównej</a>
+    </div>
+</div>
+
+
+</body>
+</html>

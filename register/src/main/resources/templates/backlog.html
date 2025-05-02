@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Backlog</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -36,7 +38,7 @@
 
         <div class="user">
             <img src="" alt="User Image" class="user-img" id="user-avatar">
-            <div>
+            <div class="information">
                 <p class="bold"></p>
                 <p class="role"></p>
             </div>
@@ -101,20 +103,27 @@
 
 <div class="main-content">
     <div class="loader"></div>
-    <div class="error-container" id="err-container">
-        <p th:if="${error}" class="error">
-                <span class="error-content" th:text="${error}">
-                </span>
-            <i class='bx bx-x-circle' onclick="hideError()"></i>
-        </p>
+
+    <div class="popup">
+        <!-- Komunikat dynamiczny -->
+        <div id="popup-userMessage" class="userMessage" style="display: none;">
+            <span></span>
+            <i class='bx bx-x-circle' onclick="this.parentElement.style.display='none'"></i>
+        </div>
     </div>
+
 
     <header class="title-container">
         <h1>Backlog</h1>
         <span id="currentDate"></span>
     </header>
 
-    <form th:action="@{/backlog/save}" method="post">
+    <div class="mainContainer">
+        <div class="modalsBtn">
+            <button class="mainBtn" th:onclick="|window.location.href='@{/efficiency}'|">Powrót</button>
+        </div>
+
+    <form th:action="@{/backlog/save}" method="post" id="backlog-form">
         <div class="table-wrapper">
             <table class="half-table">
                 <thead>
@@ -127,7 +136,7 @@
                 <tr th:each="process, iterStat : ${processes}" th:if="${iterStat.index % 2 == 0}">
                     <td class="process-name" th:text="${process.processName}"></td>
                     <td>
-                        <input type="number" th:name="'process_' + ${process.id}" min="0" >
+                        <input class="backlog-input" type="number" th:name="'process_' + ${process.id}" min="0" >
                     </td>
                 </tr>
                 </tbody>
@@ -144,7 +153,7 @@
                 <tr th:each="process, iterStat : ${processes}" th:if="${iterStat.index % 2 == 1}">
                     <td class="process-name" th:text="${process.processName}"></td>
                     <td>
-                        <input type="number" th:name="'process_' + ${process.id}" min="0">
+                        <input class="backlog-input" type="number" th:name="'process_' + ${process.id}" min="0">
                     </td>
                 </tr>
                 </tbody>
@@ -155,8 +164,9 @@
             <button class="mainBtn" type="submit">Zapisz</button>
         </div>
     </form>
+    </div>
 
-
+<input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
 
 </div>
 

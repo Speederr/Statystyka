@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pierwsze logowanie</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script th:src="@{/js/script.js}" defer></script>
@@ -45,7 +47,7 @@
 <div id="first-login-window" class="login active">
         <form id="new-user-form" method="post" th:action="@{/api/user/changePassword}">
             <div class="inputs">
-                <h1>Pierwsze logowanie</h1>
+                <h1 class="loginTitle">Pierwsze logowanie</h1>
 
                 <label for="username">Nazwa użytkownika</label>
                 <div class="input-box">

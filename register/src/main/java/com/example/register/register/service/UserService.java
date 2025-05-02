@@ -1,13 +1,7 @@
 package com.example.register.register.service;
 
-import com.example.register.register.model.Role;
-import com.example.register.register.model.Section;
-import com.example.register.register.model.Team;
-import com.example.register.register.model.User;
-import com.example.register.register.repository.RoleRepository;
-import com.example.register.register.repository.SectionRepository;
-import com.example.register.register.repository.TeamRepository;
-import com.example.register.register.repository.UserRepository;
+import com.example.register.register.model.*;
+import com.example.register.register.repository.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,28 +19,17 @@ import java.util.*;
 @Service
 public class UserService implements UserDetailsService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final EntityManager entityManager;
+    private final TeamRepository teamRepository;
+    private final SectionRepository sectionRepository;
+    private final PositionRepository positionRepository;
 
     @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private EntityManager entityManager;
-
-    @Autowired
-    private TeamRepository teamRepository;
-
-    @Autowired
-    private SectionRepository sectionRepository;
-
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, EmailService emailService, EntityManager entityManager, TeamRepository teamRepository, SectionRepository sectionRepository) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, EmailService emailService, EntityManager entityManager, TeamRepository teamRepository, SectionRepository sectionRepository, PositionRepository positionRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
@@ -54,6 +37,7 @@ public class UserService implements UserDetailsService {
         this.entityManager = entityManager;
         this.teamRepository = teamRepository;
         this.sectionRepository = sectionRepository;
+        this.positionRepository = positionRepository;
     }
 
     @Override
@@ -122,6 +106,7 @@ public class UserService implements UserDetailsService {
         userRepository.save(user);
     }
 
+
     @Transactional
     public void updateUserPassword(String username, String newPassword) {
         User user = userRepository.findByUsername(username)
@@ -136,7 +121,7 @@ public class UserService implements UserDetailsService {
     }
 
     public void createUser(String firstName, String lastName, String username, String email,
-                           Long roleId, Long teamId, Long sectionId) {
+                           Long roleId, Long teamId, Long sectionId, Long positionId) {
 
         // Generowanie tymczasowego hasła
         String temporaryPassword = generateTemporaryPassword();
@@ -153,6 +138,9 @@ public class UserService implements UserDetailsService {
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono sekcji o ID: " + sectionId));
 
+        Position position = positionRepository.findById(positionId)
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono stanowiska o ID: " + positionId));
+
         // Tworzenie nowego użytkownika
         User user = new User();
         user.setFirstName(firstName);
@@ -168,10 +156,38 @@ public class UserService implements UserDetailsService {
         user.setRole(role);
         user.setTeam(team); // Ustawienie zespołu
         user.setSection(section); // Ustawienie sekcji
+        user.setPosition(position);
+        user.setCreateByAdmin(true);
 
         userRepository.save(user); // Zapisz użytkownika w bazie danych
 
         // Wysłanie e-maila do użytkownika
+        emailService.sendUserCreationMail(
+                email, firstName, lastName, username, temporaryPassword
+        );
+    }
+
+    public void createUser(String firstName, String lastName, String username, String email, Long id_role) {
+
+        // Generowanie tymczasowego hasła
+        String temporaryPassword = generateTemporaryPassword();
+
+        User user = new User();
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setRole(roleRepository.findById(id_role).orElseThrow());
+
+        // Haszowanie hasła
+        String hashedPassword = passwordEncoder.encode(temporaryPassword);
+        user.setPassword(hashedPassword);
+        user.setFirstLogin(true);
+        user.setCreateByAdmin(false);
+
+
+        userRepository.save(user);
+
         emailService.sendUserCreationMail(
                 email, firstName, lastName, username, temporaryPassword
         );

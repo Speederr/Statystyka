@@ -1,5 +1,6 @@
 package com.example.register.register.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Getter
@@ -19,20 +21,39 @@ public class SavedData {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long user_id;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "process_id", nullable = false)
-    private Long process_id;
+    @ManyToOne
+    @JoinColumn(name = "process_id", nullable = false)
+    private BusinessProcess process;
 
     @Column(name = "quantity", nullable = false)
     private Long quantity;
 
-    @CreationTimestamp // Automatycznie ustawia bieżącą datę
+    @CreationTimestamp
     @Temporal(TemporalType.DATE)
     @Column(name = "todays_date", updatable = false)
-    private Date todaysDate;
+    private LocalDate todaysDate;
+
+    @Transient
+    @JsonProperty("process_id")
+    private Long processId;
+
+    public Long getProcessId() {
+        return process != null ? process.getId() : processId;
+    }
+
+    @Transient
+    @JsonProperty("user_id")
+    private Long userId;
+
+    public Long getUserId() {
+        return user != null ? user.getId() : userId;
+    }
+
 }
+

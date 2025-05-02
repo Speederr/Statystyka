@@ -1,21 +1,73 @@
 table {
-    background: white;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
 }
-th, td {
-    border: 1px solid black;
-    padding: 10px;
+td {
+    border: 1px solid #ddd;
+    padding: 12px; /* Większe odstępy */
     text-align: center;
+    transition: background-color 0.3s ease;
+    white-space: nowrap;
+    min-width: 120px;
+    font-size: 14px;
+}
+th {
+    background: #007bff; /* Niebieski nagłówek */
+    color: white; /* Biały tekst w nagłówku */
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    text-align: center;
+    z-index: 2;
+    padding: 14px;
+}
+thead {
+   background: #0056b3; /* Ciemniejszy niebieski dla lepszej separacji */
+}
+tbody tr:nth-child(odd) {
+    background-color: #f9f9f9; /* Jasnoszare naprzemienne wiersze */
 }
 
-input:focus {
-    outline: none;
+tbody tr:nth-child(even) {
+    background-color: #ffffff; /* Białe naprzemienne wiersze */
 }
+tbody tr:hover {
+    background-color: #d0e4ff; /* Lekko niebieskie podświetlenie na hover */
+}
+
+.time-input {
+    background: #ffffff; /* Jasnoszare tło */
+    height: 40px;
+    line-height: 40px;
+    border-radius: 20px; /* Mniejsze zaokrąglenie */
+    padding: 0 20px;
+    border: 1px solid #d1d1d1; /* Subtelna szara ramka */
+    color: black;
+    text-align: center;
+    transition: all 0.3s ease-in-out;
+}
+
+.time-input:focus {
+    background: #f1f1f1;
+    outline: none;
+    border-color: #a0a0a0;
+    box-shadow: 0 0 5px rgba(160, 160, 160, 0.5);
+}
+.disabled-cursor {
+    cursor: not-allowed;
+    background-color: #f0f0f0; /* Opcjonalnie, szare tło dla zablokowanych pól */
+}
+
+.enabled-cursor {
+    cursor: text;
+    background-color: white; /* Opcjonalnie, przywrócenie domyślnego tła */
+}
+
 .tableContainer {
-    height: 80vh;
+    height: 70vh;
     overflow-y: auto;
 }
-
 #form-process-container {
     box-sizing: border-box;
     padding: 20px;
@@ -31,7 +83,7 @@ input:focus {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1;
+    z-index: 10;
     left: 0;
     top: 0;
     width: 100%;
@@ -45,6 +97,7 @@ input:focus {
     border-radius: 20px;
 }
 
+.formInput,
 input {
     background: rgba(255, 255, 255, 0.3);
     height: 25px;
@@ -55,6 +108,9 @@ input {
     color: black;
     text-align: center;
     width: 95%;
+}
+#averageTime {
+    height: 40px;
 }
 label {
     color: black;
@@ -84,4 +140,15 @@ label {
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
+}
+.teamFilterContainer {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+#timeTeam {
+    border-radius: 10px;
+    width: 100%;
+    height: 30px;
+    text-align: center;
 }

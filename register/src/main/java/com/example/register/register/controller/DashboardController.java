@@ -1,14 +1,16 @@
 package com.example.register.register.controller;
 
+import org.springframework.stereotype.Controller;
 import com.example.register.register.model.Attendance;
 import com.example.register.register.model.User;
 import com.example.register.register.service.AttendanceService;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
+
 
 @Controller
 public class DashboardController {
@@ -18,16 +20,16 @@ public class DashboardController {
     public DashboardController(AttendanceService attendanceService) {
         this.attendanceService = attendanceService;
     }
-
     @GetMapping("/efficiency")
-    public String showEfficiency(Model model) {
-        LocalDate today = LocalDate.now(); // Pobranie dzisiejszej daty
+    public String showEfficiency(Model model, Principal principal) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
 
-        // Pobranie list użytkowników obecnych i na urlopie z AttendanceService
-        List<Attendance> presentAttendance = attendanceService.getPresentEmployees(today);
-        List<Attendance> leaveAttendance = attendanceService.getEmployeesOnLeave(today);
+        LocalDate today = LocalDate.now();
+        List<Attendance> presentAttendance = attendanceService.getPresentEmployees(today, principal);
+        List<Attendance> leaveAttendance = attendanceService.getEmployeesOnLeave(today, principal);
 
-        // Konwersja Attendance → User (aby Thymeleaf miał listę użytkowników)
         List<User> presentEmployees = presentAttendance.stream()
                 .map(Attendance::getUser)
                 .toList();
@@ -35,12 +37,14 @@ public class DashboardController {
                 .map(Attendance::getUser)
                 .toList();
 
-        // Przekazanie danych do modelu
         model.addAttribute("presentEmployees", presentEmployees);
         model.addAttribute("onLeaveEmployees", onLeaveEmployees);
         model.addAttribute("presentCount", presentEmployees.size());
         model.addAttribute("onLeaveCount", onLeaveEmployees.size());
 
-        return "efficiency"; // Nazwa szablonu Thymeleaf
+        return "efficiency";
     }
+
 }
+
+

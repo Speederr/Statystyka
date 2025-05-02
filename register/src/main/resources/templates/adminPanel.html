@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Admina</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/adminPanel.css}">
@@ -35,7 +37,7 @@
 
         <div class="user">
             <img src="" alt="User Image" class="user-img" id="user-avatar">
-            <div>
+            <div class="information">
                 <p class="bold"></p>
                 <p class="role"></p>
             </div>
@@ -128,7 +130,62 @@
             <i class='bx bx-x clear-icon' id="clear-search"></i>
         </div>
     </div>
-    <!-- Modal -->
+
+        <br />
+
+    <div class="role">
+    <form th:action="@{/api/user/saveUsers}" method="post" id="users-form">
+        <table id="user-table">
+            <thead>
+            <th>Zaznacz</th>
+            <th>Imię</th>
+            <th>Nazwisko</th>
+            <th>Login</th>
+            <th>Email</th>
+            <th>Zespół</th>
+            <th>Sekcja</th>
+            <th>Rola</th>
+            </thead>
+            <tbody>
+            <tr th:each="user : ${users}">
+                <td class="checkbox-cell">
+                    <input type="checkbox" class="checkbox-button" th:if="${!user.isSuperAdmin}" name="selectedUsers" th:value="${user.id}">
+
+                </td>
+                <td th:text="${user.firstName}">Imię</td>
+                <td th:text="${user.lastName}">Nazwisko</td>
+                <td th:text="${user.username}">Login</td>
+                <td th:text="${user.email}">Email</td>
+                <td th:text="${user.team.teamName}">Zespół</td>
+                <td class="select-cell">
+                    <select class="select-section" th:attr="name='sections[' + ${user.id} + ']'" th:if="${user.team != null}">
+                        <option th:each="section : ${user.team.sections}"
+                                th:value="${section.id}"
+                                th:text="${section.sectionName}"
+                                th:selected="${user.section != null && user.section.id == section.id}">
+                        </option>
+                    </select>
+                </td>
+                <td class="select-cell">
+                        <select class="select-role" th:attr="name='roles[' + ${user.id} + ']'" th:value="${user.role.roleName}" th:if="${!user.isSuperAdmin}">
+                            <option value="Admin" th:selected="${user.role.roleName == 'Admin'}">Admin</option>
+                            <option value="Manager" th:selected="${user.role.roleName == 'Manager'}">Manager</option>
+                            <option value="Coordinator" th:selected="${user.role.roleName == 'Coordinator'}">Coordinator</option>
+                            <option value="User" th:selected="${user.role.roleName == 'User'}">User</option>
+                    </select>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="new-form-button-container">
+            <button type="submit" class="mainBtn">Zapisz</button>
+            <button id="deleteButton" class="mainBtn" formaction="/api/user/deleteUsers" formmethod="post">Usuń</button>
+        </div>
+    </form>
+        <p id="statusMessage"></p>
+    </div>
+
+    <!-- Modal do tworzenia nowego usera -->
     <div id="userModal" class="modal">
         <div class="modal-content">
             <form th:action="@{/api/user/addUser}" th:object="${user}" method="post" id="form-container">
@@ -159,6 +216,11 @@
                     <option value="">Wybierz sekcję</option>
                 </select>
 
+                <label for="position">Stanowisko:</label>
+                <select id="position" name="positionId">
+                    <option value="">Wybierz stanowisko</option>
+                </select>
+
                 <label>Rola</label>
                 <div class="radio-group">
                     <div class="radio-item">
@@ -185,59 +247,6 @@
         </div>
     </div>
 
-        <br />
-
-<!--        <h1 class="settings-header">Uprawnienia</h1>-->
-    <div class="role">
-    <form th:action="@{/api/user/saveUsers}" method="post" id="users-form">
-        <table id="user-table">
-            <thead>
-            <th>Zaznacz</th>
-<!--            <th>ID</th>-->
-            <th>Imię</th>
-            <th>Nazwisko</th>
-            <th>Login</th>
-            <th>Email</th>
-            <th>Sekcja</th>
-            <th>Rola</th>
-            </thead>
-            <tbody>
-            <tr th:each="user : ${users}">
-                <td class="checkbox-cell">
-                    <input type="checkbox" class="checkbox-button" th:if="${!user.isSuperAdmin}" name="selectedUsers" th:value="${user.id}">
-
-                </td>
-                <td th:text="${user.firstName}">Imię</td>
-                <td th:text="${user.lastName}">Nazwisko</td>
-                <td th:text="${user.username}">Login</td>
-                <td th:text="${user.email}">Email</td>
-                <td class="select-cell">
-                    <select class="select-section" th:attr="name='sections[' + ${user.id} + ']'" th:if="${user.team != null}">
-                        <option th:each="section : ${user.team.sections}"
-                                th:value="${section.id}"
-                                th:text="${section.sectionName}"
-                                th:selected="${user.section != null && user.section.id == section.id}">
-                        </option>
-                    </select>
-                </td>
-                <td class="select-cell">
-                        <select class="select-role" th:attr="name='roles[' + ${user.id} + ']'" th:value="${user.role.roleName}" th:if="${!user.isSuperAdmin}">
-                            <option value="Admin" th:selected="${user.role.roleName == 'Admin'}">Admin</option>
-                            <option value="Manager" th:selected="${user.role.roleName == 'Manager'}">Manager</option>
-                            <option value="Coordinator" th:selected="${user.role.roleName == 'Coordinator'}">Coordinator</option>
-                            <option value="User" th:selected="${user.role.roleName == 'User'}">User</option>
-                    </select>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-        <div class="new-form-button-container">
-            <button type="submit" class="mainBtn">Zapisz</button>
-            <button id="deleteButton" class="mainBtn" formaction="/api/user/deleteUsers" formmethod="post">Usuń</button>
-        </div>
-    </form>
-        <p id="statusMessage"></p>
-    </div>
 <!--    Modal do dodania nowego zespołu -->
     <div id="teamModal" class="modal">
         <div class="modal-content">
@@ -283,7 +292,7 @@
 
 
 
-
+<input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
 </div>
 
 </body>

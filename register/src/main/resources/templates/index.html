@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml" lang="en">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml" xmlns="http://www.w3.org/1999/html"
+      lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Statystyka</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -37,7 +40,7 @@
 
         <div class="user">
             <img src="" alt="User Image" class="user-img" id="user-avatar">
-            <div>
+            <div class="information">
                 <p class="bold"></p>
                 <p class="role"></p>
             </div>
@@ -140,7 +143,7 @@
                                        min="1">
 
                                 <label th:for="${process.processName}" th:text="${process.processName}"></label>
-                                <i class='bx bx-plus'></i>
+                                <i class='bx bx-plus add-efficiency' th:attr="data-process-id=${process.id}"></i>
                             </div>
                         </div>
                     </div>
@@ -160,7 +163,43 @@
         </a>
     </div>
 
+    <div id="firstLoginModal" class="modal hidden">
+        <div class="modal-content">
+            <form id="setupForm">
+                <div class="title">
+                    <h4>Uzupełnij dane</h4>
+                </div>
+
+                <label for="team">Zespół:</label>
+                <select id="team" name="teamId" required>
+                    <option value="">Wybierz zespół</option>
+                </select>
+
+                <label for="section">Sekcja:</label>
+                <select id="section" name="sectionId" required>
+                    <option value="">Wybierz sekcję</option>
+                </select>
+
+                <label for="position">Stanowisko:</label>
+                <select id="position" name="positionId" required>
+                    <option value="">Wybierz stanowisko</option>
+                </select>
+
+                <div class="btnContainer">
+                    <button type="submit" class="mainBtn">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+
+
+
 </div>
+
+
 
 
 

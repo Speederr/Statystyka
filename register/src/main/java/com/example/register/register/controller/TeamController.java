@@ -2,20 +2,19 @@ package com.example.register.register.controller;
 
 import com.example.register.register.model.Team;
 import com.example.register.register.repository.TeamRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/api/teams")
 public class TeamController {
 
-    private final TeamRepository teamRepository;
-
-    public TeamController(TeamRepository teamRepository) {
-        this.teamRepository = teamRepository;
-    }
+    @Autowired
+    private TeamRepository teamRepository;
 
     // 🔹 Endpoint do pobierania wszystkich zespołów
     @GetMapping
@@ -23,6 +22,7 @@ public class TeamController {
         List<Team> teams = teamRepository.findAll();
         return ResponseEntity.ok(teams);
     }
+
 
     @PostMapping("/saveNewTeam")
     public ResponseEntity<Team> saveNewTeam(@RequestBody Team team) {

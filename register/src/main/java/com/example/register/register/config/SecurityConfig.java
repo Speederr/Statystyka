@@ -34,14 +34,22 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 🔓 Publiczne endpointy
                         .requestMatchers("/register", "/login", "/firstLogin", "/restorePassword",
-                                "/api/user/restorePassword", "/css/**", "/js/**", "/images/**").permitAll()
+                                "/api/user/restorePassword","/error", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/availability").permitAll()
 
                         // 🔒 REST API dla wiadomości - dostępne dla zalogowanych użytkowników
                         .requestMatchers(HttpMethod.GET, "/api/messages/received").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/messages/sent").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/messages/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/matrix/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/user/all-users", "/api/sections", "/api/user/summary/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/user/by-section/**", "/matrix/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/efficiency/average/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/efficiency/section/non-operational/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/saved-data/get-report/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/saved-data/summary/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
 
-                        .requestMatchers(HttpMethod.POST, "/api/messages/send").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/messages/send","/api/saved-data/save-single").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/message/{messageId}").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/message/bulk-delete").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/messages/mark-as-read").authenticated() // Wymaga zalogowania
@@ -55,8 +63,13 @@ public class SecurityConfig {
                                 "/api/user/deleteUsers", "/api/teams", "/api/teams/saveNewTeam", "/api/sections/saveNewSection").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/user/avatar").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/user/changePasswordInSettings").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/user/avatar").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/processes/update/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,"/api/attendance/update").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/user/avatar", "/api/position/{positionId}").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/user/whoami", "/api/user/setup-data").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/user/complete-setup").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/matrix/save", "/matrix/saveSingle").authenticated()
+
+                        .requestMatchers(HttpMethod.PUT, "/api/processes/update/**", "/export/processes").hasRole("ADMIN")
                         .requestMatchers("/adminPanel").hasRole("ADMIN")
                         .requestMatchers("/averageTime").hasRole("ADMIN")
                         .requestMatchers("/efficiency").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
@@ -103,7 +116,19 @@ public class SecurityConfig {
                                 "/api/messages/**",
                                 "/api/teams",
                                 "/api/teams/saveNewTeam",
-                                "/api/sections/saveNewSection"
+                                "/api/sections",
+                                "/api/sections/saveNewSection",
+                                "/export/processes",
+                                "/api/position/{positionId}",
+                                "/api/user/all-users",
+                                "/api/saved-data/save-single",
+                                "/api/attendance/update",
+                                "/api/user/whoami",
+                                "/api/user/setup-data",
+                                "/api/user/complete-setup",
+                                "/matrix/save",
+                                "/matrix/saveSingle"
+
                         )
                 );
 

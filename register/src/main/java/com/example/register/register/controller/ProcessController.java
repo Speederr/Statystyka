@@ -2,6 +2,7 @@ package com.example.register.register.controller;
 
 import com.example.register.register.model.BusinessProcess;
 import com.example.register.register.model.Team;
+import com.example.register.register.model.User;
 import com.example.register.register.repository.ProcessRepository;
 import com.example.register.register.repository.TeamRepository;
 import com.example.register.register.repository.UserFavoritesRepository;
@@ -9,7 +10,6 @@ import com.example.register.register.repository.UserRepository;
 import com.example.register.register.service.ProcessService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-@Controller
+@RestController
 @RequestMapping("/api/processes")
 public class ProcessController {
 
@@ -80,26 +80,84 @@ public class ProcessController {
 
         return ResponseEntity.ok(response);
     }
+//    @GetMapping("/processes/{userId}")
+//    public String showProcesses(@PathVariable Long userId, Model model) {
+//        System.out.println("🔵 Wywołano showProcesses() dla userId=" + userId);
+//
+//        Optional<User> userOpt = userRepository.findById(userId);
+//        if (userOpt.isEmpty()) {
+//            System.out.println("❌ Użytkownik o ID " + userId + " nie istnieje!");
+//            model.addAttribute("allProcesses", Collections.emptyList());
+//            model.addAttribute("favoriteProcesses", Collections.emptyList());
+//            return "processes";
+//        }
+//
+//        User user = userOpt.get();
+//        System.out.println("👤 Użytkownik: " + user.getUsername());
+//
+//        Team userTeam = user.getTeam();
+//        if (userTeam == null) {
+//            System.out.println("❌ Użytkownik nie ma przypisanego zespołu!");
+//            model.addAttribute("allProcesses", Collections.emptyList());
+//            model.addAttribute("favoriteProcesses", Collections.emptyList());
+//            return "processes";
+//        }
+//
+//        Long teamId = userTeam.getId();
+//        System.out.println("✅ Użytkownik należy do zespołu ID: " + teamId);
+//
+//        List<BusinessProcess> allProcesses = processService.getProcessesByTeamId(teamId);
+//        System.out.println("📌 Znalezione procesy dla teamId " + teamId + ": " + allProcesses.size());
+//
+//        List<BusinessProcess> favoriteProcesses = processService.getFavoriteProcesses(userId);
+//        List<Long> favoriteProcessIds = favoriteProcesses.stream()
+//                .map(BusinessProcess::getId)
+//                .toList();
+//
+//        List<BusinessProcess> filteredProcesses = allProcesses.stream()
+//                .filter(process -> !favoriteProcessIds.contains(process.getId()))
+//                .toList();
+//
+//        model.addAttribute("allProcesses", filteredProcesses);
+//        model.addAttribute("favoriteProcesses", favoriteProcesses);
+//
+//        return "processes";
+//    }
 
-
+///stara wersja z principal
     @GetMapping("/processes")
     public String showProcesses(Model model, Principal principal) {
+        System.out.println("🔵 Wywołano showProcesses()");
+
         if (principal != null) {
             String username = principal.getName();
+            System.out.println("👤 Zalogowany użytkownik: " + username);
+
             Long userId = userRepository.findUserIdByUsername(username);
+            System.out.println("🔎 ID użytkownika: " + userId);
 
-            model.addAttribute("userId", userId);
+            // Pobierz zespół użytkownika
+            Team userTeam = userRepository.findTeamByUsername(username);
+            if (userTeam == null) {
+                System.out.println("❌ Użytkownik " + username + " nie ma przypisanego zespołu!");
+                model.addAttribute("allProcesses", Collections.emptyList());
+                model.addAttribute("favoriteProcesses", Collections.emptyList());
+                return "processes";
+            }
 
-            // Pobierz wszystkie procesy
-            List<BusinessProcess> allProcesses = processService.getAllProcesses();
+            Long teamId = userTeam.getId();
+            System.out.println("✅ Użytkownik " + username + " należy do zespołu ID: " + teamId);
+
+            // Pobierz tylko procesy z jego zespołu
+            List<BusinessProcess> allProcesses = processService.getProcessesByTeamId(teamId);
+            System.out.println("📌 Znalezione procesy dla teamId " + teamId + ": " + allProcesses.size());
 
             // Pobierz ulubione procesy
             List<BusinessProcess> favoriteProcesses = processService.getFavoriteProcesses(userId);
-
-            // Usunięcie ulubionych procesów z listy wszystkich procesów
             List<Long> favoriteProcessIds = favoriteProcesses.stream()
                     .map(BusinessProcess::getId)
                     .toList();
+
             List<BusinessProcess> filteredProcesses = allProcesses.stream()
                     .filter(process -> !favoriteProcessIds.contains(process.getId()))
                     .toList();
@@ -107,6 +165,7 @@ public class ProcessController {
             model.addAttribute("allProcesses", filteredProcesses);
             model.addAttribute("favoriteProcesses", favoriteProcesses);
         } else {
+            System.out.println("⚠ Brak zalogowanego użytkownika!");
             model.addAttribute("userId", null);
             model.addAttribute("allProcesses", Collections.emptyList());
             model.addAttribute("favoriteProcesses", Collections.emptyList());
@@ -115,9 +174,30 @@ public class ProcessController {
         return "processes";
     }
 
+    @GetMapping("/team/{userId}")
+    public ResponseEntity<List<BusinessProcess>> getProcessesForUserTeam(@PathVariable Long userId) {
+        System.out.println("🔍 Pobieranie procesów dla userId: " + userId);
+
+        // Pobierz użytkownika
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null || user.getTeam() == null) {
+            System.out.println("⚠ Brak użytkownika lub brak przypisanego zespołu!");
+            return ResponseEntity.badRequest().body(Collections.emptyList());
+        }
+
+        Long teamId = user.getTeam().getId();
+        System.out.println("✅ Użytkownik należy do teamId: " + teamId);
+
+        // Pobierz procesy tylko dla tego zespołu
+        List<BusinessProcess> processes = processService.getProcessesByTeamId(teamId);
+        System.out.println("📌 Znaleziono procesy: " + processes.size());
+
+        return ResponseEntity.ok(processes);
+    }
+
+
     @PostMapping("/saveNewProcess")
-    public String saveNewProcess(@ModelAttribute("process") BusinessProcess process,
-                                 @RequestParam("team") Long teamId) {
+    public String saveNewProcess(@RequestParam("teamId") Long teamId, BusinessProcess process) {
 
         Team team = teamRepository.findById(teamId)
                         .orElseThrow(() -> new RuntimeException("Nie znaleziono zespołu: " + teamId));

@@ -189,6 +189,7 @@
   color: #606060;
   text-shadow: 0 1px #fff;
   margin: 7px 0;
+  text-decoration: none;
 }
 
 .mainBtn:hover {
@@ -322,7 +323,9 @@
     background-color: #f8f9fa;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-
+.title-container h1 {
+    font-weight: normal;
+}
 /* Styl dla daty */
 #currentDate {
     font-size: 16px;
@@ -330,3 +333,35 @@
     font-weight: bold;
 }
 /* ============================================= HEADER END ======================================================= */
+.chart-header {
+    display: flex;
+    justify-content: space-between; /* odstępy pomiędzy grupami */
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.date-filter {
+    display: flex;
+    align-items: center;
+    margin: 0 auto; /* 🔥 to centruje */
+    gap: 10px;
+}
+
+.backlog-date-input {
+    padding: 5px 8px;
+}
+.changeScaleBtn {
+    display: flex;
+    align-items: center;
+}
+#filterButton,
+.changeScaleBtn button {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    margin-right: 5px;
+
+}
+.modalsBtn {
+    display: flex;
+}
