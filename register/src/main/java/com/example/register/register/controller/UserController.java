@@ -207,26 +207,6 @@ public class UserController {
     }
 
 
-//    @PostMapping("/changePassword")
-//    @Transactional
-//    public ResponseEntity<Void> changePassword(
-//            @RequestParam("newPassword") String newPassword,
-//            @RequestParam("confirmPassword") String confirmPassword,
-//            Authentication authentication) {
-//
-//        if (!newPassword.equals(confirmPassword)) {
-//            return ResponseEntity.status(HttpStatus.FOUND)
-//                    .location(URI.create("redirect:/changePassword?error=mismatch"))
-//                    .build();
-//        }
-//        String username = authentication.getName();
-//
-//        userService.updateUserPassword(username, newPassword);
-//
-//        return ResponseEntity.status(HttpStatus.FOUND)
-//                .location(URI.create("/index")) // Set the redirect location
-//                .build();
-//    }
     @PostMapping("/changePassword")
     @Transactional
     public ResponseEntity<Void> changePassword(
@@ -330,7 +310,6 @@ public class UserController {
     @GetMapping("/avatar")
     public ResponseEntity<String> getUserAvatar(Principal principal) {
         String username = principal.getName();
-        log.info("Żądanie avatara dla użytkownika: " + username);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony"));
@@ -341,7 +320,6 @@ public class UserController {
         }
 
         String base64Avatar = Base64.getEncoder().encodeToString(user.getAvatarUrl());
-        log.info("Avatar wczytany dla użytkownika: " + username);
         return ResponseEntity.ok(base64Avatar);
     }
 

@@ -3,6 +3,7 @@ package com.example.register.register.controller;
 import com.example.register.register.DTO.OvertimeDTO;
 import com.example.register.register.DTO.OvertimeDetailDTO;
 import com.example.register.register.DTO.OvertimeExportDto;
+import com.example.register.register.DTO.SavedDataDto;
 import com.example.register.register.model.User;
 import com.example.register.register.repository.SavedDataRepository;
 import com.example.register.register.repository.UserRepository;
@@ -100,7 +101,40 @@ public class OvertimeController {
         workbook.close();
     }
 
+    @PostMapping("/exportOvertimeForDate")
+    public void exportOvertimeForDate(@RequestBody List<SavedDataDto> filteredData, HttpServletResponse response) throws IOException {
 
+        // 🔽 Konfiguracja odpowiedzi
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=Nadgodziny_szczegoly.xlsx");
+
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        XSSFSheet sheet = workbook.createSheet("Szczegóły");
+
+        // ✅ Nagłówki
+        Row header = sheet.createRow(0);
+        header.createCell(0).setCellValue("Proces");
+        header.createCell(1).setCellValue("Ilość");
+        header.createCell(2).setCellValue("Data dodania");
+        header.createCell(3).setCellValue("Pracownik");
+        header.createCell(4).setCellValue("Rodzaj czasu pracy");
+        header.createCell(5).setCellValue("Czas(min)");
+
+        // ✅ Dane
+        int rowNum = 1;
+        for (SavedDataDto data : filteredData) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(data.processName());
+            row.createCell(1).setCellValue(data.quantity());
+            row.createCell(2).setCellValue(data.todaysDate().toString());
+            row.createCell(3).setCellValue(data.username());
+            row.createCell(4).setCellValue(data.volumeType());
+            row.createCell(5).setCellValue(data.overtimeMinutes());
+        }
+
+        workbook.write(response.getOutputStream());
+        workbook.close();
+    }
 
 
 }

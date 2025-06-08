@@ -170,6 +170,7 @@ public ResponseEntity<String> saveNewProcess(@RequestParam("teamId") Long teamId
         if (existingProcess.isPresent()) {
             BusinessProcess process = existingProcess.get();
             process.setAverageTime(updatedProcess.getAverageTime());
+            process.setNonOperational(updatedProcess.isNonOperational());
             processRepository.save(process);
             return ResponseEntity.ok().body("{\"message\": \"Process updated successfully\"}");
         } else {

@@ -66,7 +66,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,  "/api/user/addUser", "/api/user/deleteUsers", "/api/teams", "/api/teams/saveNewTeam",
                                 "/api/sections/saveNewSection").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/processes/saveNewProcess").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
-                        .requestMatchers(HttpMethod.POST, "/api/overtime/exportAll").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.POST, "/api/overtime/exportAll", "/api/overtime/exportOvertimeForDate").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.POST, "/api/user/avatar").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/user/changePasswordInSettings").authenticated()
                         .requestMatchers(HttpMethod.POST,"/api/attendance/update").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
@@ -136,7 +136,8 @@ public class SecurityConfig {
                                 "/matrix/save",
                                 "/matrix/saveSingle",
                                 "/api/saved-data/deduct-full-day",
-                                "/api/overtime/exportAll"
+                                "/api/overtime/exportAll",
+                                "/api/overtime/exportOvertimeForDate"
 
                         )
                 );

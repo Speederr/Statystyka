@@ -155,3 +155,6 @@ label {
     height: 30px;
     text-align: center;
 }
+.checkbox-button.time-checkbox {
+    cursor: pointer;
+}

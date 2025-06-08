@@ -117,14 +117,18 @@
         <span id="currentDate"></span>
     </header>
 
-    <div class="modalsBtn">
-        <button class="mainBtn" th:onclick="|window.location.href='@{/details}'|">Pracownicy</button>
-        <button class="mainBtn" th:onclick="|window.location.href='@{/backlog}'|">Dodaj backlog</button>
-        <button class="mainBtn" th:onclick="|window.location.href='@{/backlogDetails}'|">Backlog - szczegóły</button>
-        <button class="mainBtn" th:onclick="|window.location.href='@{/executionReport}'|">Raport wykonania</button>
-        <button class="mainBtn" th:onclick="|window.location.href='@{/averageTime}'|">Edytuj czasy</button>
-        <button class="mainBtn" th:onclick="|window.location.href='@{/overtimeReport}'|">Nadgodziny - podsumowanie</button>
-    </div>
+    <div class="modalsBtn efficiency">
+        <div class="left-main-side">
+            <button class="mainBtn" th:onclick="|window.location.href='@{/details}'|">Pracownicy</button>
+            <button class="mainBtn" th:onclick="|window.location.href='@{/executionReport}'|">Raport wykonania</button>
+            <button class="mainBtn" th:onclick="|window.location.href='@{/overtimeReport}'|">Nadgodziny - podsumowanie</button>
+        </div>
+        <div class="right-main-side">
+            <button class="mainBtn" th:onclick="|window.location.href='@{/backlog}'|">Dodaj backlog</button>
+            <button class="mainBtn" th:onclick="|window.location.href='@{/backlogDetails}'|">Backlog - szczegóły</button>
+            <button class="mainBtn" th:onclick="|window.location.href='@{/averageTime}'|">Edytuj czasy</button>
+        </div>
+        </div>
 
 <div class="dashboard-container">
     <div class="dashboard-grid">

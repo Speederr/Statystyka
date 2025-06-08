@@ -36,10 +36,12 @@ public class ProcessExportController {
         headerRow.createCell(0).setCellValue("Nazwa procesu");
         headerRow.createCell(1).setCellValue("Czas w minutach");
         headerRow.createCell(2).setCellValue("Czas w sekundach");
+        headerRow.createCell(3).setCellValue("Czy proces nieoperacyjny?");
 
         for (Map<String, Object> process : selectedProcesses) {
             Row row = sheet.createRow(rowCount++);
             String processName = (String) process.get("processName");
+            boolean nonOperational = process.get("nonOperational") != null && Boolean.parseBoolean(process.get("nonOperational").toString());
 
             // ✅ Pobieramy wartość z JSON-a poprawnie (averageTimeMinutes zamiast averageTime)
             double averageTimeMinutes = process.get("averageTimeMinutes") != null
@@ -53,6 +55,7 @@ public class ProcessExportController {
             row.createCell(0).setCellValue(processName);
             row.createCell(1).setCellValue(averageTimeMinutes);
             row.createCell(2).setCellValue(averageTimeSeconds);
+            row.createCell(3).setCellValue(nonOperational ? "TAK" : "NIE");
         }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

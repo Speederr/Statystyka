@@ -19,16 +19,8 @@
     <link rel="stylesheet" th:href="@{/css/averageTime.css}">
     <link rel="stylesheet" th:href="@{/css/button.css}">
 
-
     <script th:src="@{/js/script.js}" defer></script>
     <script th:src="@{/js/json.js}" defer></script>
-
-<!--            <link rel="stylesheet" href="../static/css/sidebarCSS.css">-->
-<!--            <link rel="stylesheet" href="../static/css/index.css">-->
-<!--            <link rel="stylesheet" href="../static/css/averageTime.css">-->
-
-<!--            <script src="../static/js/script.js" defer></script>-->
-<!--            <script src="../static/js/json.js" defer></script>-->
 
 </head>
 
@@ -144,6 +136,7 @@
                     <th>Nazwa Procesu</th>
                     <th>Średni czas (minuty)</th>
                     <th>Średni czas (sekundy)</th>
+                    <th>Czy proces nieoperacyjny?</th>
                 </tr>
                 </thead>
                 <tbody id="processTable">
@@ -158,6 +151,9 @@
                         <input type="text" class="time-input seconds"
                                th:value="${#numbers.formatInteger(process.averageTime * 60, 0, 'COMMA')}"
                                th:id="'seconds_' + ${process.id}" readonly>
+                    </td>
+                    <td class="checkbox-cell">
+                        <input type="checkbox" class="checkbox-button time-checkbox" th:id="'checkbox_' + ${process.id}" th:value="${process.id}" th:checked="${process.nonOperational}" disabled>
                     </td>
 
                 </tr>

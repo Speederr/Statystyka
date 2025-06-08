@@ -78,7 +78,12 @@ document.addEventListener("DOMContentLoaded", function () {
             input.classList.toggle("enabled-cursor", enable);
             replaceIcon(input, enable ? "bx-edit" : "bx-check");
         });
+
+        document.querySelectorAll(".time-checkbox").forEach(checkbox => {
+            checkbox.disabled = !enable;
+        });
     }
+
 
     function syncMinutesAndSeconds(input, type) {
         const processId = input.id.split("_")[1];
@@ -112,6 +117,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const updatePromises = Array.from(minuteInputs).map(input => {
                 const processId = input.id.split("_")[1];
                 const newTime = input.value;
+                const checkbox = document.getElementById(`checkbox_${processId}`);
+                const isNonOperational = checkbox?.checked || false;
 
                 return fetch(`/api/processes/update`, {
                     method: "PUT",
@@ -120,8 +127,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     },
                     body: JSON.stringify({
                         id: processId,
-                        averageTime: newTime
-                    })
+                        averageTime: newTime,
+                        nonOperational: isNonOperational
+                })
                 }).then(response => {
                     if (response.ok) {
                         replaceIcon(input, "bx-check");
@@ -303,6 +311,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     ? row.cells[2].querySelector("input").value
                     : (parseFloat(averageTimeMinutes) * 60).toFixed(0); // Jeśli nie ma inputa, obliczamy
 
+                const checkbox = row.cells[3].querySelector("input[type='checkbox']");
+                const nonOperational = checkbox?.checked || false;
+
                 const processTeamId = row.getAttribute("data-team");
 
                 // ✅ Filtrujemy dane na podstawie wybranego teamId
@@ -310,7 +321,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     filteredData.push({
                         processName,
                         averageTimeMinutes,
-                        averageTimeSeconds
+                        averageTimeSeconds,
+                        nonOperational
                     });
                 }
             });
@@ -2550,10 +2562,11 @@ function renderOvertimeTablePage() {
 }
 
 // 🔄 POBIERANIE DANYCH Z API I RESET FILTRÓW
-function fetchOvertimeData(startDateOvertime = null, endDateOvertime = null) {
+function fetchOvertimeData(startDateOvertime = null, endDateOvertime = null, userId = null) {
   const query = new URLSearchParams();
   if (startDateOvertime) query.append("startDateOvertime", startDateOvertime);
   if (endDateOvertime)   query.append("endDateOvertime",   endDateOvertime);
+  if (userId)            query.append("userId", userId);
 
   fetch(`/api/overtime/get-data?${query.toString()}`)
     .then(res => res.json())
@@ -2669,6 +2682,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!userTableBody) return;
 
+  const currentUserId = document.getElementById("userId")?.value;
+
   // 2) ustaw domyślne daty w inputs
   const startInput = document.getElementById("startDateOvertime");
   const endInput   = document.getElementById("endDateOvertime");
@@ -2700,7 +2715,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ).forEach(cb => cb.checked=true);
     startInput.value = toISO(ago);
     endInput  .value = toISO(today);
-    fetchOvertimeData(toISO(ago), toISO(today));
+    fetchOvertimeData(toISO(ago), toISO(today), currentUserId);
   });
 
   // 5) dropdowny
@@ -2720,11 +2735,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // 6) data‐form submit
   document.getElementById("overtimeForm")?.addEventListener("submit", e => {
     e.preventDefault();
-    fetchOvertimeData(startInput.value, endInput.value);
+    fetchOvertimeData(startInput.value, endInput.value, currentUserId);
   });
 
   // 7) pierwsze załadowanie
-  fetchOvertimeData(toISO(ago), toISO(today));
+  fetchOvertimeData(toISO(ago), toISO(today), currentUserId);
 });
 
 
@@ -2944,9 +2959,43 @@ document.getElementById("exportOvertimeSummaryXlsxBtn").addEventListener("click"
     });
 });
 
-
-
-
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+   if (!window.location.pathname.includes("/userOvertimeDetails")) return;
 
+  document.getElementById("exportXlsxBtn").addEventListener("click", function () {
+    const rows = Array.from(document.querySelectorAll("#overtime-user-table tbody tr"));
+
+    const dataToExport = rows.map(row => {
+      const cells = row.querySelectorAll("td");
+
+      return {
+        processName: cells[0].textContent.trim(),
+        quantity: parseInt(cells[1].textContent.trim(), 10) || 0,
+        todaysDate: cells[2].textContent.trim(),       // np. "2025-06-08"
+        username: cells[3].textContent.trim(),
+        volumeType: cells[4].textContent.trim(),
+        overtimeMinutes: parseInt(cells[5].textContent.trim(), 10) || 0
+      };
+    });
+
+    // 🔥 Wyślij POST z JSON
+    fetch("/api/overtime/exportOvertimeForDate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dataToExport)
+    }).then(res => res.blob())
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "Nadgodziny_szczegóły.xlsx";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }).catch(err => {
+        console.error("❌ Błąd przy eksporcie XLSX:", err);
+      });
+  });
+});

@@ -43,8 +43,6 @@ public class ProcessService {
                 .stream()
                 .sorted(Comparator.comparing(BusinessProcess::getProcessName))
                 .collect(Collectors.toList());
-
-        log.info("Ulubione procesy dla userId " + userId + ": " + favorites);
         return favorites;
     }
 

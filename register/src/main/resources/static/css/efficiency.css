@@ -597,7 +597,16 @@ cursor: pointer;
   .left-side {
     flex: 0 0 auto;
   }
-
+  .modalsBtn.efficiency {
+    display: flex;
+    justify-content: space-between;
+  }
+  .left-main-side {
+    display: flex;
+  }
+  .right-main-side {
+    display: flex;
+  }
   .center-side {
     flex: 1 1 auto;
     display: flex;
