@@ -12,8 +12,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import lombok.extern.slf4j.Slf4j;
 
->>>>>>> 2a5f853e825ef8042839cc44bbbc5647b106ee19
-
 import java.time.LocalDateTime;
 import java.security.Principal;
 import java.util.*;
