@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.security.Principal;
 import java.util.*;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 
 @RestController
+@Slf4j
 @RequestMapping("/api/processes")
 public class ProcessController {
 
@@ -61,7 +63,7 @@ public class ProcessController {
 
     @GetMapping("/favorites/{userId}")
     public ResponseEntity<List<BusinessProcess>> getFavoriteProcesses(@PathVariable Long userId) {
-        System.out.println("Otrzymano zapytanie o ulubione procesy dla userId: " + userId);
+        log.info("Otrzymano zapytanie o ulubione procesy dla userId: " + userId);
         List<BusinessProcess> favorites = processService.getFavoriteProcesses(userId);
 
         if (favorites == null || favorites.isEmpty()) {
@@ -83,30 +85,30 @@ public class ProcessController {
 
     @GetMapping("/processes")
     public String showProcesses(Model model, Principal principal) {
-        System.out.println("🔵 Wywołano showProcesses()");
+        log.info("🔵 Wywołano showProcesses()");
 
         if (principal != null) {
             String username = principal.getName();
-            System.out.println("👤 Zalogowany użytkownik: " + username);
+            log.info("👤 Zalogowany użytkownik: " + username);
 
             Long userId = userRepository.findUserIdByUsername(username);
-            System.out.println("🔎 ID użytkownika: " + userId);
+            log.info("🔎 ID użytkownika: " + userId);
 
             // Pobierz zespół użytkownika
             Team userTeam = userRepository.findTeamByUsername(username);
             if (userTeam == null) {
-                System.out.println("❌ Użytkownik " + username + " nie ma przypisanego zespołu!");
+                log.info("❌ Użytkownik " + username + " nie ma przypisanego zespołu!");
                 model.addAttribute("allProcesses", Collections.emptyList());
                 model.addAttribute("favoriteProcesses", Collections.emptyList());
                 return "processes";
             }
 
             Long teamId = userTeam.getId();
-            System.out.println("✅ Użytkownik " + username + " należy do zespołu ID: " + teamId);
+            log.info("✅ Użytkownik " + username + " należy do zespołu ID: " + teamId);
 
             // Pobierz tylko procesy z jego zespołu
             List<BusinessProcess> allProcesses = processService.getProcessesByTeamId(teamId);
-            System.out.println("📌 Znalezione procesy dla teamId " + teamId + ": " + allProcesses.size());
+            log.info("📌 Znalezione procesy dla teamId " + teamId + ": " + allProcesses.size());
 
             // Pobierz ulubione procesy
             List<BusinessProcess> favoriteProcesses = processService.getFavoriteProcesses(userId);
@@ -121,7 +123,7 @@ public class ProcessController {
             model.addAttribute("allProcesses", filteredProcesses);
             model.addAttribute("favoriteProcesses", favoriteProcesses);
         } else {
-            System.out.println("⚠ Brak zalogowanego użytkownika!");
+            log.info("⚠ Brak zalogowanego użytkownika!");
             model.addAttribute("userId", null);
             model.addAttribute("allProcesses", Collections.emptyList());
             model.addAttribute("favoriteProcesses", Collections.emptyList());
@@ -132,21 +134,21 @@ public class ProcessController {
 
     @GetMapping("/team/{userId}")
     public ResponseEntity<List<BusinessProcess>> getProcessesForUserTeam(@PathVariable Long userId) {
-        System.out.println("🔍 Pobieranie procesów dla userId: " + userId);
+        log.info("🔍 Pobieranie procesów dla userId: " + userId);
 
         // Pobierz użytkownika
         User user = userRepository.findById(userId).orElse(null);
         if (user == null || user.getTeam() == null) {
-            System.out.println("⚠ Brak użytkownika lub brak przypisanego zespołu!");
+            log.info("⚠ Brak użytkownika lub brak przypisanego zespołu!");
             return ResponseEntity.badRequest().body(Collections.emptyList());
         }
 
         Long teamId = user.getTeam().getId();
-        System.out.println("✅ Użytkownik należy do teamId: " + teamId);
+        log.info("✅ Użytkownik należy do teamId: " + teamId);
 
         // Pobierz procesy tylko dla tego zespołu
         List<BusinessProcess> processes = processService.getProcessesByTeamId(teamId);
-        System.out.println("📌 Znaleziono procesy: " + processes.size());
+        log.info("📌 Znaleziono procesy: " + processes.size());
 
         return ResponseEntity.ok(processes);
     }

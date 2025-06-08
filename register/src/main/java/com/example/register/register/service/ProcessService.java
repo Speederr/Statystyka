@@ -11,11 +11,13 @@ import com.example.register.register.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ProcessService {
     @Autowired
     private ProcessRepository processRepository;
@@ -42,7 +44,7 @@ public class ProcessService {
                 .sorted(Comparator.comparing(BusinessProcess::getProcessName))
                 .collect(Collectors.toList());
 
-        System.out.println("Ulubione procesy dla userId " + userId + ": " + favorites);
+        log.info("Ulubione procesy dla userId " + userId + ": " + favorites);
         return favorites;
     }
 
@@ -73,7 +75,7 @@ public void saveFavoriteProcesses(Long userId, List<Long> processIds) {
 
     public List<BusinessProcess> getProcessesByTeamId(Long teamId) {
         List<BusinessProcess> processes = processRepository.findByTeamId(teamId);
-        System.out.println("🔎 Procesy znalezione dla teamId " + teamId + ": " + processes.size());
+        log.info("🔎 Procesy znalezione dla teamId " + teamId + ": " + processes.size());
         return processes;
     }
 

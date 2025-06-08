@@ -17,6 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
 import java.security.Principal;
@@ -25,6 +26,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
+@Slf4j
 @RequestMapping("/")
 public class PageController {
 
@@ -82,7 +84,7 @@ public class PageController {
             if (userId != null) {
                 model.addAttribute("userId", userId);
             } else {
-                System.out.println("Użytkownik nie został znaleziony w bazie.");
+                log.info("Użytkownik nie został znaleziony w bazie.");
                 model.addAttribute("userId", "");
             }
         } else {
