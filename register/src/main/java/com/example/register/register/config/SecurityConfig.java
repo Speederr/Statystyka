@@ -135,7 +135,8 @@ public class SecurityConfig {
                                 "/api/user/complete-setup",
                                 "/matrix/save",
                                 "/matrix/saveSingle",
-                                "/api/saved-data/deduct-full-day"
+                                "/api/saved-data/deduct-full-day",
+                                "/api/overtime/exportAll"
 
                         )
                 );
