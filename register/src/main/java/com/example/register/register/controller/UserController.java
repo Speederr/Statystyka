@@ -1,5 +1,6 @@
 package com.example.register.register.controller;
 
+import com.example.register.register.DTO.OvertimeDTO;
 import com.example.register.register.DTO.UserDto;
 import com.example.register.register.DTO.UserSummaryDTO;
 import com.example.register.register.DTO.UserTableDto;
@@ -9,6 +10,7 @@ import com.example.register.register.service.EmailService;
 import com.example.register.register.service.UserService;
 import com.example.register.register.service.UserSummaryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -90,6 +92,7 @@ public class UserController {
             @RequestParam(value = "selectedUsers", required = false) List<Long> selectedUsers,
             @RequestParam Map<String, String> roles,
             @RequestParam Map<String, String> sections,
+            @RequestParam Map<String, String> teams,
             Model model) {
 
         if (selectedUsers == null || selectedUsers.isEmpty()) {
@@ -128,6 +131,18 @@ public class UserController {
                     System.err.println("Błąd: Nieprawidłowy format ID sekcji dla użytkownika ID: " + userId);
                 }
             }
+
+            String selectedTeam = teams.get("teams[" + userId + "]");
+            if(selectedTeam != null && !selectedTeam.isEmpty()) {
+                try {
+                    Long teamId = Long.parseLong(selectedTeam);
+                    userService.updateUserTeam(userId, teamId);
+                    System.out.println("Updated user ID: " + userId + " with team ID: " + teamId);
+                } catch (NumberFormatException e) {
+                    System.err.println("Błąd: Nieprawidłowy format ID zespołu dla użytkownika ID: " + userId);
+
+                }
+            }
         }
 
         return ResponseEntity.status(HttpStatus.FOUND)
@@ -136,14 +151,11 @@ public class UserController {
     }
 
     @PostMapping("/deleteUsers")
-    @Transactional
-    public ResponseEntity<Void> deleteSelectedUsers(
+    public ResponseEntity<String> deleteSelectedUsers(
             @RequestParam(value = "selectedUsers", required = false) List<Long> selectedUsers) {
 
         if (selectedUsers == null || selectedUsers.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create("/error?message=" + URLEncoder.encode("Nie zaznaczono żadnych użytkowników do usunięcia.", StandardCharsets.UTF_8)))
-                    .build();
+            return ResponseEntity.badRequest().body("❌ Nie zaznaczono żadnych użytkowników do usunięcia.");
         }
 
         for (Long userId : selectedUsers) {
@@ -152,27 +164,25 @@ public class UserController {
                         .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono użytkownika o ID: " + userId));
 
                 if (user.isSuperAdmin()) {
-                    return ResponseEntity.status(HttpStatus.FOUND)
-                            .location(URI.create("/error?message=" + URLEncoder.encode("Nie można usunąć użytkownika Super Admin.", StandardCharsets.UTF_8)))
-                            .build();
+                    return ResponseEntity.badRequest().body("❌ Nie można usunąć użytkownika Super Admin.");
                 }
 
                 userService.deleteUserById(userId);
-                System.out.println("Deleted user ID: " + userId);
 
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.status(HttpStatus.FOUND)
-                        .location(URI.create("/error?message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8)))
-                        .build();
+            } catch (DataIntegrityViolationException dive) {
+                return ResponseEntity.badRequest()
+                        .body("❌ Nie można usunąć użytkownika o ID: " + userId + ", ponieważ ma powiązane dane.");
+            } catch (IllegalArgumentException iae) {
+                return ResponseEntity.badRequest().body("❌ " + iae.getMessage());
             } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.FOUND)
-                        .location(URI.create("/error?message=" + URLEncoder.encode("Wystąpił błąd podczas usuwania użytkownika o ID: " + userId, StandardCharsets.UTF_8)))
-                        .build();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("❌ Błąd podczas usuwania użytkownika o ID: " + userId);
             }
         }
 
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("/adminPanel")).build();
+        return ResponseEntity.ok("✅ Użytkownicy zostali usunięci.");
     }
+
 
 
     @GetMapping("/info")
@@ -195,6 +205,26 @@ public class UserController {
     }
 
 
+//    @PostMapping("/changePassword")
+//    @Transactional
+//    public ResponseEntity<Void> changePassword(
+//            @RequestParam("newPassword") String newPassword,
+//            @RequestParam("confirmPassword") String confirmPassword,
+//            Authentication authentication) {
+//
+//        if (!newPassword.equals(confirmPassword)) {
+//            return ResponseEntity.status(HttpStatus.FOUND)
+//                    .location(URI.create("redirect:/changePassword?error=mismatch"))
+//                    .build();
+//        }
+//        String username = authentication.getName();
+//
+//        userService.updateUserPassword(username, newPassword);
+//
+//        return ResponseEntity.status(HttpStatus.FOUND)
+//                .location(URI.create("/index")) // Set the redirect location
+//                .build();
+//    }
     @PostMapping("/changePassword")
     @Transactional
     public ResponseEntity<Void> changePassword(
@@ -209,11 +239,18 @@ public class UserController {
         }
         String username = authentication.getName();
 
+        User user = userService.findByUsername(username);
         userService.updateUserPassword(username, newPassword);
-//        userService.updateFirstLoginStatus(username);
+
+        // Jeśli to pierwsze logowanie, zaktualizuj odpowiednie flagi
+        if (user.isFirstLogin()) {
+            user.setFirstLogin(false); // Zmień na false
+            user.setPasswordChanged(true); // Ustaw że hasło zostało zmienione
+            userRepository.save(user);
+        }
 
         return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create("/index")) // Set the redirect location
+                .location(URI.create("/index"))
                 .build();
     }
 
@@ -242,21 +279,33 @@ public class UserController {
 
     @GetMapping("/profile")
     public ResponseEntity<UserDto> getUserProfile(Principal principal) {
-
-        String username = principal.getName();  // Pobranie nazwy użytkownika
+        String username = principal.getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony."));
 
-        // Konwersja User na UserDto, aby nie zwracać wszystkich danych (np. hasła)
+        // Pobierz nazwę sekcji
+        String sectionName = null;
+        if (user.getSection() != null) {
+            sectionName = user.getSection().getSectionName();
+        }
+
+        String teamName = null;
+        if (user.getTeam() != null) {
+            teamName = user.getTeam().getTeamName();
+        }
+
         UserDto userDto = new UserDto(
                 user.getFirstName(),
                 user.getLastName(),
                 user.getUsername(),
-                user.getEmail()
+                user.getEmail(),
+                teamName,
+                sectionName
         );
 
         return ResponseEntity.ok(userDto);
     }
+
 
 
     @PostMapping("/avatar")
@@ -321,23 +370,6 @@ public class UserController {
         return "users"; // Nazwa pliku HTML w folderze templates
     }
 
-//    @GetMapping("/all-users")
-//    public List<UserTableDto> getAllUsers() {
-//        LocalDate today = LocalDate.now(); // Pobieramy dzisiejszą datę
-//
-//        return userRepository.findAll().stream()
-//                .map(user -> new UserTableDto(
-//                        user.getId(),
-//                        user.getFirstName(),
-//                        user.getLastName(),
-//                        getUserEfficiency(user, today), // ✅ Pobieramy efektywność tylko dla dzisiejszej daty
-//                        getNonOperationalTime(user, today), // ✅ Pobieramy czas nieoperacyjny tylko dla dzisiejszej daty
-//                        positionRepository.findById(user.getPosition().getId())
-//                                .map(Position::getPositionName).orElse("Brak"), // ✅ Pobieramy nazwę stanowiska
-//                        getAttendanceStatus(user, today) // ✅ Pobieramy status obecności tylko dla dzisiejszej daty
-//                ))
-//                .toList();
-//    }
 @GetMapping("/all-users")
 public List<UserTableDto> getAllUsers(Principal principal) {
     LocalDate today = LocalDate.now();
@@ -434,6 +466,26 @@ public List<UserTableDto> getAllUsers(Principal principal) {
                 .collect(Collectors.toList());
     }
 
+    @GetMapping("/table/by-section/{sectionId}")
+    public ResponseEntity<List<UserTableDto>> getEmployeesToTableBySection(@PathVariable Long sectionId) {
+        LocalDate today = LocalDate.now();
+        List<User> users = userRepository.findBySection_Id(sectionId);
+
+        List<UserTableDto> result = users.stream()
+                .map(user -> new UserTableDto(
+                        user.getId(),
+                        user.getFirstName(),
+                        user.getLastName(),
+                        getUserEfficiency(user, today),
+                        getNonOperationalTime(user, today),
+                        positionRepository.findById(user.getPosition().getId()).map(Position::getPositionName).orElse("Brak"),
+                        getAttendanceStatus(user, today)
+                ))
+                .toList();
+
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/setup-data")
     public ResponseEntity<Map<String, Object>> getSetupData() {
         Map<String, Object> response = new HashMap<>();
@@ -456,7 +508,6 @@ public List<UserTableDto> getAllUsers(Principal principal) {
         user.setTeam(teamRepository.findById(teamId).orElseThrow());
         user.setSection(sectionRepository.findById(sectionId).orElseThrow());
         user.setPosition(positionRepository.findById(positionId).orElseThrow());
-        user.setFirstLogin(false);
 
         userRepository.save(user);
         return ResponseEntity.ok().build();
@@ -470,7 +521,13 @@ public List<UserTableDto> getAllUsers(Principal principal) {
         Map<String, Object> data = new HashMap<>();
         data.put("username", user.getUsername());
         data.put("firstLogin", user.isFirstLogin());
-        data.put("isCreateByAdmin", user.isCreateByAdmin()); // ⬅️ Dodane
+        data.put("isCreateByAdmin", user.isCreateByAdmin());
+        data.put("passwordChanged", user.isPasswordChanged());
+
+        // Dodajemy informacje o polach, które mogą być null
+        data.put("team", user.getTeam() != null ? user.getTeam().getId() : null);
+        data.put("section", user.getSection() != null ? user.getSection().getId() : null);
+        data.put("position", user.getPosition() != null ? user.getPosition().getId() : null);
 
         return ResponseEntity.ok(data);
     }

@@ -46,10 +46,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/user/by-section/**", "/matrix/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/efficiency/average/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/efficiency/section/non-operational/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/attendance/workmode/summary").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/saved-data/get-report/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/saved-data/summary/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/backlog/export").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/chart/stacked-summary").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/overtime/get-all-overtime", "/api/overtime/${userId}/details").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
 
-                        .requestMatchers(HttpMethod.POST, "/api/messages/send","/api/saved-data/save-single").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/messages/send","/api/saved-data/save-single", "/api/saved-data/deduct-full-day").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/message/{messageId}").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/message/bulk-delete").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/messages/mark-as-read").authenticated() // Wymaga zalogowania
@@ -59,8 +63,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/processes/favorites/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/efficiency/calculate/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/saved-data/save").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/processes/saveNewProcess", "/api/user/addUser",
-                                "/api/user/deleteUsers", "/api/teams", "/api/teams/saveNewTeam", "/api/sections/saveNewSection").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,  "/api/user/addUser", "/api/user/deleteUsers", "/api/teams", "/api/teams/saveNewTeam",
+                                "/api/sections/saveNewSection").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/processes/saveNewProcess").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.POST, "/api/overtime/exportAll").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.POST, "/api/user/avatar").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/user/changePasswordInSettings").authenticated()
                         .requestMatchers(HttpMethod.POST,"/api/attendance/update").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
@@ -69,9 +75,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/user/complete-setup").authenticated()
                         .requestMatchers(HttpMethod.POST, "/matrix/save", "/matrix/saveSingle").authenticated()
 
-                        .requestMatchers(HttpMethod.PUT, "/api/processes/update/**", "/export/processes").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/processes/update/**", "/export/processes").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers("/adminPanel").hasRole("ADMIN")
-                        .requestMatchers("/averageTime").hasRole("ADMIN")
+                        .requestMatchers("/averageTime").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers("/efficiency").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers("/index", "/changePassword", "/settings", "/api/notifications/count").authenticated()
                         .anyRequest().authenticated()
@@ -100,6 +106,7 @@ public class SecurityConfig {
                                 "/api/user/restorePassword",
                                 "/api/processes/favorites/**",
                                 "/api/processes/update/**",
+                                "/api/processes/saveNewProcess",
                                 "/api/saved-data/save",
                                 "/api/efficiency/calculate/**",
                                 "/api/user/avatar",
@@ -127,7 +134,8 @@ public class SecurityConfig {
                                 "/api/user/setup-data",
                                 "/api/user/complete-setup",
                                 "/matrix/save",
-                                "/matrix/saveSingle"
+                                "/matrix/saveSingle",
+                                "/api/saved-data/deduct-full-day"
 
                         )
                 );

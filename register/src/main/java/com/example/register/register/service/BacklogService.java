@@ -1,31 +1,30 @@
 package com.example.register.register.service;
 
+import com.example.register.register.DTO.BacklogExportDto;
 import com.example.register.register.model.Backlog;
 import com.example.register.register.model.BusinessProcess;
+import com.example.register.register.model.SavedData;
 import com.example.register.register.repository.BacklogRepository;
 import com.example.register.register.repository.ProcessRepository;
+import com.example.register.register.repository.SavedDataRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class BacklogService {
 
-    private final BacklogRepository backlogRepository;
-    private final ProcessRepository processRepository;
-
     @Autowired
-    public BacklogService(BacklogRepository backlogRepository, ProcessRepository processRepository) {
-        this.backlogRepository = backlogRepository;
-        this.processRepository = processRepository;
-    }
+    private  BacklogRepository backlogRepository;
+    @Autowired
+    private  ProcessRepository processRepository;
+    @Autowired
+    private SavedDataRepository savedDataRepository;
+
 
     @Transactional
     public void saveBacklog(Map<Long, Integer> backlogData) {
@@ -86,4 +85,5 @@ public class BacklogService {
                         )
                 ));
     }
+
 }

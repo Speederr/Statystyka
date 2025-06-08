@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: 69% 30%;
   gap: 1rem;
-  align-items: start;
+  align-items: center;
 
 }
 
@@ -11,7 +11,7 @@
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  padding: 1.5rem;
+  padding: 10px;
 }
 
 /* Nagłówki w kartach */
@@ -27,30 +27,33 @@
 }
 
 .summary-cards {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;       /* pozwala kartom zawijać się na nowe linie */
+  gap: 1rem;             /* odstęp między kartami */
+  justify-content: center; /* centruje karty w wierszu */
 }
 
 .summary-card {
-    background: #f8f9fa;
-    padding: 1.5rem 2rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    text-align: center;
+  flex: 1 1 160px;       /* rośnie, kurczy się, próbuje mieć min. 200px szerokości */
+  min-width: 160px;      /* nie pozwól, by karta była węższa */
+  padding: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-radius: 0.5rem;
+  background: #fff;
+  text-align: center;
 }
 
+/* Tekst w karcie */
 .summary-card h3 {
-    margin-bottom: 0.5rem;
-    font-size: 1.2rem;
-    color: #333;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .summary-card p {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #007bff;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #007bff;
+  margin: 0;
 }
 .modalsBtn {
     display: flex;
@@ -105,4 +108,105 @@
 .level-4 {
     background-color: #93bf85; /* ciemny zielony */
     color: white;
+}
+.right-sections {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+.vertical-info-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    padding: 20px;
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+/* dropdown */
+.filter-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.dropdown-wrapper {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+}
+
+.multiselect-container {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  flex-grow: 1;
+}
+
+
+.select-box {
+  position: relative;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #8F9092;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 250px;
+  height: 50px;
+  user-select: none;
+
+}
+.select-box i {
+  font-size: 18px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.select-box:hover {
+    cursor: pointer;
+    background: rgb(224, 224, 226);
+    transition: 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.process-checkbox-dropdown {
+  position: absolute;
+  top: 100%; /* 🔹 Ustaw tuż pod select-boxem */
+  left: 0;
+  width: 100%;
+  background-color: #f9f9f9;
+  border-radius: 0 0 10px 10px;
+  z-index: 1000;
+  margin-top: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+
+}
+
+.process-checkbox-dropdown.show {
+  max-height: 350px;
+  min-width: 250px;
+  height: 350px;
+  width: 300px;
+  opacity: 1;
+  overflow-y: auto;
+}
+.process-checkbox-dropdown label {
+  display: block;
+  padding: 8px;
+  cursor: pointer;
+}
+.process-checkbox-dropdown label:hover {
+  background-color: #efefef;
+}
+
+.rotate {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
 }

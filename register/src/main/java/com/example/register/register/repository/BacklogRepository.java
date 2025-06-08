@@ -14,7 +14,6 @@ import java.util.Optional;
 public interface BacklogRepository extends JpaRepository<Backlog, Long> {
     Optional<Backlog> findByProcessAndDate(BusinessProcess process, LocalDate date);
 
-    List<Backlog> findByDate(LocalDate date);
     List<Backlog> findByDateBetween(LocalDate start, LocalDate end);
     List<Backlog> findByProcess_Team_Id(Long teamId);
 

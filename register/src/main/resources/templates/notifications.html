@@ -44,14 +44,14 @@
             </div>
         </div>
         <ul>
-            <li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
                 <a th:href="@{/index}">
                     <i class="bx bx-home"></i>
                     <span class="nav-item">Dashboard</span>
                 </a>
                 <span class="tooltip">Dashboard</span>
             </li>
-            <li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
                 <a th:href="@{/processes}">
                     <i class="bx bx-windows"></i>
                     <span class="nav-item">Procesy</span>

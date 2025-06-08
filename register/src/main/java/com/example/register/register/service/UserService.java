@@ -79,6 +79,12 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
+    public void updateUserTeam(Long userId, Long newTeamId) {
+        userRepository.updateUserTeamById(userId, newTeamId);
+        System.out.println("Updated team for userId: " + userId + " to teamId " + newTeamId);
+    }
+
+    @Transactional
     public void deleteUserById(Long userId) {
         Optional<User> user = userRepository.findById(userId);
 
@@ -106,7 +112,6 @@ public class UserService implements UserDetailsService {
         userRepository.save(user);
     }
 
-
     @Transactional
     public void updateUserPassword(String username, String newPassword) {
         User user = userRepository.findByUsername(username)
@@ -115,11 +120,18 @@ public class UserService implements UserDetailsService {
         String hashedPassword = passwordEncoder.encode(newPassword);
         user.setPassword(hashedPassword);
 
+        // Jeśli to pierwsze logowanie
+        if (user.isFirstLogin()) {
+            user.setFirstLogin(false); // Zmień na false
+            user.setPasswordChanged(true); // Oznacz że hasło zostało zmienione
+        }
+
         userRepository.save(user);
-        entityManager.flush();  // Wymuszenie zapisu
+        entityManager.flush();
         System.out.println("✅ Hasło zmienione i zapisane w bazie dla użytkownika: " + username);
     }
 
+    //funckja dla admina
     public void createUser(String firstName, String lastName, String username, String email,
                            Long roleId, Long teamId, Long sectionId, Long positionId) {
 
@@ -152,12 +164,13 @@ public class UserService implements UserDetailsService {
         String hashedPassword = passwordEncoder.encode(temporaryPassword);
         user.setPassword(hashedPassword);
 
-        user.setFirstLogin(true);
         user.setRole(role);
         user.setTeam(team); // Ustawienie zespołu
         user.setSection(section); // Ustawienie sekcji
         user.setPosition(position);
+        user.setFirstLogin(true);
         user.setCreateByAdmin(true);
+        user.setPasswordChanged(false);
 
         userRepository.save(user); // Zapisz użytkownika w bazie danych
 
@@ -166,7 +179,7 @@ public class UserService implements UserDetailsService {
                 email, firstName, lastName, username, temporaryPassword
         );
     }
-
+    //funkcja dla endpointu /register
     public void createUser(String firstName, String lastName, String username, String email, Long id_role) {
 
         // Generowanie tymczasowego hasła
@@ -184,6 +197,7 @@ public class UserService implements UserDetailsService {
         user.setPassword(hashedPassword);
         user.setFirstLogin(true);
         user.setCreateByAdmin(false);
+        user.setPasswordChanged(false);
 
 
         userRepository.save(user);
@@ -192,7 +206,6 @@ public class UserService implements UserDetailsService {
                 email, firstName, lastName, username, temporaryPassword
         );
     }
-
 
     public String generateTemporaryPassword() {
         // Możesz użyć bardziej złożonego algorytmu, jeśli to konieczne
@@ -203,6 +216,15 @@ public class UserService implements UserDetailsService {
     public boolean isPasswordComplexEnough(String password) {
         String passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&_])[A-Za-z\\d@$!%*?&_]{8,12}$";
         return password.matches(passwordPattern);
+    }
+
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Nie znaleziono użytkownika: " + username));
+    }
+
+    public List<User> findByTeam(Team team) {
+        return userRepository.findAllByTeam(team);
     }
 
 }

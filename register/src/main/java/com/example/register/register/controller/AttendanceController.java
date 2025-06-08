@@ -4,15 +4,20 @@ import com.example.register.register.model.Attendance;
 import com.example.register.register.model.User;
 import com.example.register.register.repository.AttendanceRepository;
 import com.example.register.register.repository.UserRepository;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
+@RequestMapping("/api/attendance/")
 public class AttendanceController {
 
     @Autowired
@@ -21,7 +26,7 @@ public class AttendanceController {
     @Autowired
     private AttendanceRepository attendanceRepository;
 
-    @PostMapping("/api/attendance/update")
+    @PostMapping("/update")
     public ResponseEntity<String> updateAttendance(@RequestParam Long userId, @RequestParam String status) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -45,6 +50,55 @@ public class AttendanceController {
 
         return ResponseEntity.ok("Status zaktualizowany!");
     }
+
+@GetMapping("/workmode/summary")
+public ResponseEntity<Map<String, Integer>> getWorkModeSummary(@RequestParam(required = false) String sectionId, Principal principal) {
+    List<User> users;
+
+    if (sectionId != null && !"all".equalsIgnoreCase(sectionId)) {
+        Long id;
+        try {
+            id = Long.parseLong(sectionId);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().build();
+        }
+        users = userRepository.findBySection_Id(id);
+    } else {
+        // domyślnie: użytkownicy z zespołu zalogowanego użytkownika
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        users = userRepository.findByTeam_Id(currentUser.getTeam().getId());
+    }
+
+    int total = users.size();
+    int office = 0;
+    int homeoffice = 0;
+    LocalDate today = LocalDate.now();
+
+    for (User user : users) {
+        Optional<Attendance> attendanceOpt = attendanceRepository.findByUserAndAttendanceDate(user, today);
+        if (attendanceOpt.isPresent()) {
+            String mode = attendanceOpt.get().getWorkMode();
+            if ("office".equalsIgnoreCase(mode)) {
+                office++;
+            } else if ("homeoffice".equalsIgnoreCase(mode)) {
+                homeoffice++;
+            }
+        }
+    }
+
+
+    Map<String, Integer> result = Map.of(
+            "total", total,
+            "office", office,
+            "homeoffice", homeoffice
+    );
+
+    return ResponseEntity.ok(result);
+}
+
+
+
 
 
 }

@@ -80,51 +80,7 @@ public class ProcessController {
 
         return ResponseEntity.ok(response);
     }
-//    @GetMapping("/processes/{userId}")
-//    public String showProcesses(@PathVariable Long userId, Model model) {
-//        System.out.println("🔵 Wywołano showProcesses() dla userId=" + userId);
-//
-//        Optional<User> userOpt = userRepository.findById(userId);
-//        if (userOpt.isEmpty()) {
-//            System.out.println("❌ Użytkownik o ID " + userId + " nie istnieje!");
-//            model.addAttribute("allProcesses", Collections.emptyList());
-//            model.addAttribute("favoriteProcesses", Collections.emptyList());
-//            return "processes";
-//        }
-//
-//        User user = userOpt.get();
-//        System.out.println("👤 Użytkownik: " + user.getUsername());
-//
-//        Team userTeam = user.getTeam();
-//        if (userTeam == null) {
-//            System.out.println("❌ Użytkownik nie ma przypisanego zespołu!");
-//            model.addAttribute("allProcesses", Collections.emptyList());
-//            model.addAttribute("favoriteProcesses", Collections.emptyList());
-//            return "processes";
-//        }
-//
-//        Long teamId = userTeam.getId();
-//        System.out.println("✅ Użytkownik należy do zespołu ID: " + teamId);
-//
-//        List<BusinessProcess> allProcesses = processService.getProcessesByTeamId(teamId);
-//        System.out.println("📌 Znalezione procesy dla teamId " + teamId + ": " + allProcesses.size());
-//
-//        List<BusinessProcess> favoriteProcesses = processService.getFavoriteProcesses(userId);
-//        List<Long> favoriteProcessIds = favoriteProcesses.stream()
-//                .map(BusinessProcess::getId)
-//                .toList();
-//
-//        List<BusinessProcess> filteredProcesses = allProcesses.stream()
-//                .filter(process -> !favoriteProcessIds.contains(process.getId()))
-//                .toList();
-//
-//        model.addAttribute("allProcesses", filteredProcesses);
-//        model.addAttribute("favoriteProcesses", favoriteProcesses);
-//
-//        return "processes";
-//    }
 
-///stara wersja z principal
     @GetMapping("/processes")
     public String showProcesses(Model model, Principal principal) {
         System.out.println("🔵 Wywołano showProcesses()");
@@ -195,17 +151,15 @@ public class ProcessController {
         return ResponseEntity.ok(processes);
     }
 
-
-    @PostMapping("/saveNewProcess")
-    public String saveNewProcess(@RequestParam("teamId") Long teamId, BusinessProcess process) {
-
-        Team team = teamRepository.findById(teamId)
-                        .orElseThrow(() -> new RuntimeException("Nie znaleziono zespołu: " + teamId));
-
-        process.setTeam(team);
-        processRepository.save(process);
-        return "redirect:/averageTime";
-    }
+@PostMapping("/saveNewProcess")
+@ResponseBody
+public ResponseEntity<String> saveNewProcess(@RequestParam("teamId") Long teamId, @ModelAttribute BusinessProcess process) {
+    Team team = teamRepository.findById(teamId)
+            .orElseThrow(() -> new RuntimeException("Nie znaleziono zespołu: " + teamId));
+    process.setTeam(team);
+    processRepository.save(process);
+    return ResponseEntity.ok("Proces został dodany");
+}
 
     @PutMapping("/update")
     public ResponseEntity<String> updateProcess(@RequestBody BusinessProcess updatedProcess) {
@@ -227,5 +181,32 @@ public class ProcessController {
         model.addAttribute("teams", teamRepository.findAll());
         return "process-form";
     }
+
+    @GetMapping("/by-logged-user")
+    public ResponseEntity<List<Map<String, Object>>> getProcessesForLoggedUser(Principal principal) {
+        String username = principal.getName();
+        User user = userRepository.findByUsername(username).orElse(null);
+
+        if (user == null || user.getTeam() == null) {
+            return ResponseEntity.badRequest().body(Collections.emptyList());
+        }
+
+        List<BusinessProcess> processes = processService.getProcessesByTeamId(user.getTeam().getId());
+
+        // Posortuj alfabetycznie po nazwie procesu i od razu zamapuj potrzebne pola
+        List<Map<String, Object>> response = processes.stream()
+                .sorted(Comparator.comparing(BusinessProcess::getProcessName))
+                .map(p -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", p.getId());
+                    map.put("processName", p.getProcessName());
+                    return map;
+                })
+                .toList();
+
+        return ResponseEntity.ok(response);
+    }
+
+
 
 }

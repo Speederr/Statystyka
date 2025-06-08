@@ -23,10 +23,6 @@
     <script th:src="@{/js/json.js}" defer></script>
     <script th:src="@{/js/script.js}" defer></script>
 
-    <!--        <link rel="stylesheet" href="../static/css/efficiency.css">-->
-    <!--        <link rel="stylesheet" href="../static/css/sidebarCSS.css">-->
-    <!--        <script src="../static/js/json.js" defer></script>-->
-    <!--        <script src="../static/js/script.js" defer></script>-->
 </head>
 
 <body>
@@ -47,14 +43,14 @@
             </div>
         </div>
         <ul>
-            <li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
                 <a th:href="@{/index}">
                     <i class="bx bx-home"></i>
                     <span class="nav-item">Dashboard</span>
                 </a>
                 <span class="tooltip">Dashboard</span>
             </li>
-            <li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
                 <a th:href="@{/processes}">
                     <i class="bx bx-windows"></i>
                     <span class="nav-item">Procesy</span>
@@ -122,27 +118,53 @@
 
 
     <form id="reportForm" th:action="@{/executionReport}" method="get" class="filter-form">
-        <div class="filter-container">
-            <div class="modalsBtn">
-                <button class="mainBtn" type="button" th:onclick="|window.location.href='@{/efficiency}'|">Powrót</button>
+        <div class="filter-container-execution-report">
+            <div class="left-side">
+                <button class="mainBtn return" type="button" th:onclick="|window.location.href='@{/efficiency}'|">Powrót</button>
             </div>
-            <div class="filter-date-container">
-                <div class="date-container">
-                    <label class="date-label" for="startDate">Od:</label>
-                    <input class="date-input" type="date" id="startDate" name="startDate" th:value="${startDate}">
+
+                <div class="center-side">
+                    <div class="filter-row-execution">
+                        <div class="date-container">
+                            <label class="date-label" for="startDate">Od:</label>
+                            <input class="date-input" type="date" id="startDate" name="startDate" th:value="${startDate}">
+                        </div>
+                        <div class="date-container">
+                            <label class="date-label" for="endDate">Do:</label>
+                            <input class="date-input" type="date" id="endDate" name="endDate" th:value="${endDate}">
+                        </div>
+                        <button type="submit" id="applyFilters" class="filter-button">Filtruj</button>
+                    </div>
+                    <div class="filter-row-execution">
+                        <div class="multiselect-container">
+                            <div class="select-box" id="userSelect">
+                                <span id="userLabel">Pracownik</span>
+                                <i class='bx bx-chevron-down' id="userArrow"></i>
+                                <div class="checkbox-dropdown" id="userDropdown"></div>
+                            </div>
+                        </div>
+                        <div class="multiselect-container">
+                            <div class="select-box" id="processSelect">
+                                <span id="processLabel">Proces</span>
+                                <i class='bx bx-chevron-down' id="processArrow"></i>
+                                <div class="section-checkbox-dropdown" id="processDropdown"></div>
+                            </div>
+                        </div>
+                        <div class="multiselect-container overtime">
+                            <div class="select-box" id="overtimeSelect">
+                                <span id="overtimeLabel">Rodzaj czasu pracy</span>
+                                <i class='bx bx-chevron-down' id="overtimeArrow"></i>
+                                <div class="overtime-checkbox-dropdown" id="overtimeDropdown"></div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-                <div class="date-container">
-                    <label class="date-label" for="endDate">Do:</label>
-                    <input class="date-input" type="date" id="endDate" name="endDate" th:value="${endDate}">
-                </div>
-                <div class="date-btn">
-                    <button type="submit" class="filter-button">Filtruj</button>
-                </div>
-            </div>
+        </div>
             <div class="xlsx-btn">
+                <button type="button" id="clearBtn" class="filter-button">Wyczyść</button>
                 <button type="button" id="exportXlsxBtn" class="filter-button">XLSX</button>
             </div>
-        </div>
     </form>
 
     <div class="table-container">
@@ -153,6 +175,8 @@
                 <th>Ilość</th>
                 <th>Data dodania</th>
                 <th>Pracownik</th>
+                <th>Rodzaj czasu pracy</th>
+                <th>Czas(min)</th>
             </tr>
             </thead>
             <tbody>

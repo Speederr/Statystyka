@@ -101,8 +101,20 @@ public class SectionController {
         Set<Long> officeIds = todaysOffice.stream().map(a -> a.getUser().getId()).collect(Collectors.toSet());
         Set<Long> homeofficeIds = todaysHomeoffice.stream().map(a -> a.getUser().getId()).collect(Collectors.toSet());
 
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Nie znaleziono użytkownika"));
+
         if ("all".equalsIgnoreCase(sectionId)) {
-            allEmployees = userRepository.findAllEmployees();
+            if (currentUser.getTeam() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Użytkownik nie jest przypisany do żadnego zespołu"));
+            }
+
+            Long teamId = currentUser.getTeam().getId();
+
+            allEmployees = userRepository.findAllEmployees().stream()
+                    .filter(u -> u.getTeam() != null && u.getTeam().getId().equals(teamId))
+                    .toList();
         } else {
             Long id;
             try {

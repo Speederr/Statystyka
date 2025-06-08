@@ -9,7 +9,6 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -28,14 +27,12 @@ public class SavedData {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "process_id", nullable = false)
+    @JoinColumn(name = "process_id", nullable = true)
     private BusinessProcess process;
 
     @Column(name = "quantity", nullable = false)
     private Long quantity;
 
-    @CreationTimestamp
-    @Temporal(TemporalType.DATE)
     @Column(name = "todays_date", updatable = false)
     private LocalDate todaysDate;
 
@@ -54,6 +51,13 @@ public class SavedData {
     public Long getUserId() {
         return user != null ? user.getId() : userId;
     }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "volume_type", nullable = false, length = 32)
+    private VolumeType volumeType;
+
+    @Column(name="overtime_minutes", nullable=false)
+    private Integer overtimeMinutes = 0;
 
 }
 

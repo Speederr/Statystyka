@@ -59,6 +59,10 @@ public class User {
     @Column(name = "is_create_by_admin", nullable = false)
     private boolean isCreateByAdmin;
 
+    @Column(name = "isPasswordChanged", nullable = false)
+    private boolean passwordChanged = false;
+
+
     @ManyToMany
     @JsonBackReference
     @JoinTable(

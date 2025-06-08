@@ -4,9 +4,6 @@ body {
     margin: 0;
     padding: 0;
 }
-.modalsBtn {
-    display: flex;
-}
 
 /* Ustawienie flexboxa dla tabel */
 .table-wrapper {
@@ -14,6 +11,8 @@ body {
     flex-wrap: wrap;
     justify-content: space-between; /* Rozkłada tabele równomiernie */
     gap: 20px; /* Odstęp między tabelami */
+    height: 670px;
+    overflow-y: auto;
 }
 
 /* Każda tabela zajmuje 50% szerokości */
@@ -66,7 +65,8 @@ input[type=number]::-webkit-outer-spin-button {
 
 .table-container {
     width: 100%;
-    max-height: calc(100vh - 260px);
+    height: 660px;
+/*    max-height: calc(100vh - 260px); */
     overflow-x: auto;
     overflow-y: auto;
     white-space: nowrap;
@@ -75,22 +75,28 @@ input[type=number]::-webkit-outer-spin-button {
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Subtelny cień */
     background: #fff;
 }
-
+.overtime-user-table,
+.overtime-table,
 .summary-table {
     width: max-content;
     min-width: 100%;
     border-collapse: collapse;
 }
+
+.overtime-user-table td,
+.overtime-table td,
 .half-table th, .summary-table td,
 .summary-table th, .summary-table td {
     border: 1px solid #ddd;
-    padding: 12px; /* Większe odstępy */
+    padding: 6px; /* Większe odstępy */
     text-align: center;
     transition: background-color 0.3s ease;
     white-space: nowrap;
     min-width: 120px;
     font-size: 14px;
 }
+.overtime-user-table th,
+.overtime-table th,
 .half-table th,
 .summary-table th {
     background: #007bff; /* Niebieski nagłówek */
@@ -102,23 +108,28 @@ input[type=number]::-webkit-outer-spin-button {
     z-index: 2;
     padding: 14px;
 }
-
+.overtime-user-table thead,
+.overtime-table thead,
 .summary-table thead {
    background: #0056b3; /* Ciemniejszy niebieski dla lepszej separacji */
 }
 
+.overtime-user-table tbody tr:nth-child(odd),
+.overtime-table tbody tr:nth-child(odd),
 #report-table tbody tr:nth-child(odd),
 .half-table tbody tr:nth-child(odd),
 .summary-table tbody tr:nth-child(odd) {
     background-color: #f9f9f9; /* Jasnoszare naprzemienne wiersze */
 }
-
+.overtime-user-table tbody tr:nth-child(even),
+.overtime-table tbody tr:nth-child(even),
 #report-table tbody tr:nth-child(even),
 .half-table tbody tr:nth-child(even),
 .summary-table tbody tr:nth-child(even) {
     background-color: #ffffff; /* Białe naprzemienne wiersze */
 }
-
+.overtime-user-table tbody tr.hover,
+.overtime-table tr:hover,
 .half-table tbody tr:hover,
 .summary-table tbody tr:hover {
     background-color: #d0e4ff; /* Lekko niebieskie podświetlenie na hover */
@@ -136,7 +147,6 @@ input[type=number]::-webkit-outer-spin-button {
 /* Poprawka dla pierwszej kolumny (procesy) */
 .summary-table tbody tr td:first-child {
     font-weight: bold;
-    background: #f1f1f1; /* Szare tło */
     position: sticky;
     left: 0;
     border-right: 2px solid #ddd;
@@ -145,6 +155,15 @@ input[type=number]::-webkit-outer-spin-button {
     background: none;
 }
 
+table tbody tr td i {
+    font-size: 1.8rem;
+    color: black;
+}
+table tbody tr td i:hover {
+   cursor: pointer;
+   color: #007bff;
+   transition: color 0.3s ease;
+}
 .filter-container {
     display: flex;
     align-items: center;
@@ -168,7 +187,9 @@ input[type=number]::-webkit-outer-spin-button {
     gap: 10px; /* 🔹 Odstęp między przyciskami */
 }
 .xlsx-btn {
-    margin-left: auto; /* 🔹 Przesuwa XLSX na prawą stronę */
+    margin-left: auto;
+    display: flex;
+    gap: 5px;
 }
 .date-input {
     height: 35px;
@@ -229,7 +250,13 @@ input[type=number]::-webkit-outer-spin-button {
 
 /* Górne 4 karty */
 .small-card {
-    min-height: 280px;
+   max-height: 280px;
+}
+.card.small-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 20px;
 }
 
 /* Dolne 2 karty na całą szerokość */
@@ -287,6 +314,13 @@ input[type=number]::-webkit-outer-spin-button {
 .chart-container {
     flex: 1;
     max-width: 60%;
+    position: relative;
+    overflow: visible;
+}
+.chart-container-bar{
+    flex: 1;
+    position: relative;
+    height: 170px;
 }
 .large-chart-container {
     display: flex;
@@ -297,17 +331,7 @@ input[type=number]::-webkit-outer-spin-button {
     height: 330px; /* Ograniczamy kontener */
     max-height: 330px;
 }
-.large-chart-container-up {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end; /* 🔹 Przesuwa wykres na dół */
-    align-items: stretch;
-    max-width: 100%;
-    width: 100%;
-    height: 190px;
-    max-height: 190px;
-    padding: 0 10px;
-}
+
 #legendOfficeCount,
 #legendHomeofficeCount,
 #legendNotLoggedCount,
@@ -316,6 +340,7 @@ input[type=number]::-webkit-outer-spin-button {
     margin-left: 5px;
 }
 
+canvas#nonOperationalChart,
 canvas#weeklyChart {
     width: 100% !important;
     height: 100% !important;
@@ -325,7 +350,7 @@ canvas#remoteWorkChart,
 canvas#availabilityChart {
     max-width: 100%;
     height: 170px;
-}
+  }
 canvas#backlogChart {
     max-width: 100%; /* Zapobiega rozciąganiu */
     max-height: 290px;
@@ -349,7 +374,7 @@ cursor: pointer;
 }
 #teamFilter,
 .backlog-date-input {
-    width: 100px;
+    width: 120px;
     height: 25px;
     text-align: center;
     border-radius: 5px;
@@ -378,6 +403,8 @@ cursor: pointer;
     margin: 0;
 
 }
+#remote-chart-title,
+#total-workmode-counter,
 #total-available-counter {
     text-align: left;
 }
@@ -399,3 +426,197 @@ cursor: pointer;
     font-size: 14px;
     cursor: pointer;
 }
+    .custom-tooltip {
+      position: absolute;
+      display: none;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      max-height: 150px;
+      max-width: 250px;
+      overflow-y: auto;
+      font-size: 13px;
+      pointer-events: auto;
+      text-align: left;
+    }
+
+    .tooltip-color-box {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 6px;
+      border-radius: 2px;
+      vertical-align: middle;
+    }
+/* ============================================ FILTRY =============================================== */
+.filter-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    flex-direction: column;
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .multiselect-container {
+    position: relative;
+    width: 180px;
+  }
+    .multiselect-container.overtime {
+      position: relative;
+      width: 200px;
+    }
+
+  .select-box {
+    border: 1px solid #ccc;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .checkbox-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 0 0 6px 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    z-index: 10;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    user-select: none;
+    pointer-events: none; /* blokuje kliknięcia */
+  }
+  .overtime-checkbox-dropdown,
+  .overtime-section-checkbox-dropdown,
+  .section-checkbox-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background-color: #f9f9f9;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      z-index: 9;
+      margin-top: 4px;
+      padding: 5px 0;
+      white-space: nowrap;
+      max-height: 200px;
+      overflow-y: auto;
+      width: max-content;
+      min-width: 100%;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      user-select: auto !important;
+      pointer-events: none; /* blokuje kliknięcia */
+  }
+
+  .overtime-user-checkbox-dropdown,
+  .overtime-checkbox-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background-color: #f9f9f9;
+        border-radius: 0 0 10px 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        z-index: 9;
+        margin-top: 4px;
+        padding: 5px 0;
+        white-space: nowrap;
+        max-height: 200px;
+        overflow-y: auto;
+        width: max-content;
+        min-width: 100%;
+        opacity: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        user-select: none;
+        pointer-events: none; /* blokuje kliknięcia */
+  }
+
+  .overtime-user-checkbox-dropdown.show,
+  .overtime-section-checkbox-dropdown.show,
+  .overtime-checkbox-dropdown.show,
+  .section-checkbox-dropdown.show,
+  .checkbox-dropdown.show {
+      max-height: 200px;
+      opacity: 1;
+      overflow-y: auto;
+      pointer-events: auto; /* przywraca interakcje */
+  }
+
+  .overtime-user-checkbox-dropdown label,
+  .overtime-section-checkbox-dropdown label,
+  .overtime-checkbox-dropdown label,
+  .section-checkbox-dropdown label,
+  .checkbox-dropdown label {
+    display: block;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .overtime-user-checkbox-dropdown label:hover,
+  .overtime-section-checkbox-dropdown label:hover,
+  .overtime-checkbox-dropdown label:hover,
+  .section-checkbox-dropdown label:hover,
+  .checkbox-dropdown label:hover {
+    background-color: #eee;
+  }
+  .rotate {
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
+  }
+.select-box i {
+  font-size: 18px;
+  pointer-events: none; /* zapobiega klikaniu strzałki oddzielnie */
+  user-select: none;
+}
+  .filter-container-overtime-user,
+  .filter-container-execution-report {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .left-side {
+    flex: 0 0 auto;
+  }
+
+  .center-side {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+    .filter-row-execution {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+  .date-container label {
+    font-weight: bold;
+    margin-right: 0.25rem;
+  }
+
+/* ============================================ FILTRY END =============================================== */

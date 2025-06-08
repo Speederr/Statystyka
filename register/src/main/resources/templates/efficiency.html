@@ -24,10 +24,6 @@
     <script th:src="@{/js/script.js}" defer></script>
     <script th:src="@{/js/charts.js}" defer></script>
 
-<!--        <link rel="stylesheet" href="../static/css/efficiency.css">-->
-<!--        <link rel="stylesheet" href="../static/css/sidebarCSS.css">-->
-<!--        <script src="../static/js/json.js" defer></script>-->
-<!--        <script src="../static/js/script.js" defer></script>-->
 </head>
 
 <body>
@@ -48,14 +44,14 @@
             </div>
         </div>
         <ul>
-            <li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
                 <a th:href="@{/index}">
                     <i class="bx bx-home"></i>
                     <span class="nav-item">Dashboard</span>
                 </a>
                 <span class="tooltip">Dashboard</span>
             </li>
-            <li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
                 <a th:href="@{/processes}">
                     <i class="bx bx-windows"></i>
                     <span class="nav-item">Procesy</span>
@@ -126,6 +122,8 @@
         <button class="mainBtn" th:onclick="|window.location.href='@{/backlog}'|">Dodaj backlog</button>
         <button class="mainBtn" th:onclick="|window.location.href='@{/backlogDetails}'|">Backlog - szczegóły</button>
         <button class="mainBtn" th:onclick="|window.location.href='@{/executionReport}'|">Raport wykonania</button>
+        <button class="mainBtn" th:onclick="|window.location.href='@{/averageTime}'|">Edytuj czasy</button>
+        <button class="mainBtn" th:onclick="|window.location.href='@{/overtimeReport}'|">Nadgodziny - podsumowanie</button>
     </div>
 
 <div class="dashboard-container">
@@ -138,7 +136,7 @@
                 <!-- Filtr wyboru sekcji -->
                 <div class="filter-container" id="sectionFilterContainer" style="display: block;">
                     <select id="sectionFilter">
-                        <option value="all">Wszystkie sekcje</option>
+                        <option value="all">Sekcja</option>
                     </select>
                 </div>
             </div>
@@ -162,6 +160,8 @@
             <!-- Liczba pracowników w formacie x/y osób -->
             <p id="total-available-counter"><span id="employeeCount">0/0</span></p>
 
+
+
             <div class="chart-content">
                 <div class="legend">
                     <div class="legend-item">
@@ -181,12 +181,13 @@
                 <div class="chart-container">
                     <canvas id="availabilityChart"></canvas>
                 </div>
+
             </div>
         </section>
 
 
         <section class="card small-card">
-            <h2 class="chartsTitle">Tryb pracy</h2>
+            <h2 class="chartsTitle" id="remote-chart-title">Tryb pracy</h2>
             <!-- Ukryte dane -->
             <p id="officeCount" th:text="${officeCount}" style="display: none;"></p>
             <p id="homeofficeCount" th:text="${homeofficeCount}" style="display: none;"></p>
@@ -197,6 +198,9 @@
             <ul id="homeofficeList" style="display: none;">
                 <li th:each="emp : ${homeofficeEmployees}" th:data-name="${emp.firstName + ' ' + emp.lastName}"></li>
             </ul>
+
+            <!-- Licznik trybu pracy -->
+            <p id="total-workmode-counter"><span id="workModeCount">0/0</span></p>
 
             <div class="chart-content">
                 <div class="legend">
@@ -216,11 +220,17 @@
             </div>
         </section>
 
-
-        <section class="card large-card">
-            <h2 class="chartsTitle">Efektywność i czas nieoperacyjny</h2>
-            <div class="large-chart-container-up">
+        <section class="card small-card">
+            <h2 class="chartsTitle">Efektywność</h2>
+            <div class="chart-container-bar">
                 <canvas id="weeklyChart"></canvas>
+            </div>
+        </section>
+
+        <section class="card small-card">
+            <h2 class="chartsTitle">Czas nieoperacyjny</h2>
+            <div class="chart-container-bar">
+                <canvas id="nonOperationalChart"></canvas>
             </div>
         </section>
 
@@ -235,7 +245,7 @@
                     <label for="endDate" class="backlog-label" >Do:</label>
                     <input type="date" id="endDate" class="backlog-date-input">
 
-                    <button id="filterButton"><i class='bx bx-search'></i></button>
+                    <button id="filterButton" title="Filtruj"><i class='bx bx-search'></i></button>
                 </div>
             </div>
             <div class="large-chart-container">
@@ -250,12 +260,25 @@
             </div>
         </section>
 
+        <!-- Tooltip poza canvasem -->
+        <div id="chartjs-tooltip" class="custom-tooltip">
+            <div class="arrow"></div>
+            <div id="tooltip-content"></div>
+        </div>
+        <div id="chartjs-tooltip-remote" class="custom-tooltip">
+            <div class="arrow"></div>
+            <div id="tooltip-content-remote"></div>
+        </div>
+
+
     </div>
 </div>
 
     <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
 
 </div>
+
+
 
 </body>
 </html>

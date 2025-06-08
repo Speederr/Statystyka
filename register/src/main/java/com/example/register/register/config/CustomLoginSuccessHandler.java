@@ -1,5 +1,6 @@
 package com.example.register.register.config;
 
+import com.example.register.register.model.User;
 import com.example.register.register.repository.UserRepository;
 import com.example.register.register.service.AttendanceService;
 import com.example.register.register.service.UserService;
@@ -30,23 +31,30 @@ public class CustomLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         String username = authentication.getName();
 
-        if (!attendanceService.hasAttendanceForToday(username)) {
-            String clientIp = request.getRemoteAddr();
-            attendanceService.recordAttendanceWithIp(username, clientIp);
-        }
+        String clientIp = request.getRemoteAddr();
+        attendanceService.recordAttendanceAfterLogin(username, clientIp);
 
-        boolean isFirstLogin = userService.isFirstLogin(username);
+
+//        boolean isFirstLogin = userService.isFirstLogin(username);
+        User user = userService.findByUsername(username);
+        boolean isFirstLogin = user.isFirstLogin();
+        boolean createdByAdmin = user.isCreateByAdmin();
 
         if (isFirstLogin) {
-            // 🔁 Nie zmieniamy flagi tutaj – użytkownik musi najpierw zmienić hasło
+            // najpierw zmiana hasła
             getRedirectStrategy().sendRedirect(request, response, "/firstLogin");
+            return;
+        }
+        // sprawdzenie, czy user ma rolę MANAGER
+        boolean isManager = authentication.getAuthorities().stream()
+                .anyMatch(ga -> ga.getAuthority().equals("ROLE_MANAGER"));
+
+        if (isManager) {
+            getRedirectStrategy().sendRedirect(request, response, "/efficiency");
         } else {
             getRedirectStrategy().sendRedirect(request, response, "/index");
         }
     }
-
-
-
 
     private boolean checkIfFirstLogin(Authentication authentication) {
 

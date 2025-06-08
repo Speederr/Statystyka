@@ -42,6 +42,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query(value = "UPDATE users SET section_id = ?2 WHERE id = ?1", nativeQuery = true)
     void updateUserSectionById(Long userId, Long sectionId);
 
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE users SET team_id = ?2 WHERE id = ?1", nativeQuery = true)
+    void updateUserTeamById(Long userId, Long teamId);
+
     @Query("SELECT u.team FROM User u WHERE u.username = :username")
     Team findTeamByUsername(@Param("username") String username);
 
@@ -74,5 +79,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findBySection_Id(Long sectionId);
     List<User> findByTeamId(Long teamId);
+    List<User> findAllByTeam(Team team);
+    List<User> findByTeam_Id(Long teamId);
 
 }

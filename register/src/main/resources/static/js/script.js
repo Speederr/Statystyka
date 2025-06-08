@@ -295,7 +295,52 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+//document.addEventListener("DOMContentLoaded", function () {
+//  if (!window.location.pathname.includes("/index")) return;
+//
+//    const teamSelect = document.getElementById("team");
+//    const sectionSelect = document.getElementById("section");
+//    const positionSelect = document.getElementById("position");
+//    const setupForm = document.getElementById("setupForm");
+//    const modal = document.getElementById("firstLoginModal");
+//
+//    const teamSectionMap = {};
+//
+//    // 🔽 Pobranie danych zespołów, sekcji i stanowisk
+//    fetch("/api/user/setup-data")
+//        .then(res => res.json())
+//        .then(data => {
+//            // Zespoły
+//            data.teams.forEach(team => {
+//                const option = new Option(team.teamName, team.id);
+//                teamSelect.appendChild(option);
+//                teamSectionMap[team.id] = team.sections; // przypisz sekcje do zespołu
+//            });
+//
+//            // Stanowiska
+//            data.positions.forEach(pos => {
+//                const option = new Option(pos.positionName, pos.id);
+//                positionSelect.appendChild(option);
+//            });
+//        })
+//        .catch(err => console.error("❌ Błąd ładowania danych setupu:", err));
+//
+//    // 🔁 Dynamiczna zmiana sekcji przy zmianie zespołu
+//    teamSelect.addEventListener("change", function () {
+//        const selectedTeamId = this.value;
+//        sectionSelect.innerHTML = "<option value=''>Wybierz sekcję</option>";
+//
+//        if (teamSectionMap[selectedTeamId]) {
+//            teamSectionMap[selectedTeamId].forEach(section => {
+//                const option = new Option(section.sectionName, section.id);
+//                sectionSelect.appendChild(option);
+//            });
+//        }
+//    });
 document.addEventListener("DOMContentLoaded", function () {
+    const path = window.location.pathname;
+
+    if (!["/index", "/adminPanel"].some(p => path.includes(p))) return;
 
     const teamSelect = document.getElementById("team");
     const sectionSelect = document.getElementById("section");
@@ -303,9 +348,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const setupForm = document.getElementById("setupForm");
     const modal = document.getElementById("firstLoginModal");
 
+    if (!teamSelect || !sectionSelect || !positionSelect) return;
+
     const teamSectionMap = {};
 
-    // 🔽 Pobranie danych zespołów, sekcji i stanowisk
     fetch("/api/user/setup-data")
         .then(res => res.json())
         .then(data => {
@@ -313,7 +359,7 @@ document.addEventListener("DOMContentLoaded", function () {
             data.teams.forEach(team => {
                 const option = new Option(team.teamName, team.id);
                 teamSelect.appendChild(option);
-                teamSectionMap[team.id] = team.sections; // przypisz sekcje do zespołu
+                teamSectionMap[team.id] = team.sections; // przypisanie sekcji
             });
 
             // Stanowiska
@@ -324,7 +370,6 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .catch(err => console.error("❌ Błąd ładowania danych setupu:", err));
 
-    // 🔁 Dynamiczna zmiana sekcji przy zmianie zespołu
     teamSelect.addEventListener("change", function () {
         const selectedTeamId = this.value;
         sectionSelect.innerHTML = "<option value=''>Wybierz sekcję</option>";
@@ -337,40 +382,45 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+
     // 🔁 Sprawdzenie, czy pokazać modal (pierwsze logowanie)
     fetch("/api/user/whoami")
         .then(res => res.json())
         .then(user => {
-            if (user.firstLogin && !user.isCreateByAdmin) {
+            // Sprawdź czy hasło zostało zmienione i czy pola są puste
+            if (user.passwordChanged && !user.isCreateByAdmin &&
+                (!user.team || !user.section || !user.position)) {
                 modal?.classList.remove("hidden");
             }
         })
         .catch(err => console.error("❌ Błąd pobierania danych użytkownika:", err));
 
-    // 🔁 Obsługa formularza zapisu danych
-    setupForm?.addEventListener("submit", function (e) {
-        e.preventDefault();
+      // 🔁 Obsługa formularza zapisu danych – tylko jeśli istnieje
+      if (setupForm) {
+        setupForm.addEventListener("submit", function (e) {
+          e.preventDefault();
 
-        const formData = new FormData(setupForm);
+          const formData = new FormData(setupForm);
 
-        fetch("/api/user/complete-setup", {
+          fetch("/api/user/complete-setup", {
             method: "POST",
             body: formData
-        })
+          })
             .then(res => {
-                if (res.ok) {
-                    displayMessage('success', 'Dane zostały zaktualizowane!');
-                    modal?.classList.add("hidden");
-                    setTimeout(() => location.reload(), 3000);
-                } else {
-                    displayMessage('error', 'Błąd zapisu danych.');
-                }
+              if (res.ok) {
+                displayMessage('success', 'Dane zostały zaktualizowane!');
+                modal?.classList.add("hidden");
+                setTimeout(() => location.reload(), 3000);
+              } else {
+                displayMessage('error', 'Błąd zapisu danych.');
+              }
             })
             .catch(err => {
-                console.error("❌ Błąd wysyłki danych:", err);
-                displayMessage('error', 'Wystąpił błąd połączenia.');
+              console.error("❌ Błąd wysyłki danych:", err);
+              displayMessage('error', 'Wystąpił błąd połączenia.');
             });
-    });
+        });
+      }
 });
 
 

@@ -6,6 +6,7 @@ import com.example.register.register.repository.TeamRepository;
 import com.example.register.register.repository.UserRepository;
 import com.example.register.register.service.AttendanceService;
 import com.example.register.register.service.BacklogService;
+import com.example.register.register.service.ProcessService;
 import com.example.register.register.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,24 +28,22 @@ import java.util.stream.Collectors;
 @RequestMapping("/")
 public class PageController {
 
-    final private UserService userService;
-    private final UserRepository userRepository;
-    private final ProcessRepository processRepository;
-    private final BacklogService backlogService;
-    private final TeamRepository teamRepository;
-    private final AttendanceService attendanceService;
-
-    public PageController(UserService userService, UserRepository userRepository, ProcessRepository processRepository, BacklogService backlogService, TeamRepository teamRepository, AttendanceService attendanceService) {
-        this.userService = userService;
-        this.userRepository = userRepository;
-        this.processRepository = processRepository;
-        this.backlogService = backlogService;
-        this.teamRepository = teamRepository;
-        this.attendanceService = attendanceService;
-    }
-
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private ProcessRepository processRepository;
+    @Autowired
+    private BacklogService backlogService;
+    @Autowired
+    private TeamRepository teamRepository;
+    @Autowired
+    private AttendanceService attendanceService;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+    @Autowired
+    private ProcessService processService;
 
     @GetMapping("/login")
     public String showLoginForm() {
@@ -92,13 +91,24 @@ public class PageController {
         return "processes";
     }
 
-
     @GetMapping("/adminPanel")
-    public String showAdminPage(Model model) {
-        List<User> users = userService.getAllUsers();
-        model.addAttribute("users", users);
+    public String showAdminPage(Model model, Principal principal) {
+        String username = principal.getName();
+        User loggedUser = userService.findByUsername(username);
+
+        Team team = loggedUser.getTeam();
+        List<User> usersFromTeam = userService.findByTeam(team);
+
+        List<Team> teams = teamRepository.findAll();
+
+        model.addAttribute("users", usersFromTeam);
+        model.addAttribute("teams", teams);
+        model.addAttribute("loggedUser", loggedUser);
+
+
         return "adminPanel";
     }
+
 
     @GetMapping("/firstLogin")
     public String showFirstLoginForm() {
@@ -120,16 +130,34 @@ public class PageController {
         return "profile";
     }
 
-    @GetMapping("/averageTime")
-    public String showAverageTime(Model model) {
-        List<Team> teams = teamRepository.findAll();
-        List<BusinessProcess> processes = processRepository.findAll();
+@GetMapping("/averageTime")
+public String showProcessTimes(Model model, Principal principal) {
+    User loggedUser = userService.findByUsername(principal.getName());
 
-        model.addAttribute("teams", teams);
-        model.addAttribute("processes", processes);
-        model.addAttribute("process", new BusinessProcess()); // ✅ Dodaj pusty obiekt
-        return "averageTime";
+    List<BusinessProcess> processes;
+    if (loggedUser.getRole().getRoleName().equalsIgnoreCase("Manager") ||
+            loggedUser.getRole().getRoleName().equalsIgnoreCase("Coordinator")) {
+
+        processes = processService.getProcessesByTeamId(loggedUser.getTeam().getId());
+
+        // 👇 tylko zespół zalogowanego użytkownika
+        model.addAttribute("teams", List.of(loggedUser.getTeam()));
+        model.addAttribute("isRestricted", true);
+
+    } else {
+        processes = processService.getAllProcesses();
+        model.addAttribute("teams", teamRepository.findAll());
+        model.addAttribute("isRestricted", false);
     }
+
+    model.addAttribute("userId", loggedUser.getId());
+    model.addAttribute("loggedUser", loggedUser);
+    model.addAttribute("processes", processes);
+    model.addAttribute("process", new BusinessProcess());
+
+    return "averageTime";
+}
+
 
 
     @GetMapping("/notifications")
@@ -137,6 +165,7 @@ public class PageController {
         return "notifications";
     }
 
+    @SuppressWarnings("unused")
     @GetMapping("/backlogDetails")
     public String showBacklog(
             @RequestParam(required = false) String startDate,
@@ -241,9 +270,9 @@ public class PageController {
         String clientIp = request.getRemoteAddr();
         String username = principal.getName();
 
-        attendanceService.recordAttendanceWithIp(username, clientIp);
+        attendanceService.recordAttendanceAfterLogin(username, clientIp);
 
-        String workMode = (clientIp.startsWith("192.168.10.")) ? "office" : "homeoffice";
+        String workMode = (clientIp.startsWith("192.168.")) ? "office" : "homeoffice";
         return ResponseEntity.ok(workMode);
     }
 
@@ -259,8 +288,21 @@ public class PageController {
         }
     }
 
+    @GetMapping("/chartDetails")
+    public String getChartDetails() {
+        return "chartDetails";
+    }
 
 
+    @GetMapping("/overtimeReport")
+    public String getOvertimeDetails() {
+        return "overtimeReport";
+    }
 
+    @GetMapping("/userOvertimeDetails/overtime/{userId}")
+    public String showOvertimeDetailsPage(@PathVariable Long userId, Model model) {
+        model.addAttribute("userId", userId);
+        return "UserOvertimeDetails";
+    }
 
 }

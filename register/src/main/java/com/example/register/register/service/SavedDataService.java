@@ -2,10 +2,8 @@ package com.example.register.register.service;
 
 import com.example.register.register.DTO.MixedChartDTO;
 import com.example.register.register.model.*;
-import com.example.register.register.repository.EfficiencyRepository;
-import com.example.register.register.repository.ProcessRepository;
-import com.example.register.register.repository.SavedDataRepository;
-import com.example.register.register.repository.UserRepository;
+import com.example.register.register.repository.*;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,18 +14,18 @@ import java.util.stream.Collectors;
 
 @Service
 public class SavedDataService {
-
     @Autowired
     private SavedDataRepository savedDataRepository;
-
     @Autowired
     private EfficiencyRepository efficiencyRepository;
-
     @Autowired
     private ProcessRepository processRepository;
-
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private AttendanceRepository attendanceRepository;
+
+    final int FULL_DAY = 480;
 
     public void saveData(List<SavedData> dataList) {
         if (dataList.isEmpty()) {
@@ -112,16 +110,6 @@ public class SavedDataService {
     return Math.round(efficiency * 100.0) / 100.0; // Zaokrąglenie do 2 miejsc po przecinku
     }
 
-//    public List<DailySummaryDTO> getSummaryForUser(Long userId) {
-//        return savedDataRepository.getStackedChartData(userId).stream()
-//                .map(obj -> new DailySummaryDTO(
-//                        (LocalDate) obj[0],
-//                        (String) obj[1],
-//                        (Long) obj[2]
-//                ))
-//                .toList();
-//    }
-
     public List<MixedChartDTO> getMixedChartForUser(Long userId) {
         // Dane z saved_data
         List<Object[]> barData = savedDataRepository.getStackedChartData(userId);
@@ -146,4 +134,37 @@ public class SavedDataService {
 
 
 
+    @Transactional
+    public void deductFullDay(Long userId, LocalDate date) {
+        int offRaw = savedDataRepository
+                .sumOvertimeByUserAndDateAndType(userId, VolumeType.OVERTIME_OFF);
+
+        if (offRaw <= 0) {
+            return;
+        }
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found: " + userId ));
+
+        SavedData sd = new SavedData();
+        sd.setUser(userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId)));
+        sd.setProcess(null);
+        sd.setQuantity(0L);
+        sd.setTodaysDate(date);
+        sd.setVolumeType(VolumeType.DEDUCT_FULL_DAY);
+        sd.setOvertimeMinutes(FULL_DAY);
+        savedDataRepository.save(sd);
+
+        Attendance attendance = attendanceRepository.findByUserAndAttendanceDate(user, date).orElseGet(() -> {
+            Attendance a = new Attendance();
+            a.setUser(user);
+            a.setAttendanceDate(date);
+            a.setWorkMode(null);
+            return a;
+        });
+
+        attendance.setStatus("leave");
+        attendanceRepository.save(attendance);
+
+    }
+    
 }

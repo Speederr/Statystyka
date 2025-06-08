@@ -7,17 +7,11 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-
-public class SavedDataDto {
-
-    private String process;
-    private Long quantity;
-    private LocalDate date;
-    private String employee;
-
-
-}
+public record SavedDataDto(
+        String processName,
+        long quantity,
+        LocalDate todaysDate,
+        String username,
+        String volumeType,
+        int overtimeMinutes
+) {}

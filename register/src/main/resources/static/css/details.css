@@ -3,6 +3,13 @@
     justify-content: space-between;
     margin-bottom: 30px;
 }
+.filter-data-container-chart {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
 .filter-data-container {
     display: flex;
     justify-content: space-between;
@@ -25,9 +32,19 @@
     transition: 0.3s ease;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+.table-wrapper {
+  max-height: 700px;
+  overflow-y: auto;    /* pokazuje pionowy pasek przewijania */
+}
 table {
     width: 100%;
     border-collapse: collapse;
+}
+.table-wrapper thead th {
+  position: sticky;
+  top: 0;
+  background: #007bff;
+  z-index: 1;
 }
 th, td {
     border: 1px solid #ddd;
@@ -45,7 +62,7 @@ th {
     position: sticky;
     top: 0;
     text-align: center;
-    z-index: 2;
+    z-index: 1;
     padding: 14px;
 }
 table thead {
@@ -76,16 +93,28 @@ table tbody tr td i:hover {
   display: inline-block;
   width: 250px;
 }
+
 .select-box {
-  height: 50px;
-  border: 1px solid #8F9092;
-  border-radius: 10px;
+  position: relative;
   padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #8F9092;
   background: rgba(255, 255, 255, 0.3);
   cursor: pointer;
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 250px;
+  height: 50px;
+  user-select: none;
+
+}
+.select-box i {
+  font-size: 18px;
+  pointer-events: none;
   user-select: none;
 }
+
 .select-box:hover {
     cursor: pointer;
     background: rgb(224, 224, 226);
@@ -95,32 +124,99 @@ table tbody tr td i:hover {
 .select-box #selectedLabel {
     line-height: 28px;
 }
-.select-box::after {
-  content: "\25BE"; /* strzałka */
-  position: absolute;
-  right: 15px;
-  top: 12px;
-  font-size: 14px;
-}
+.process-checkbox-dropdown,
+.section-checkbox-dropdown,
 .checkbox-dropdown {
-  display: none;
   position: absolute;
-  background-color: #f9f9f9;
+  top: 100%; /* 🔹 Ustaw tuż pod select-boxem */
+  left: 0;
   width: 100%;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
+  background-color: #f9f9f9;
   border-radius: 0 0 10px 10px;
   z-index: 1000;
-  margin-top: 5px;
+  margin-top: 4px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+
 }
+
+.section-checkbox-dropdown.show {
+  max-height: 200px;
+  opacity: 1;
+}
+.checkbox-dropdown.show {
+  max-height: 200px;
+  opacity: 1;
+  overflow-y: auto;
+}
+.process-checkbox-dropdown.show {
+  max-height: 200px;
+  min-width: 250px;
+  width: 300px;
+  opacity: 1;
+  overflow-y: auto;
+}
+.process-checkbox-dropdown label,
+.section-checkbox-dropdown label,
 .checkbox-dropdown label {
   display: block;
   padding: 8px;
   cursor: pointer;
 }
+.process-checkbox-dropdown label:hover,
+.section-checkbox-dropdown label:hover,
 .checkbox-dropdown label:hover {
   background-color: #efefef;
 }
 
+.rotate {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
+
+.card.extra-large-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    height: 75vh;
+}
+
+.execution-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.date-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-btn {
+    background: black;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+    margin-top: 20px;
+}
+canvas#executionChart {
+    max-width: 100%; /* Zapobiega rozciąganiu */
+    max-height: 600px;
+    height: 600px;
+}

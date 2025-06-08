@@ -33,4 +33,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
     List<Attendance> findByAttendanceDateAndWorkMode(LocalDate date, String workMode);
 
+    int countByUser_UsernameAndAttendanceDate(String username, LocalDate date);
+
 }

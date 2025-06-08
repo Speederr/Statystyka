@@ -16,55 +16,15 @@ import java.util.Optional;
 @Service
 public class AttendanceService {
 
-    private final AttendanceRepository attendanceRepository;
-    private final UserRepository userRepository;
-
     @Autowired
-    public AttendanceService(AttendanceRepository attendanceRepository, UserRepository userRepository) {
-        this.attendanceRepository = attendanceRepository;
-        this.userRepository = userRepository;
-    }
+    private AttendanceRepository attendanceRepository;
+    @Autowired
+    private UserRepository userRepository;
 
-    public boolean hasAttendanceForToday(String username) {
-        return attendanceRepository.countByUsernameAndDate(username, LocalDate.now()) > 0;
-    }
-
-
-    public void recordAttendance(String username, LocalDate date, String status, String workMode) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Użytkownik nie znaleziony: " + username));
-
-        Optional<Attendance> optional = attendanceRepository.findByUserAndAttendanceDate(user, date);
-
-        Attendance attendance;
-        if (optional.isPresent()) {
-            attendance = optional.get(); // ✅ aktualizujemy istniejący rekord
-        } else {
-            attendance = new Attendance(user, date, status, workMode); // ⬅️ nowy jeśli nie ma
-        }
-
-        attendance.setStatus(status);
-        attendance.setWorkMode(workMode);
-        attendanceRepository.save(attendance);
-    }
-
-
-    public void recordAttendanceWithIp(String username, String clientIp) {
-        String workMode = (clientIp.startsWith("192.168.*")) ? "office" : "homeoffice";
-        recordAttendance(username, LocalDate.now(), "present", workMode);
-    }
-
-    public int countPresentEmployees(LocalDate date) {
-        return attendanceRepository.countPresentEmployees(date);
-    }
-
-    public int countEmployeesOnLeave(LocalDate date) {
-        return attendanceRepository.countEmployeesOnLeave(date);
-    }
 
     public List<Attendance> getPresentEmployees(LocalDate date, Principal principal) {
         User manager = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("Kierownik nie znaleziony."));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         Long teamId = manager.getTeam().getId();
 
@@ -73,7 +33,7 @@ public class AttendanceService {
 
     public List<Attendance> getEmployeesOnLeave(LocalDate date, Principal principal) {
         User manager = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("Kierownik nie znaleziony"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         Long teamId = manager.getTeam().getId();
 
@@ -97,8 +57,39 @@ public class AttendanceService {
         }
     }
 
+    public void recordAttendanceAfterLogin(String username, String clientIp) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Użytkownik nie znaleziony: " + username));
+
+        LocalDate today = LocalDate.now();
+        Optional<Attendance> optional = attendanceRepository.findByUserAndAttendanceDate(user, today);
+
+        String workMode = clientIp.startsWith("192.168.") ? "office" : "homeoffice";
+
+        if (optional.isPresent()) {
+            Attendance attendance = optional.get();
+
+            // jeśli był oznaczony jako "notloggedin", zaktualizuj na "present"
+            if ("notloggedin".equalsIgnoreCase(attendance.getStatus())) {
+                attendance.setStatus("present");
+                attendance.setWorkMode(workMode);
+                attendanceRepository.save(attendance);
+            }
+
+        } else {
+            // jeśli nie było wpisu, dodaj nowy
+            Attendance attendance = new Attendance();
+            attendance.setUser(user);
+            attendance.setAttendanceDate(today);
+            attendance.setStatus("present");
+            attendance.setWorkMode(workMode);
+            attendanceRepository.save(attendance);
+        }
+    }
+
+
     // 🔄 Codzienne przypisanie "notloggedin" dla użytkowników bez wpisu
-    @Scheduled(cron = "0 */3 * * * *") // co 15 minut
+    @Scheduled(cron = "0 */3 * * * *") // co 3 minuty
     public void autoMarkNotLoggedUsers() {
         markNotLoggedUsers(LocalDate.now());
     }

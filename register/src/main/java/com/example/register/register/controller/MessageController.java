@@ -127,7 +127,8 @@ public class MessageController {
         System.out.println("📩 E-mail użytkownika: " + email);
 
         // Pobranie wiadomości na podstawie e-maila
-        List<UserMessage> receivedMessages = messageRepository.findByRecipient(email);
+//        List<UserMessage> receivedMessages = messageRepository.findByRecipient(email);
+        List<UserMessage> receivedMessages = messageRepository.findByRecipientAndDeletedByRecipientFalse(email);
         System.out.println("📥 Odebrane wiadomości: " + receivedMessages.size());
 
         // 🔹 Modyfikujemy dane przed zwróceniem
@@ -170,7 +171,7 @@ public class MessageController {
         System.out.println("📤 Pobieranie wysłanych wiadomości dla: " + currentEmail);
 
         // Pobranie wysłanych wiadomości na podstawie e-maila nadawcy
-        List<UserMessage> sentMessages = messageRepository.findBySender(currentEmail);
+        List<UserMessage> sentMessages = messageRepository.findBySenderAndDeletedBySenderFalse(currentEmail);
 
         // 🔹 Mapowanie danych przed zwróceniem do frontendu
         List<Map<String, Object>> response = sentMessages.stream()
@@ -225,23 +226,6 @@ public class MessageController {
         return ResponseEntity.ok(Map.of("success", "Wiadomość została usunięta."));
 
     }
-
-
-//    @DeleteMapping("/bulk-delete")
-//    public ResponseEntity<?> deleteMultipleMessages(@RequestBody List<Long> messageIds) {
-//        if(messageIds.isEmpty()) {
-//            return ResponseEntity.badRequest().body("{\"error\": \"Nie podano żadnych ID do usunięcia.\"}");
-//        }
-//
-//        List<UserMessage> messageToDelete = messageRepository.findAllById(messageIds);
-//
-//        if(messageToDelete.isEmpty()) {
-//            return ResponseEntity.status(404).body("{\"error\": \"Nie znaleziono wiadomości do usunięcia.\"}");
-//        }
-//
-//        messageRepository.deleteAll(messageToDelete);
-//        return ResponseEntity.ok().body("{\"success\": \"Zaznaczone wiadomości zostały usunięte.\"}");
-//    }
 
     @DeleteMapping("/bulk-delete")
     public ResponseEntity<?> deleteMultipleMessages(@RequestBody List<Long> messageIds, Principal principal) {

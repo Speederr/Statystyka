@@ -46,6 +46,7 @@ tbody tr:hover {
     color: black;
     text-align: center;
     transition: all 0.3s ease-in-out;
+    width: 95%;
 }
 
 .time-input:focus {
@@ -63,9 +64,11 @@ tbody tr:hover {
     cursor: text;
     background-color: white; /* Opcjonalnie, przywrócenie domyślnego tła */
 }
-
+.mainTableContainer {
+    width: 100%;
+}
 .tableContainer {
-    height: 70vh;
+    height: 65vh;
     overflow-y: auto;
 }
 #form-process-container {
@@ -107,7 +110,7 @@ input {
     border: none;
     color: black;
     text-align: center;
-    width: 95%;
+    width: 100%;
 }
 #averageTime {
     height: 40px;

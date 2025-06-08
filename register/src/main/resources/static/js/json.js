@@ -148,82 +148,145 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("form-process-container");
+
+    if (form) {
+        form.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+
+            fetch("/api/processes/saveNewProcess", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Błąd zapisu");
+                return response.text();
+            })
+            .then(message => {
+                // ✅ Wyświetl komunikat
+                displayMessage("success", "Pomyślnie dodano proces!");
+
+                // ✅ Wyczyść formularz
+                form.reset();
+
+                // ✅ Zamknij modal
+                document.getElementById("closeProcessModalBtn").click();
+
+                // ✅ Odśwież stronę po krótkim czasie
+                setTimeout(() => location.reload(), 2200);
+            })
+            .catch(error => {
+                displayMessage("error", "Błąd podczas komunikacji z serwerem.");
+            });
+        });
+    }
+});
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 async function calculateAndSave() {
-    const userId = document.getElementById('userId').value.trim();
-    if (!userId) {
-        alert("Brak ID użytkownika.");
+  const userId = document.getElementById('userId').value.trim();
+  if (!userId) {
+    alert("Brak ID użytkownika.");
+    return;
+  }
+
+  // Helper – odczyt zaznaczonego radiobuttona
+  function getSelectedVolumeType() {
+    const sel = document.querySelector('input[name="volumeType"]:checked');
+    return sel ? sel.value : 'BASIC';
+  }
+  const selectedVolumeType = getSelectedVolumeType();
+
+  // Pobranie czasu nadgodzin, jeśli dotyczy
+   let overtimeMinutes = 0;
+    if (selectedVolumeType !== 'BASIC') {
+      const otInput = document.getElementById('overtimeMinutes');
+      overtimeMinutes = otInput && +otInput.value > 0 ? +otInput.value : 0;
+
+      if (!overtimeMinutes || overtimeMinutes <= 0) {
+        displayMessage("error", "Uzupełnij czas nadgodzin przed dodaniem wolumenu!");
         return;
+      }
     }
 
-    // Zbierz dane z formularza
-    const inputs = document.querySelectorAll('input[data-process-id]');
-    const processVolumes = {};   // Dane do obliczenia efektywności
-    const dataList = [];         // Dane do zapisania wolumenów
-    const today = new Date().toISOString().split("T")[0]; // Dzisiejsza data
+  // Zbierz dane z formularza
+  const inputs = document.querySelectorAll('input[data-process-id]');
+  const processVolumes = {};   // do obliczenia efektywności
+  const dataList = [];         // do zapisu wolumenów
+  const today = new Date().toISOString().split("T")[0];
 
-    inputs.forEach(input => {
-        const processId = input.getAttribute('data-process-id');
-        const quantity = input.value.trim();
+  inputs.forEach(input => {
+    const processId = Number(input.getAttribute('data-process-id'));
+    const quantity  = input.value.trim();
 
-        if (quantity !== "" && /^\d+$/.test(quantity) && Number(quantity) > 0) {
-            // Dodaj do obiektu JSON dla efektywności
-            processVolumes[processId] = parseInt(quantity, 10);
+    if (quantity !== "" && /^\d+$/.test(quantity) && +quantity > 0) {
+      // do licznika efektywności
+      processVolumes[processId] = +quantity;
+      // do bulk save
+      dataList.push({
+        user_id:       +userId,
+        process_id:    processId,
+        quantity:      +quantity,
+        todaysDate:    today,
+        volumeType:    selectedVolumeType,
+        overtimeMinutes // do zapisu, backend musi to odebrać
+      });
+    }
+  });
 
-            // Dodaj do listy dla zapisu wolumenów
-            dataList.push({
-                user_id: Number(userId),
-                process_id: Number(processId),
-                quantity: Number(quantity),
-                todaysDate: today
-            });
-        }
-    });
+  if (Object.keys(processVolumes).length === 0) {
+    displayMessage("error", "Brak wprowadzonych danych!");
+    return;
+  }
 
-    if (Object.keys(processVolumes).length === 0) {
-        displayMessage("error", "Brak wprowadzonych danych!");
-        return;
+  try {
+      // 🔹 Krok 1: Oblicz efektywność – wysyłamy obiekt EfficiencyRequest
+      const effRequest = {
+        processVolumes: processVolumes,
+        volumeType: selectedVolumeType,
+        overtimeMinutes: overtimeMinutes
+      };
+
+      // 🔹 Krok 2: Zapisz wolumeny
+      const saveResponse = await fetch("/api/saved-data/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataList)
+      });
+      if (saveResponse.ok) {
+        displayMessage("success", "Zapisano wolumen!");
+        clearInputFields();
+        loadOvertimeSummary(userId);
+        setTimeout(() => location.reload(), 3000);
+      } else {
+        throw new Error("Błąd podczas zapisywania wolumenów.");
+      }
+
+    const efficiencyResponse = await fetch(
+      `/api/efficiency/calculate/${userId}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(effRequest)
+      }
+    );
+    if (!efficiencyResponse.ok) {
+      throw new Error("Błąd podczas obliczania efektywności.");
     }
 
-    try {
-        // 🔹 Krok 1: Oblicz efektywność
-        const efficiencyResponse = await fetch(`/api/efficiency/calculate/${userId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(processVolumes)
-        });
-
-        if (efficiencyResponse.ok) {
-//            console.log("Efektywność została pomyślnie obliczona!");
-        } else {
-            throw new Error("Błąd podczas obliczania efektywności.");
-        }
-
-        // 🔹 Krok 2: Zapisz wolumeny
-        const saveResponse = await fetch("/api/saved-data/save", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(dataList)
-        });
-
-        if (saveResponse.ok) {
-            displayMessage("success", "Zapisano wolumen!");
-            clearInputFields();
-        } else {
-            throw new Error("Błąd podczas zapisywania wolumenów.");
-        }
-    } catch (error) {
-        console.error('Błąd:', error);
-        displayMessage("error", "Wystąpił błąd podczas operacji. Spróbuj ponownie.");
-    }
+  } catch (error) {
+    console.error('Błąd:', error);
+    displayMessage("error", "Wystąpił błąd podczas operacji. Spróbuj ponownie.");
+  }
 }
+
+
 
 document.addEventListener("DOMContentLoaded", function () {
     const exportButton = document.getElementById('exportToXLSX');
@@ -315,6 +378,8 @@ function fetchUserProfile() {
             document.getElementById('user-lastname').textContent = data.lastName || 'Brak danych';
             document.getElementById('user-login').textContent = data.username || 'Brak danych';
             document.getElementById('user-email').textContent = data.email || 'Brak danych';
+            document.getElementById('user-team').textContent = data.teamName || 'Brak danych';
+            document.getElementById('user-section').textContent = data.sectionName || 'Brak danych';
         })
         .catch(error => {
             console.error('Wystąpił błąd:', error);
@@ -415,6 +480,31 @@ if (profileImageUpload) {
 
 // Wywołanie fetchUserAvatar przy załadowaniu strony
 window.addEventListener("DOMContentLoaded", fetchUserAvatar);
+
+document.getElementById("deleteButton")?.addEventListener("click", function (event) {
+    event.preventDefault();
+
+    const form = document.getElementById("users-form");
+    const formData = new FormData(form);
+
+    fetch("/api/user/deleteUsers", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.text().then(msg => ({ status: res.status, msg })))
+    .then(({ status, msg }) => {
+        const type = status === 200 ? "success" : "error";
+        displayMyMessage(type, msg);
+
+        if (status === 200) {
+            setTimeout(() => location.reload(), 2500); // opcjonalne odświeżenie
+        }
+    })
+    .catch(err => {
+        displayMyMessage("error", "❌ Błąd połączenia z serwerem.");
+    });
+});
+
 
 
 
@@ -665,7 +755,7 @@ function displayMyMessage(type, message) {
 
     setTimeout(() => {
         div.style.display = 'none';
-    }, 3000);
+    }, 5000);
 }
 
 
@@ -717,7 +807,7 @@ document.addEventListener("DOMContentLoaded", function () {
        });
    }
 });
-
+////////////////////////////////////////////////////////// filtr na endpoincie notifications //////////////////////////////////////////////////////////
 document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.getElementById("search-userMessages");
     const messageList = document.getElementById("message-list");
@@ -745,8 +835,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
-
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////// filtr do endpointu adminPanel //////////////////////////////////////////////////////////
 document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.getElementById("search-user-messages");
     const clearIcon = document.getElementById("clear-search");
@@ -783,7 +873,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1217,53 +1307,71 @@ document.addEventListener("change", function (event) {
 });
 ////////////////////////////////// ZAPISYWANIE WOLUMENU PO KLIKNIĘCIU NA PLUS + ///////////////////////////////////////
 document.addEventListener("DOMContentLoaded", function () {
-    // Pobranie userId z ukrytego pola input, jeśli istnieje
-    const userIdElement = document.getElementById('userId');
-    const userId = userIdElement ? userIdElement.value.trim() : null;
+  const userIdElement = document.getElementById('userId');
+  const userId = userIdElement ? userIdElement.value.trim() : null;
+  if (!userId) return;
 
-    if (!userId) {
-//        console.warn("⚠️ Brak ID użytkownika – funkcjonalność zapisu może być ograniczona.");
-        return; // Jeśli userId nie istnieje, przerywamy dalsze operacje, ale nie blokujemy całego skryptu
-    }
+  // Helper – odczyt zaznaczonego radiobuttona
+  function getSelectedVolumeType() {
+    const sel = document.querySelector('input[name="volumeType"]:checked');
+    return sel ? sel.value : 'BASIC';
+  }
 
-    // Znajdź wszystkie przyciski "+"
-    document.querySelectorAll(".add-efficiency").forEach(button => {
-        button.addEventListener("click", function () {
-            let input = this.closest(".form-floating").querySelector("input");
-            let processId = input.getAttribute("data-process-id");
-            let quantity = input.value;
+  document.querySelectorAll(".add-efficiency").forEach(button => {
+    button.addEventListener("click", async function () {
+      const input      = this.closest(".form-floating").querySelector("input");
+      const processId  = Number(input.getAttribute("data-process-id"));
+      const quantity   = Number(input.value);
 
-            if (!quantity || quantity <= 0) {
-                displayMessage("error", "Brak wprowadzonych danych!");
-                return;
-            }
+      if (!quantity || quantity <= 0) {
+        displayMessage("error", "Brak wprowadzonych danych!");
+        return;
+      }
 
-            let requestData = new URLSearchParams();
-            requestData.append("userId", userId);  // Używamy dynamicznego userId
-            requestData.append("processId", processId);
-            requestData.append("quantity", quantity);
+      const volumeType       = getSelectedVolumeType();
+      // Pobranie czasu nadgodzin, jeśli to nie BASIC
+     let overtimeMinutes = 0;
+      if (volumeType !== 'BASIC') {
+        const otInput = document.getElementById('overtimeMinutes');
+        overtimeMinutes = otInput ? Number(otInput.value) : 0;
 
-            fetch("/api/saved-data/save-single", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: requestData
-            })
-            .then(response => response.text())
-            .then(data => {
-                console.log(data);
-                displayMessage("success", "Zapisano wolumen!");
+        if (!overtimeMinutes || overtimeMinutes <= 0) {
+          displayMessage("error", "Uzupełnij czas nadgodzin przed dodaniem wolumenu!");
+          return;
+        }
+      }
 
-                // 🔄 Odświeżenie strony po 3 sekundach
-                setTimeout(() => {
-                    location.reload();
-                }, 3000);
-            })
-            .catch(error => console.error("❌ Błąd zapisu:", error));
+      // Zbuduj payload jako JSON
+      const payload = {
+        userId,
+        processId,
+        quantity,
+        volumeType,
+        overtimeMinutes
+      };
+
+      try {
+        const res = await fetch("/api/saved-data/save-single", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
         });
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const text = await res.text();
+        console.log(text);
+        displayMessage("success", "Zapisano wolumen!");
+        loadOvertimeSummary(userId);
+        setTimeout(() => location.reload(), 3000);
+      } catch (err) {
+        console.error("❌ Błąd zapisu:", err);
+        displayMessage("error", "Nie udało się zapisać danych.");
+      }
     });
+  });
 });
+
 
 
 ////////////////////////////////////////////////////// WCZYTAJ WYKRES I FILTRUJ ///////////////////////////////////////
@@ -1309,7 +1417,7 @@ function loadAvailability(sectionId = "all") {
         fetch('/api/sections')
             .then(response => response.json())
             .then(data => {
-                sectionSelect.innerHTML = `<option value="all">Wszyscy użytkownicy</option>`;
+                sectionSelect.innerHTML = `<option value="all">Sekcja</option>`;
                 data.forEach(section => {
                     let option = document.createElement("option");
                     option.value = section.id;
@@ -1330,247 +1438,361 @@ function loadAvailability(sectionId = "all") {
     populateSectionSelect();
 });
 
+
+// Załóżmy, że filter.js zawiera uniwersalne funkcje eksportowane globalnie
 document.addEventListener("DOMContentLoaded", function () {
   if (!window.location.pathname.includes("/details")) return;
 
-  // --- ZMIENNE
-  const sectionSelect = document.getElementById("sectionDetailsFilter");
+    const {
+      getSelectedUserIds,
+      getSelectedSectionIds,
+      renderSectionCheckboxes,
+      renderEmployeeCheckboxes,
+      setupDropdownToggle,
+      loadUsersBySectionIds,
+      resetAllFilters
+    } = window.filters;
+
+
+  const sectionDropdown = document.getElementById("sectionDropdown");
+  const sectionLabel = document.getElementById("sectionLabel");
+  const sectionArrowIcon = document.getElementById("sectionArrowIcon");
+
   const checkboxContainer = document.getElementById("checkboxDropdown");
-  const tableBody = document.querySelector("#employeeTable tbody");
   const selectedLabel = document.getElementById("selectedLabel");
+  const arrowIcon = document.getElementById("arrowIcon");
 
-  // --- FUNKCJE
-  function getSelectedUserIds() {
-    return Array.from(document.querySelectorAll(".employee-checkbox:checked")).map(cb => cb.value);
-  }
+  const sectionCustomSelect = document.getElementById("sectionCustomSelect");
+  const customSelect = document.getElementById("customSelect");
+  const tableBody = document.querySelector("#employeeTable tbody");
 
+  // 🔹 Renderowanie tabeli użytkowników
   function renderUserTable(users) {
     tableBody.innerHTML = "";
     users.forEach(user => {
       const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>
-            <a href="/userDetails/${user.id}" title="Szczegóły użytkownika">
-              <i class='bx bxs-user-detail'></i>
-            </a>
-        </td>
-        <td>${user.firstName}</td>
-        <td>${user.lastName}</td>
-        <td>${user.efficiency !== null ? user.efficiency + "%" : "Brak danych"}</td>
-        <td>${user.nonOperational !== null ? user.nonOperational + " godz." : "Brak danych"}</td>
-        <td>${user.positionName ?? "Brak"}</td>
-        <td>
-          <select class="attendance-status" data-user-id="${user.id}">
-            <option value="present" ${user.attendanceStatus === "present" ? "selected" : ""}>Obecny</option>
-            <option value="leave" ${user.attendanceStatus === "leave" ? "selected" : ""}>Urlop</option>
-            <option value="notloggedin" ${user.attendanceStatus === "notloggedin" ? "selected" : ""}>Niezalogowany</option>
-          </select>
-        </td>`;
+            row.innerHTML = `
+              <td><a href="/userDetails/${user.id}" title="Szczegóły użytkownika"><i class='bx bxs-user-detail'></i></a></td>
+              <td>${user.firstName}</td>
+              <td>${user.lastName}</td>
+              <td>${user.efficiency != null ? user.efficiency + "%" : "Brak danych"}</td>
+              <td>${user.nonOperational != null ? user.nonOperational + " godz." : "Brak danych"}</td>
+              <td>${user.positionName || "Brak"}</td>
+              <td>
+                <select class="attendance-status" data-user-id="${user.id}">
+                  <option value="present" ${user.attendanceStatus === "present" ? "selected" : ""}>Obecny</option>
+                  <option value="leave" ${user.attendanceStatus === "leave" ? "selected" : ""}>Nieobecny</option>
+                  <option value="notloggedin" ${user.attendanceStatus === "notloggedin" ? "selected" : ""}>Niezalogowany</option>
+                </select>
+              </td>`;
       tableBody.appendChild(row);
     });
   }
 
-  function handleFilterChange() {
-    const sectionId = sectionSelect.value;
-    const selectedUserIds = getSelectedUserIds();
-    selectedLabel.textContent = selectedUserIds.length > 0 ? `${selectedUserIds.length} wybranych` : "Wszyscy pracownicy";
+      // 🔹 Obsługa zmiany filtrów
+    function handleFilterChange() {
+      const sectionIds = getSelectedSectionIds();
+      const userIds = getSelectedUserIds();
 
+      sectionLabel.textContent = sectionIds.length > 0
+        ? `${sectionIds.length} wybranych`
+        : "Sekcja";
+
+      selectedLabel.textContent = userIds.length > 0
+        ? `${userIds.length} wybranych`
+        : "Pracownik";
+
+      if (userIds.length > 0) {
+        // 🟢 Wyświetl tylko zaznaczonych pracowników
+        fetch(`/api/user/filter-by-ids?ids=${userIds.join(",")}`)
+          .then(res => res.json())
+          .then(renderUserTable);
+      } else if (sectionIds.length > 0) {
+        // 🟡 Żadne checkboxy nie zaznaczone, ale są sekcje -> odśwież listę pracowników z tych sekcji, ale NIE zaznaczaj żadnych checkboxów!
+        fetch(`/api/user/table/by-sections?ids=${sectionIds.join(",")}`)
+          .then(res => res.json())
+          .then(renderUserTable);
+      } else {
+        // 🔴 Nic nie zaznaczone – pokazujemy pustą tabelę
+        renderUserTable([]);
+      }
+    }
+
+
+// 🔹 Przycisk "Wyczyść"
+document.querySelector(".btnContainer .mainBtn").addEventListener("click", () => {
+  window.filters.resetAllFilters(
+    sectionDropdown,
+    checkboxContainer,
+    sectionLabel,
+    selectedLabel,
+    renderUserTable
+  );
+});
+
+
+
+  // === Obsługa filtrowania sekcji i pracowników ===
+
+  sectionDropdown.addEventListener("change", async () => {
+    const sectionIds = getSelectedSectionIds();
+    const sectionLabel = document.getElementById("sectionLabel");
+    const selectedLabel = document.getElementById("selectedLabel");
+    const checkboxContainer = document.getElementById("checkboxDropdown");
+
+    // 🔹 Aktualizacja etykiety sekcji
+    sectionLabel.textContent = sectionIds.length > 0
+      ? `${sectionIds.length} wybranych`
+      : "Sekcja";
+
+    // 🔹 Pobranie użytkowników z sekcji (do checkboxów)
+    const sectionUsersArrays = await Promise.all(
+      sectionIds.map(id => fetch(`/api/user/by-section/${id}`).then(res => res.json()))
+    );
+    const flatUsers = sectionUsersArrays.flat();
+    const uniqueUsers = Array.from(new Map(flatUsers.map(u => [u.id, u])).values());
+    const allowedUserIds = new Set(uniqueUsers.map(u => String(u.id)));
+
+    // 🔹 Zostaw tylko zaznaczonych użytkowników z wybranych sekcji
+    const selectedUserIds = getSelectedUserIds().filter(id => allowedUserIds.has(id));
+
+    // 🔹 Odśwież listę checkboxów z zachowaniem zaznaczeń
+    renderEmployeeCheckboxes(checkboxContainer, uniqueUsers);
+    document.querySelectorAll(".employee-checkbox").forEach(cb => {
+      cb.checked = selectedUserIds.includes(cb.value);
+    });
+
+    // 🔹 Aktualizacja etykiety pracowników
+    selectedLabel.textContent = selectedUserIds.length > 0
+      ? `${selectedUserIds.length} wybranych`
+      : "Pracownik";
+
+    // 🔹 Renderuj odpowiednich użytkowników w tabeli
     if (selectedUserIds.length > 0) {
       fetch(`/api/user/filter-by-ids?ids=${selectedUserIds.join(",")}`)
         .then(res => res.json())
-        .then(users => renderUserTable(users));
-    } else if (sectionId !== "all") {
-      fetch(`/api/user/by-section/${sectionId}`)
-        .then(res => res.json())
-        .then(users => renderUserTable(users));
+        .then(renderUserTable);
+    } else if (sectionIds.length > 0) {
+      Promise.all(
+        sectionIds.map(id => fetch(`/api/user/table/by-section/${id}`).then(res => res.json()))
+      ).then(dataArrays => {
+        const fullUsers = dataArrays.flat();
+        const uniqueFullUsers = Array.from(new Map(fullUsers.map(u => [u.id, u])).values());
+        renderUserTable(uniqueFullUsers);
+      });
     } else {
       fetch(`/api/user/all-users`)
         .then(res => res.json())
-        .then(users => renderUserTable(users));
+        .then(renderUserTable);
     }
-  }
-
-  function renderEmployeeCheckboxes(users) {
-    checkboxContainer.innerHTML = "";
-    users.forEach(user => {
-      const wrapper = document.createElement("label");
-      wrapper.innerHTML = `
-        <input type="checkbox" class="employee-checkbox" value="${user.id}">
-        ${user.firstName} ${user.lastName}
-      `;
-      checkboxContainer.appendChild(wrapper);
-    });
-  }
-
-    function loadEmployeesForSection(sectionId) {
-      if (sectionId === "all" || !sectionId) {
-        checkboxContainer.innerHTML = "";
-        handleFilterChange();
-        return;
-      }
-
-      fetch(`/api/user/by-section/${sectionId}`)
-        .then(res => res.json())
-        .then(users => {
-          renderEmployeeCheckboxes(users); // ładuje checkboxy (ID, imię, nazwisko)
-
-          // teraz pobieramy pełne dane do tabeli
-          const ids = users.map(u => u.id);
-
-          return Promise.all(
-            ids.map(id =>
-              fetch(`/api/user/${id}`).then(res => res.json())
-            )
-          );
-        })
-        .then(fullUsers => {
-          renderUserTable(fullUsers); // wyświetl pełne dane
-        })
-        .catch(err => console.error("❌ Błąd ładowania pracowników z pełnymi danymi:", err));
-    }
-
-
-  function populateSectionSelect() {
-    fetch('/api/sections')
-      .then(res => res.json())
-      .then(data => {
-        sectionSelect.innerHTML = `<option value="all">Wszyscy użytkownicy</option>`;
-        data.forEach(section => {
-          const option = document.createElement("option");
-          option.value = section.id;
-          option.textContent = section.sectionName;
-          sectionSelect.appendChild(option);
-        });
-        loadEmployeesForSection("all");
-      });
-  }
-
-  // --- EVENTY
-  document.getElementById("customSelect").addEventListener("click", function (e) {
-    checkboxContainer.style.display = checkboxContainer.style.display === "block" ? "none" : "block";
-    e.stopPropagation();
   });
 
-  document.addEventListener("click", function () {
-    checkboxContainer.style.display = "none";
-  });
 
   checkboxContainer.addEventListener("change", handleFilterChange);
-  sectionSelect.addEventListener("change", () => loadEmployeesForSection(sectionSelect.value));
 
-  document.querySelector(".btnContainer .mainBtn").addEventListener("click", function () {
-    sectionSelect.value = "all";
-    document.querySelectorAll(".employee-checkbox").forEach(cb => cb.checked = false);
-    selectedLabel.textContent = "Kliknij, aby wybrać";
-    handleFilterChange();
+  setupDropdownToggle({ trigger: sectionCustomSelect, dropdown: sectionDropdown, arrow: sectionArrowIcon });
+  setupDropdownToggle({ trigger: customSelect, dropdown: checkboxContainer, arrow: arrowIcon });
+
+  // 🔹 Inicjalizacja
+fetch('/api/sections')
+  .then(res => res.json())
+  .then(sections => {
+    renderSectionCheckboxes(sectionDropdown, sections);
+
+    // Reset etykiety sekcji
+    sectionLabel.textContent = "Sekcja";
+
+    // Faza inicjalizacji
+    window.filters.__initPhaseDone = false;
+
+      loadUsersBySectionIds([], checkboxContainer, selectedLabel, renderUserTable, { preserveCheckboxState: false });
+
+    window.filters.__initPhaseDone = true;
   });
 
-  // START
-  populateSectionSelect();
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+  if (!window.location.pathname.includes("/chartDetails")) return;
+
+  const {
+    getSelectedUserIds,
+    getSelectedSectionIds,
+    getSelectedProcessNames,
+    renderSectionCheckboxes,
+    renderEmployeeCheckboxes,
+    renderProcessCheckboxes,
+    loadUsersBySectionIdsToChart,
+    setupDropdownToggle,
+    resetAllFiltersOnChart
+  } = window.filters;
+
+  // === Obsługa filtrowania sekcji, pracowników i procesów ===
+    const sectionDropdownChart = document.getElementById("sectionDropdownChart");
+    const sectionLabelChart = document.getElementById("sectionLabel");
+    const sectionArrowIconChart = document.getElementById("sectionArrowIcon");
+
+    const employeeDropdownChart = document.getElementById("employeeDropdownChart");
+    const selectedLabelChart = document.getElementById("selectedLabel");
+    const employeeArrowIconChart = document.getElementById("arrowIcon");
+
+    const processDropdownChart = document.getElementById("processDropdownChart");
+    const processLabelChart = document.getElementById("processLabel");
+    const processArrowIconChart = document.getElementById("processArrow");
+
+    setupDropdownToggle({ trigger: document.getElementById("sectionCustomSelect"), dropdown: sectionDropdownChart, arrow: sectionArrowIconChart });
+    setupDropdownToggle({ trigger: document.getElementById("customSelect"), dropdown: employeeDropdownChart, arrow: employeeArrowIconChart });
+    setupDropdownToggle({ trigger: document.getElementById("processSelect"), dropdown: processDropdownChart, arrow: processArrowIconChart });
+
+    fetch('/api/sections')
+      .then(res => res.json())
+      .then(sections => {
+        renderSectionCheckboxes(sectionDropdownChart, sections);
+        sectionLabelChart.textContent = "Sekcja";
+        loadUsersBySectionIdsToChart([], employeeDropdownChart, selectedLabelChart);
+      });
+
+    sectionDropdownChart.addEventListener("change", async () => {
+      const sectionIds = getSelectedSectionIds();
+
+      sectionLabelChart.textContent = sectionIds.length > 0
+        ? `${sectionIds.length} wybranych`
+        : "Sekcja";
+
+      const sectionUsersArrays = await Promise.all(
+        sectionIds.map(id => fetch(`/api/user/by-section/${id}`).then(res => res.json()))
+      );
+      const flatUsers = sectionUsersArrays.flat();
+      const uniqueUsers = Array.from(new Map(flatUsers.map(u => [u.id, u])).values());
+      const allowedUserIds = new Set(uniqueUsers.map(u => String(u.id)));
+
+      const selectedUserIds = getSelectedUserIds().filter(id => allowedUserIds.has(id));
+
+      renderEmployeeCheckboxes(employeeDropdownChart, uniqueUsers);
+      document.querySelectorAll(".employee-checkbox").forEach(cb => {
+        cb.checked = selectedUserIds.includes(cb.value);
+      });
+
+      selectedLabelChart.textContent = selectedUserIds.length > 0
+        ? `${selectedUserIds.length} wybranych`
+        : "Pracownik";
+
+      const reportDate = document.getElementById("reportDate")?.value;
+      const processIds = getSelectedProcessNames().map(Number); // 🔄 zamień na ID
+
+      renderChart({
+        date: reportDate,
+        sectionIds,
+        userIds: selectedUserIds,
+        processIds
+      });
+    });
+
+    employeeDropdownChart.addEventListener("change", () => {
+      const reportDate = document.getElementById("reportDate")?.value;
+      const sectionIds = getSelectedSectionIds();
+      const userIds = getSelectedUserIds();
+      const processIds = getSelectedProcessNames().map(Number);
+
+      selectedLabelChart.textContent = userIds.length > 0
+        ? `${userIds.length} wybranych`
+        : "Pracownik";
+
+      renderChart({
+        date: reportDate,
+        sectionIds: sectionIds.length > 0 ? sectionIds : undefined,
+        userIds,
+        processIds
+      });
+    });
+
+    fetch('/api/processes/by-logged-user')
+      .then(res => res.json())
+      .then(processes => {
+        renderProcessCheckboxes(processDropdownChart, processes);
+        processLabelChart.textContent = "Proces";
+      })
+      .catch(err => {
+        console.error("❌ Błąd pobierania procesów:", err);
+        processLabelChart.textContent = "Błąd";
+      });
+
+
+    processDropdownChart.addEventListener("change", () => {
+      const reportDate = document.getElementById("reportDate")?.value;
+      const sectionIds = getSelectedSectionIds();
+      const userIds = getSelectedUserIds();
+      const processIds = getSelectedProcessNames().map(Number);
+
+      processLabelChart.textContent = processIds.length > 0
+        ? `${processIds.length} wybranych`
+        : "Proces";
+
+      renderChart({
+        date: reportDate,
+        sectionIds: sectionIds.length > 0 ? sectionIds : undefined,
+        userIds,
+        processIds
+      });
+    });
+
+    // 🔹 Przycisk "Wyczyść"
+     document.getElementById("clearFiltersBtn").addEventListener("click", () => {
+      window.filters.resetAllFiltersOnChart(
+        sectionDropdownChart,
+        employeeDropdownChart,
+        processDropdownChart,
+        sectionLabelChart,
+        selectedLabelChart,
+        processLabelChart,
+        () => renderChart({ date: new Date().toISOString().split("T")[0] })
+      );
+    });
+
+
+});
+
+
+
 /////////////////////////////// EXPORT RAPORTU WYKONANIA //////////////////////////////////////////////
 const exportBtn = document.getElementById("exportXlsxBtn");
 
 if (exportBtn) {
-    exportBtn.addEventListener("click", function () {
-        const form = document.getElementById("reportForm");
-        if (!form) return; // zabezpieczenie na wypadek braku formularza
+  exportBtn.addEventListener("click", function () {
+    const form = document.getElementById("reportForm");
+    if (!form) return;
 
-        const startDate = form.startDate?.value;
-        const endDate = form.endDate?.value;
+    const startDate = form.startDate?.value;
+    const endDate = form.endDate?.value;
 
-        const params = new URLSearchParams();
-        if (startDate) params.append("startDate", startDate);
-        if (endDate) params.append("endDate", endDate);
+    const selectedProcesses = Array.from(document.querySelectorAll('#processDropdown input:checked')).map(cb => cb.value);
+    const selectedUsers = Array.from(document.querySelectorAll('#userDropdown input:checked')).map(cb => cb.value);
+    const selectedOvertime = Array.from(document.querySelectorAll('#overtimeDropdown input:checked')).map(cb => cb.value);
 
-        window.location.href = `/api/saved-data/get-report/export?${params.toString()}`;
-    });
+    const params = new URLSearchParams();
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    if (selectedProcesses.length > 0) params.append("processes", selectedProcesses.join(","));
+    if (selectedUsers.length > 0) params.append("users", selectedUsers.join(","));
+    if (selectedOvertime.length > 0) params.append("overtime", selectedOvertime.join(","));
+
+    // 🔽 Pobranie pliku z serwera
+    window.location.href = `/api/saved-data/get-report/export?${params.toString()}`;
+  });
 }
 
 
-//////////////////////////////////////// PAGINACJA FILTROWANIE I WYŚWIETLANIE STRON ////////////////////////////////////
-document.addEventListener("DOMContentLoaded", function () {
-    if (!document.getElementById("report-table")) return;
+document.getElementById("exportBacklogBtn")?.addEventListener("click", (e) => {
+    e.preventDefault();
 
-    const pageSize = 100;
-    let currentPage = 1;
-    let allData = [];
+    const startDate = document.getElementById("startDate")?.value;
+    const endDate = document.getElementById("endDate")?.value;
 
-    const tableBody = document.querySelector("#report-table tbody");
-    const recordCountInfo = document.getElementById("recordCountInfo");
-    const currentPageIndicator = document.getElementById("currentPageIndicator");
+    const params = new URLSearchParams();
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
 
-    const prevBtn = document.getElementById("prevPage");
-    const nextBtn = document.getElementById("nextPage");
-
-    const form = document.getElementById("reportForm");
-
-    // 🔄 Pobieranie danych z API
-    function fetchData(startDate = null, endDate = null) {
-        const query = new URLSearchParams();
-        if (startDate) query.append("startDate", startDate);
-        if (endDate) query.append("endDate", endDate);
-
-        fetch(`/api/saved-data/get-report?${query.toString()}`)
-            .then(res => res.json())
-            .then(data => {
-                allData = data;
-                currentPage = 1;
-                renderTablePage();
-            })
-            .catch(err => console.error("❌ Błąd pobierania danych:", err));
-    }
-
-    // 🧾 Renderowanie strony tabeli
-    function renderTablePage() {
-        const start = (currentPage - 1) * pageSize;
-        const end = start + pageSize;
-        const pagedData = allData.slice(start, end);
-
-        tableBody.innerHTML = "";
-        pagedData.forEach(row => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${row.process}</td>
-                <td>${row.quantity}</td>
-                <td>${row.date}</td>
-                <td>${row.employee}</td>
-            `;
-            tableBody.appendChild(tr);
-        });
-
-        recordCountInfo.textContent = `Wyświetlono ${Math.min(end, allData.length)} z ${allData.length} rekordów`;
-        currentPageIndicator.textContent = `Strona ${currentPage} z ${Math.ceil(allData.length / pageSize)}`;
-
-        prevBtn.disabled = currentPage === 1;
-        nextBtn.disabled = end >= allData.length;
-    }
-
-    // 🧭 Nawigacja
-    prevBtn.addEventListener("click", () => {
-        if (currentPage > 1) {
-            currentPage--;
-            renderTablePage();
-        }
-    });
-
-    nextBtn.addEventListener("click", () => {
-        if ((currentPage * pageSize) < allData.length) {
-            currentPage++;
-            renderTablePage();
-        }
-    });
-
-    // 📅 Obsługa formularza filtrowania
-    form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        const startDate = document.getElementById("startDate").value;
-        const endDate = document.getElementById("endDate").value;
-        fetchData(startDate, endDate);
-    });
-
-    // 🔄 Inicjalne pobranie danych
-    fetchData();
+    window.location.href = `/backlog/export?${params.toString()}`;
 });
 
 
@@ -1658,4 +1880,1073 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
+
+//////////////////////////////////////// PAGINACJA, FILTROWANIE I WYŚWIETLANIE STRON ////////////////////////////////////
+// 🔁 Zmienne globalne
+const pageSize = 100;
+let currentPage = 1;
+let allData = [];
+let filteredData = [];
+
+const tableBody            = document.querySelector("#report-table tbody");
+const recordCountInfo      = document.getElementById("recordCountInfo");
+const currentPageIndicator = document.getElementById("currentPageIndicator");
+const prevBtn              = document.getElementById("prevPage");
+const nextBtn              = document.getElementById("nextPage");
+const clearBtn             = document.getElementById("clearBtn");
+
+// 🧾 Renderowanie strony tabeli
+function renderTablePage() {
+  const start = (currentPage - 1) * pageSize;
+  const end   = start + pageSize;
+  const pageSlice = filteredData.slice(start, end);
+
+    if (!tableBody) {
+    return;
+    }
+
+  tableBody.innerHTML = "";
+  pageSlice.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.processName}</td>
+      <td>${row.quantity}</td>
+      <td>${row.todaysDate}</td>
+      <td>${row.username}</td>
+      <td>${row.volumeType}</td>
+      <td>${row.overtimeMinutes}</td>
+    `;
+    tableBody.appendChild(tr);
+  });
+
+  // ⬅️ Te linie MUSZĄ być tutaj
+  const from = filteredData.length === 0 ? 0 : start + 1;
+  const to   = Math.min(end, filteredData.length);
+  recordCountInfo.textContent      = `Wyświetlono ${from}–${to} z ${filteredData.length} rekordów`;
+  currentPageIndicator.textContent = `Strona ${currentPage} z ${Math.ceil(filteredData.length / pageSize)}`;
+  prevBtn.disabled = currentPage === 1;
+  nextBtn.disabled = end >= filteredData.length;
+}
+
+// 🔄 Pobieranie danych z API
+function fetchData(startDate = null, endDate = null) {
+  const query = new URLSearchParams();
+  if (startDate) query.append("startDate", startDate);
+  if (endDate)   query.append("endDate", endDate);
+
+  fetch(`/api/saved-data/get-report?${query.toString()}`)
+    .then(res => res.json())
+    .then(data => {
+      allData      = data;
+      filteredData = [...allData];
+      currentPage  = 1;
+      renderTablePage();
+      loadUniqueFiltersFromTable(); // odśwież dropdowny filtrów
+    })
+    .catch(err => console.error("❌ Błąd pobierania danych:", err));
+}
+
+// 🔍 Zastosowanie filtrów na allData → filteredData
+function applyFilters() {
+  const selProc     = Array.from(document.querySelectorAll('#processDropdown input:checked')).map(cb => cb.value);
+  const selUsers    = Array.from(document.querySelectorAll('#userDropdown   input:checked')).map(cb => cb.value);
+  const selOvertime = Array.from(document.querySelectorAll('#overtimeDropdown input:checked')).map(cb => cb.value);
+
+  filteredData = allData.filter(item =>
+    (selProc.length     === 0 || selProc.includes(item.processName)) &&
+    (selUsers.length    === 0 || selUsers.includes(item.username))    &&
+    (selOvertime.length === 0 || selOvertime.includes(item.volumeType))
+  );
+
+  currentPage = 1;
+  renderTablePage();
+}
+
+// 🔽 Inicjalizacja dropdownów z checkboxami
+function setupDropdown(selectId, labelId, arrowId, dropdownId) {
+  const select   = document.getElementById(selectId);
+  const label    = document.getElementById(labelId);
+  const arrow    = document.getElementById(arrowId);
+  const dropdown = document.getElementById(dropdownId);
+  if (!select || !label || !arrow || !dropdown) return;
+
+  label.dataset.default = label.textContent;
+
+  select.addEventListener("click", e => {
+    dropdown.classList.toggle("show");
+    arrow.classList.toggle("rotate");
+    e.stopPropagation();
+  });
+
+  document.addEventListener("click", e => {
+    if (!select.contains(e.target)) {
+      dropdown.classList.remove("show");
+      arrow.classList.remove("rotate");
+    }
+  });
+
+  dropdown.addEventListener("change", () => {
+    const cnt = dropdown.querySelectorAll("input:checked").length;
+    label.textContent = cnt > 0 ? `${cnt} wybranych` : label.dataset.default;
+    applyFilters();
+  });
+
+  // blokada zamykania dropdownu gdy klik na checkbox/label
+  dropdown.addEventListener("click", e => {
+    if (
+      e.target.matches('input[type="checkbox"]') ||
+      e.target.closest('label')?.querySelector('input[type="checkbox"]')
+    ) {
+      e.stopPropagation();
+    }
+  });
+}
+
+// 🔄 Budowa listy opcji filtrów (procesy, użytkownicy) i statycznego overtime
+function loadUniqueFiltersFromTable() {
+  const rows      = document.querySelectorAll("#report-table tbody tr");
+  const processSet = new Set();
+  const userSet    = new Set();
+
+  rows.forEach(row => {
+    const cells = row.querySelectorAll("td");
+    if (cells.length === 6) {
+      processSet.add(cells[0].textContent.trim());
+      userSet.add(cells[3].textContent.trim());
+    }
+  });
+
+  renderFilterCheckboxes("#processDropdown", Array.from(processSet));
+  renderFilterCheckboxes("#userDropdown", Array.from(userSet));
+
+  // statycznie rodzaje czasu pracy
+  const overtimeOptions = [
+    "Podstawowy czas pracy",
+    "Nadgodziny płatne",
+    "Nadgodziny do odbioru",
+    "Odebrane częściowo"
+  ];
+  renderFilterCheckboxes("#overtimeDropdown", overtimeOptions);
+
+  // przywrócenie etykiet i defaultów
+  document.getElementById("processLabel").textContent  = "Proces";
+  document.getElementById("processLabel").dataset.default  = "Proces";
+  document.getElementById("userLabel").textContent     = "Pracownik";
+  document.getElementById("userLabel").dataset.default     = "Pracownik";
+  document.getElementById("overtimeLabel").textContent = "Rodzaj czasu pracy";
+  document.getElementById("overtimeLabel").dataset.default = "Rodzaj czasu pracy";
+}
+
+// 📋 Pomocnicza: wyrenderuj checkboxy w danym kontenerze
+function renderFilterCheckboxes(containerSelector, values) {
+  const container = document.querySelector(containerSelector);
+  if (!container) return;
+  container.innerHTML = "";
+  values.forEach(value => {
+    const label = document.createElement("label");
+    label.innerHTML = `<input type="checkbox" value="${value}"> ${value}`;
+    container.appendChild(label);
+  });
+}
+
+// 🚀 Po załadowaniu DOM
+document.addEventListener("DOMContentLoaded", () => {
+  if (!document.getElementById("report-table")) return;
+
+  // paginacja
+  prevBtn.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderTablePage();
+    }
+  });
+  nextBtn.addEventListener("click", () => {
+    if (currentPage * pageSize < filteredData.length) {
+      currentPage++;
+      renderTablePage();
+    }
+  });
+
+  // czyszczenie filtrów
+  clearBtn?.addEventListener("click", () => {
+    document.querySelectorAll(
+      "#processDropdown input, #userDropdown input, #overtimeDropdown input"
+    ).forEach(cb => cb.checked = true);
+
+    document.getElementById("processLabel").textContent  = "Proces";
+    document.getElementById("userLabel").textContent     = "Pracownik";
+    document.getElementById("overtimeLabel").textContent = "Rodzaj czasu pracy";
+
+    // reset dat w formularzu jeżeli masz:
+    const endDateInput   = document.getElementById("endDate");
+    const startDateInput = document.getElementById("startDate");
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 6);
+    const toISO = d => d.toISOString().split("T")[0];
+    if (startDateInput) startDateInput.value = toISO(sevenDaysAgo);
+    if (endDateInput)   endDateInput.value   = toISO(today);
+
+    fetchData(toISO(sevenDaysAgo), toISO(today));
+  });
+
+  // dropdowny filtrów
+  setupDropdown("processSelect",  "processLabel",  "processArrow",  "processDropdown");
+  setupDropdown("userSelect",     "userLabel",     "userArrow",     "userDropdown");
+  setupDropdown("overtimeSelect", "overtimeLabel", "overtimeArrow", "overtimeDropdown");
+
+  // formularz dat
+  document.getElementById("reportForm")?.addEventListener("submit", e => {
+    e.preventDefault();
+    const startDate = document.getElementById("startDate").value;
+    const endDate   = document.getElementById("endDate").value;
+    fetchData(startDate, endDate);
+  });
+
+  // pierwsze pobranie danych
+  fetchData();
+});
+
+function getSelectedVolumeType() {
+  const sel = document.querySelector('input[name="volumeType"]:checked');
+  return sel ? sel.value : 'BASIC';
+}
+/////////////////////////////// index header //////////////////////////////////////////////////////
+document.addEventListener("DOMContentLoaded", () => {
+  const radios = document.querySelectorAll('input[name="volumeType"]');
+  const overtimeSection = document.getElementById("overtimeInputSection");
+  const overtimeInput   = document.getElementById("overtimeMinutes");
+  const confirmBtn      = document.getElementById("confirmOvertime");
+  const datePicker      = document.getElementById("overtimeDate");
+  // przechowujemy wybrany typ (domyślnie BASIC)
+  let selectedVolumeType = "BASIC";
+  let customOvertime     = 0;
+
+  if (!radios.length || !overtimeSection) return;
+
+  // na starcie chowamy sekcję nadgodzin
+  overtimeSection.classList.add("hidden");
+
+  // mapa komunikatów dla każdego typu
+  const messages = {
+    BASIC:            "Dodano wolumen!",
+    OVERTIME_PAID:    "Dodano nadgodziny płatne",
+    OVERTIME_OFF:     "Dodano nadgodziny do odbioru",
+    DEDUCT_PARTIAL:   "Odebrano nadgodziny",
+    DEDUCT_FULL_DAY: "Odebrany dzień w całości: "
+  };
+
+  // 1) Obsługa zmiany radio
+  radios.forEach(radio => {
+    radio.addEventListener("change", function() {
+      selectedVolumeType = this.value;  // zapamiętujemy typ
+
+      if (!overtimeSection || !overtimeInput) return;
+
+      if (this.value === "BASIC") {
+        // BASIC: chowamy input + odblokowujemy
+        overtimeSection.classList.add("hidden");
+        overtimeSection.classList.remove("show");
+        overtimeInput.disabled = false;
+        enableProcessInputs();
+        customOvertime = 0;
+
+      } else {
+        // inne typy: pokazujemy input
+        overtimeSection.classList.remove("hidden");
+        overtimeSection.classList.add("show");
+
+        // jeśli pełny dzień – zablokuj i ustaw na 480
+        if (this.value === "DEDUCT_FULL_DAY") {
+          overtimeInput.value = 480;
+          overtimeInput.disabled = true;
+        } else {
+          // nadgodziny lub częściowe odejmowanie – odblokuj input
+          overtimeInput.disabled = false;
+          overtimeInput.value = ""; // wyczyść poprzednią wartość
+        }
+
+        disableProcessInputs();
+      }
+    });
+  });
+
+  // 2) Potwierdzenie
+  if (confirmBtn && overtimeInput) {
+      confirmBtn.addEventListener("click", async () => {
+        const userId = Number(document.getElementById("userId")?.value);
+        const date   = datePicker?.value;
+
+      if (selectedVolumeType === "DEDUCT_FULL_DAY") {
+
+            const minutes = 480;
+
+        // czekamy na wynik modalnego zapytania
+        const ok = await askConfirmation(
+          `Czy na pewno chcesz odebrać ${minutes} min w dniu ${date}?`
+        );
+        if (!ok) return;
+
+        try {
+          const res = await fetch("/api/saved-data/deduct-full-day", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, date })
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const fullMsg = `${messages.DEDUCT_FULL_DAY}${date}`;
+          displayMessage("success", fullMsg);
+          enableProcessInputs();
+          await loadOvertimeSummary(userId, date);
+          setTimeout(() => location.reload(), 3000);
+        } catch (err) {
+          console.error("Fetch error:", err);
+          displayMessage("error", "Wystąpił błąd przy odejmowaniu pełnego dnia.");
+        }
+        return;
+      }
+
+      // dla pozostałych typów – normalny flow z minutami
+      const val = Number(overtimeInput.value);
+      if (!val || val <= 0) {
+        displayMessage("error", "Wpisz poprawny czas nadgodzin w minutach.");
+        return;
+      }
+      customOvertime = val;
+      enableProcessInputs();
+      await loadOvertimeSummary(userId, date);
+      const baseMsg = messages[selectedVolumeType] || "Zapisano";
+      const fullMsg = `${baseMsg}: ${customOvertime} min`;
+      displayMessage("success", fullMsg);
+    });
+  }
+
+  function disableProcessInputs() {
+    document.querySelectorAll("input[data-process-id]").forEach(i => i.disabled = true);
+    document.querySelectorAll(".add-efficiency").forEach(icon => {
+      icon.classList.add("disabled");
+    });
+    const saveAllBtn = document.getElementById("saveAllBtn");
+    if (saveAllBtn) {
+      saveAllBtn.classList.add("disabled");
+      saveAllBtn.style.pointerEvents = "none";
+      saveAllBtn.style.opacity = "0.5";
+      saveAllBtn.style.cursor = "default";
+    }
+  }
+
+  function enableProcessInputs() {
+    document.querySelectorAll("input[data-process-id]").forEach(i => i.disabled = false);
+    document.querySelectorAll(".add-efficiency").forEach(icon => {
+      icon.classList.remove("disabled");
+      icon.style.pointerEvents = "";
+      icon.style.opacity = "";
+    });
+    const saveAllBtn = document.getElementById("saveAllBtn");
+    if (saveAllBtn) {
+      saveAllBtn.classList.remove("disabled");
+      saveAllBtn.style.pointerEvents = "";
+      saveAllBtn.style.opacity = "";
+      saveAllBtn.style.cursor = "";
+    }
+  }
+});
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const overtimeInput = document.getElementById("overtimeMinutes");
+  if (!overtimeInput) return;  // jeśli nie ma pola, wychodzimy
+
+  // Blokuj kropkę i przecinek przy naciskaniu klawiszy
+  overtimeInput.addEventListener("keydown", (e) => {
+    if (e.key === "." || e.key === ",") {
+      e.preventDefault();
+    }
+  });
+
+  // Przy wklejaniu/usuwaniu – usuwaj kropki i przecinki
+  overtimeInput.addEventListener("input", () => {
+    const cleaned = overtimeInput.value.replace(/[\.,]/g, "");
+    if (cleaned !== overtimeInput.value) {
+      overtimeInput.value = cleaned;
+    }
+  });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.querySelector(".vts-container");
+  const selector  = document.querySelector(".volume-type-selector");
+  const minutesInput  = document.getElementById("overtimeMinutes");
+
+  // Jeżeli brak głównego kontenera, nic nie robimy
+  if (!container || !selector || !minutesInput) return;
+
+  // Nagłówek dropdownu
+  const header = container.querySelector(".vts-header");
+  if (header) {
+    header.addEventListener("click", () => {
+      container.classList.toggle("expanded");
+    });
+  }
+
+  // Radio – pokazanie/ukrycie daty przy DEDUCT_PARTIAL
+  const radios = selector.querySelectorAll('input[name="volumeType"]');
+  radios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      if (radio.value === "DEDUCT_FULL_DAY") {
+        selector.classList.add("pickup");
+      } else {
+        selector.classList.remove("pickup");
+      }
+    });
+  });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const wrapper = document.querySelector(".process-list-wrapper");
+  if (!wrapper) return;
+
+  document
+    .querySelectorAll('input[name="volumeType"]')
+    .forEach(radio => {
+      radio.addEventListener("change", () => {
+        if (radio.value === "BASIC") {
+          wrapper.classList.remove("collapsed");
+        } else {
+          wrapper.classList.add("collapsed");
+        }
+      });
+    });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const radios = document.querySelectorAll('input[name="volumeType"]');
+  const overtimeContainer = document.getElementById("overtimeContainer");
+
+  radios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      if (radio.value === "BASIC") {
+        overtimeContainer.classList.remove("show");
+        overtimeContainer.classList.add("hidden");
+      } else {
+        overtimeContainer.classList.remove("hidden");
+        overtimeContainer.classList.add("show");
+      }
+    });
+  });
+});
+
+///////////////////////////////////////// wczytywanie nadgodzin do kontenerów ///////////////////////////////////////
+async function loadOvertimeSummary(userId, date) {
+    if (!window.location.pathname.includes("/index")) {
+        return;
+    }
+
+  try {
+    // jeśli date jest przekazane, dodajemy ?date=…, inaczej nie dodajemy
+    const url = date
+      ? `/api/saved-data/overtime/${userId}?date=${encodeURIComponent(date)}`
+      : `/api/saved-data/overtime/${userId}`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.status);
+
+    const { paidMinutes, offMinutes } = await res.json();
+    document.getElementById("overtimePaid").textContent = paidMinutes + " min";
+    document.getElementById("overtimeOff").textContent  = offMinutes  + " min";
+
+  } catch (e) {
+    console.error("Nie udało się wczytać nadgodzin:", e);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const userId = document.getElementById("userId")?.value;
+  if (userId) {
+    loadOvertimeSummary(userId);
+  }
+});
+
+///////////////////////////////////////// odbieranie nadgodzin ///////////////////////////////////////
+document.addEventListener("DOMContentLoaded", () => {
+  const dateInput = document.getElementById("overtimeDate");
+  if (!dateInput) return;
+
+  const toISODate = d => d.toISOString().split("T")[0];
+
+  const today = new Date();
+  const past  = new Date();
+  const future = new Date();
+
+  past.setDate(today.getDate() - 7);
+  future.setDate(today.getDate() + 7);
+
+  const pastStr   = toISODate(past);
+  const todayStr  = toISODate(today);
+  const futureStr = toISODate(future);
+
+  dateInput.min   = pastStr;
+  dateInput.max   = futureStr;
+  dateInput.value = todayStr;
+});
+
+const modal    = document.getElementById("confirmModal");
+const confirmText = document.getElementById("confirmText");
+const yesBtn   = document.getElementById("confirmYes");
+const noBtn    = document.getElementById("confirmNo");
+
+function askConfirmation(message) {
+  return new Promise(resolve => {
+    confirmText.textContent = message;
+    modal.classList.remove("hidden");
+
+    yesBtn.onclick = () => {
+      modal.classList.add("hidden");
+      resolve(true);
+    };
+    noBtn.onclick = () => {
+      modal.classList.add("hidden");
+      resolve(false);
+    };
+  });
+}
+///////////////////////////////////////// tabela z nadgodzinami //////////////////////////////////////////////
+
+//(async function() {
+//
+//  // jeśli nie ma tabeli, wychodzimy
+//  const table = document.querySelector("#overtime-table");
+//  if (!table) return;
+//
+//  // 1) Pobierz surowe dane, w których jest już userId
+//  const raw = await fetch("/api/overtime/get-all-overtime")
+//                    .then(r => r.json());
+//
+//  // 2) Pivot po userId
+//  const byUser = raw.reduce((acc, {userId, firstName, lastName, volumeType, totalOvertime}) => {
+//    if (!acc[userId]) {
+//      acc[userId] = {
+//        userId,
+//        firstName,
+//        lastName,
+//        paid: 0,
+//        off: 0,
+//        deducted: 0
+//      };
+//    }
+//    switch (volumeType) {
+//      case "Nadgodziny płatne":    acc[userId].paid     = totalOvertime; break;
+//      case "Nadgodziny do odbioru": acc[userId].off      = totalOvertime; break;
+//      case "Odebrane częściowo":    acc[userId].deducted = totalOvertime; break;
+//    }
+//    return acc;
+//  }, {});
+//  // 3) Zamień mapę na tablicę – będzie tyle wierszy, ilu masz unikalnych userId
+//  const tableData = Object.values(byUser);
+//
+//  // 4) Renderuj główną tabelę
+//  const tbody = document.querySelector("#overtime-table tbody");
+//  tbody.innerHTML = "";
+//  tableData.forEach(row => {
+//    const tr = document.createElement("tr");
+//    tr.innerHTML = `
+//      <td>
+//        <input type="checkbox" class="select-overtime-row"
+//               data-user-id="${row.userId}" />
+//      </td>
+//        <td>
+//          <a href="/userOvertimeDetails/overtime/${row.userId}" title="Szczegóły">
+//            <i class="bx bxs-user-detail"></i>
+//          </a>
+//        </td>
+//      <td>${row.firstName}</td>
+//      <td>${row.lastName}</td>
+//      <td>${row.paid}</td>
+//      <td>${row.off}</td>
+//      <td>${row.deducted}</td>
+//    `;
+//    tbody.appendChild(tr);
+//  });
+//})();
+
+const userTableBody = document.querySelector("#overtime-user-table tbody");
+
+async function loadOvertimeDetails(userId) {
+
+  if (!userTableBody) return;
+
+  try {
+    // 1) Fetch danych z endpointu
+    const res = await fetch(`/api/overtime/${userId}/details`);
+    if (!res.ok) {
+      throw new Error(`Błąd podczas wczytywania danych: ${res.status}`);
+    }
+    const details = await res.json();
+
+    // 2) Znajdź <tbody> tabeli i wyczyść go
+    userTableBody.innerHTML = "";
+
+    // 3) Iteruj po każdy obiekt i twórz wiersz
+    details.forEach(d => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${d.processName}</td>
+        <td>${d.quantity}</td>
+        <td>${d.date}</td>
+        <td>${d.username}</td>
+        <td>${d.volumeType}</td>
+        <td>${d.overtimeMinutes}</td>
+      `;
+      userTableBody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error("Nie udało się wczytać szczegółów nadgodzin:", err);
+  }
+}
+document.addEventListener("DOMContentLoaded", () => {
+  // jeżeli jesteśmy na stronie szczegółów (tabela istnieje)
+  const table = document.querySelector("#overtime-user-table");
+  if (!table) return;
+
+  // wyciągnij userId z URL: ostatni fragment po slashu
+  const parts = window.location.pathname.split("/");
+  const userId = parts[parts.length - 1];
+  if (!userId) return;
+
+  // załaduj szczegóły
+  loadOvertimeDetails(userId);
+});
+
+///////////////////////////////////// filtry nadgodzin dla usera ////////////////////////////////////////////////
+// 🧾 RENDEROWANIE AKTUALNEJ STRONY TABELI
+function renderOvertimeTablePage() {
+  const start = (currentPage - 1) * pageSize;
+  const end   = start + pageSize;
+  const pageSlice = filteredData.slice(start, end);
+
+  userTableBody.innerHTML = "";
+  pageSlice.forEach(item => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.processName}</td>
+      <td>${item.quantity}</td>
+      <td>${item.date}</td>
+      <td>${item.username}</td>
+      <td>${item.volumeType}</td>
+      <td>${item.overtimeMinutes}</td>
+    `;
+    userTableBody.appendChild(tr);
+  });
+
+  // INFO O ZAKRESIE WYNIKÓW I NAWIGACJA
+  const from = filteredData.length === 0 ? 0 : start + 1;
+  const to   = Math.min(end, filteredData.length);
+  recordCountInfo.textContent      = `Wyświetlono ${from}–${to} z ${filteredData.length} rekordów`;
+  currentPageIndicator.textContent = `Strona ${currentPage} z ${Math.ceil(filteredData.length / pageSize)}`;
+  prevBtn.disabled = currentPage === 1;
+  nextBtn.disabled = end >= filteredData.length;
+}
+
+// 🔄 POBIERANIE DANYCH Z API I RESET FILTRÓW
+function fetchOvertimeData(startDateOvertime = null, endDateOvertime = null) {
+  const query = new URLSearchParams();
+  if (startDateOvertime) query.append("startDateOvertime", startDateOvertime);
+  if (endDateOvertime)   query.append("endDateOvertime",   endDateOvertime);
+
+  fetch(`/api/overtime/get-data?${query.toString()}`)
+    .then(res => res.json())
+    .then(data => {
+      allData      = data;
+      filteredData = [...allData];
+      currentPage  = 1;
+      renderOvertimeTablePage();
+      loadUniqueOvertimeFiltersFromTable();
+    })
+    .catch(err => console.error("❌ Błąd pobierania danych:", err));
+}
+
+// 🔍 ZASTOSOWANIE FILTRÓW
+function applyOvertimeFilters() {
+  const selProc     = Array.from(document.querySelectorAll('#overtimeProcessDropdown input:checked')).map(cb => cb.value);
+  const selOvertime = Array.from(document.querySelectorAll('#userOvertimeDropdown input:checked')).map(cb => cb.value);
+
+  filteredData = allData.filter(item =>
+    (selProc.length     === 0 || selProc.includes(item.processName)) &&
+    (selOvertime.length === 0 || selOvertime.includes(item.volumeType))
+  );
+
+  currentPage = 1;
+  renderOvertimeTablePage();
+}
+
+// 🔽 BUDOWA LISTY OPCJI FILTRÓW
+function loadUniqueOvertimeFiltersFromTable() {
+  const rows       = document.querySelectorAll("#overtime-user-table tbody tr");
+  const processSet = new Set();
+  const overtimeSet= new Set();
+//  const tableBody = getElementById("overtime-user-table");
+
+  if (!userTableBody) return;
+
+  rows.forEach(row => {
+    const cells = row.querySelectorAll("td");
+    if (cells.length === 6) {
+      processSet.add(cells[0].textContent.trim());
+      overtimeSet.add(cells[4].textContent.trim());
+    }
+  });
+
+  renderOvertimeFilterCheckboxes("#overtimeProcessDropdown", Array.from(processSet));
+  renderOvertimeFilterCheckboxes("#userOvertimeDropdown", [
+    "Nadgodziny płatne",
+    "Nadgodziny do odbioru",
+    "Odebrane częściowo"
+  ]);
+
+  // reset etykiet
+  document.getElementById("overtimeProcessLabel").textContent   = "Proces";
+  document.getElementById("overtimeProcessLabel").dataset.default = "Proces";
+  document.getElementById("overtimeLabel").textContent          = "Rodzaj czasu pracy";
+  document.getElementById("overtimeLabel").dataset.default      = "Rodzaj czasu pracy";
+}
+
+// 📋 RENDEROWANIE CHECKBOXÓW DLA FILTRÓW
+function renderOvertimeFilterCheckboxes(containerSelector, values) {
+  const container = document.querySelector(containerSelector);
+  if (!container) return;
+
+  container.innerHTML = "";
+  values.forEach(val => {
+    const label = document.createElement("label");
+    label.innerHTML = `<input type="checkbox" value="${val}"> ${val}`;
+    container.appendChild(label);
+  });
+}
+
+// 🔄 KONFIGURACJA DROPDOWNÓW
+function setupOvertimeDropdown(selectId, labelId, arrowId, dropdownId) {
+  const select   = document.getElementById(selectId);
+  const label    = document.getElementById(labelId);
+  const arrow    = document.getElementById(arrowId);
+  const dropdown = document.getElementById(dropdownId);
+  if (!select || !label || !arrow || !dropdown) return;
+
+  label.dataset.default = label.textContent;
+
+  select.addEventListener("click", e => {
+    dropdown.classList.toggle("show");
+    arrow.classList.toggle("rotate");
+    e.stopPropagation();
+  });
+
+  document.addEventListener("click", e => {
+    if (!select.contains(e.target)) {
+      dropdown.classList.remove("show");
+      arrow.classList.remove("rotate");
+    }
+  });
+
+  dropdown.addEventListener("change", () => {
+    const cnt = dropdown.querySelectorAll("input:checked").length;
+    label.textContent = cnt > 0 ? `${cnt} wybranych` : label.dataset.default;
+    applyOvertimeFilters();
+  });
+
+  dropdown.addEventListener("click", e => {
+    if (
+      e.target.matches('input[type="checkbox"]') ||
+      e.target.closest('label')?.querySelector('input[type="checkbox"]')
+    ) {
+      e.stopPropagation();
+    }
+  });
+}
+
+//// 🚀 INICJALIZACJA PO ZAŁADOWANIU DOM
+document.addEventListener("DOMContentLoaded", () => {
+
+  if (!userTableBody) return;
+
+  // 2) ustaw domyślne daty w inputs
+  const startInput = document.getElementById("startDateOvertime");
+  const endInput   = document.getElementById("endDateOvertime");
+  const today = new Date();
+  const ago   = new Date(today);
+  ago.setDate(today.getDate() - 6);
+  const toISO = d => d.toISOString().split("T")[0];
+  if (startInput) startInput.value = toISO(ago);
+  if (endInput)   endInput.value   = toISO(today);
+
+  // 3) paginacja
+  prevBtn.addEventListener("click", () => {
+    if (currentPage>1) {
+      currentPage--;
+      renderOvertimeTablePage();
+    }
+  });
+  nextBtn.addEventListener("click", () => {
+    if (currentPage*pageSize<filteredData.length) {
+      currentPage++;
+      renderOvertimeTablePage();
+    }
+  });
+
+  // 4) clearBtn reset
+  clearBtn.addEventListener("click", () => {
+    document.querySelectorAll(
+      "#overtimeProcessDropdown input, #userOvertimeDropdown input"
+    ).forEach(cb => cb.checked=true);
+    startInput.value = toISO(ago);
+    endInput  .value = toISO(today);
+    fetchOvertimeData(toISO(ago), toISO(today));
+  });
+
+  // 5) dropdowny
+  setupOvertimeDropdown(
+    "overtimeProcessSelect",
+    "overtimeProcessLabel",
+    "overtimeProcessArrow",
+    "overtimeProcessDropdown"
+  );
+  setupOvertimeDropdown(
+    "overtimeUserSelect",
+    "overtimeLabel",
+    "userOvertimeArrow",
+    "userOvertimeDropdown"
+  );
+
+  // 6) data‐form submit
+  document.getElementById("overtimeForm")?.addEventListener("submit", e => {
+    e.preventDefault();
+    fetchOvertimeData(startInput.value, endInput.value);
+  });
+
+  // 7) pierwsze załadowanie
+  fetchOvertimeData(toISO(ago), toISO(today));
+});
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (!window.location.pathname.includes("/overtimeReport")) return;
+
+  const sectionToggleBtn = document.getElementById("overtimeSectionCustomSelect");
+  const sectionDropdown = document.getElementById("overtimeSectionDropdown");
+  const sectionLabel = document.getElementById("overtimeSectionLabel");
+  const sectionArrow = document.getElementById("overtimeSectionArrowIcon");
+
+  const employeeToggleBtn = document.getElementById("overtimeCustomSelect");
+  const employeeDropdown = document.getElementById("overtimeCheckboxDropdown");
+  const employeeLabel = document.getElementById("overtimeSelectedLabel");
+  const employeeArrow = document.getElementById("overtimeArrowIcon");
+
+  const {
+    renderSectionCheckboxes,
+    renderEmployeeCheckboxes,
+    setupDropdownToggle
+  } = window.filters;
+
+  let filteredData = [];
+  let rawData = [];
+  let allData = [];
+  let selectedEmployeeIds = []; // 🔥 Tu przechowujemy zaznaczonych pracowników
+
+  // render sekcji
+  fetch("/api/sections")
+    .then(res => res.json())
+    .then(sections => {
+      renderSectionCheckboxes(sectionDropdown, sections);
+      sectionLabel.textContent = sectionLabel.dataset.default || "Sekcja";
+    })
+    .catch(err => console.error("Nie udało się pobrać sekcji:", err));
+
+  // pobierz dane i renderuj tabelę
+  fetch("/api/overtime/get-all-overtime")
+    .then(res => res.json())
+    .then(raw => {
+      const byUser = raw.reduce((acc, {userId, firstName, lastName, volumeType, totalOvertime, sectionId}) => {
+        if (!acc[userId]) {
+          acc[userId] = {
+            userId,
+            firstName,
+            lastName,
+            sectionId,
+            paid: 0,
+            off: 0,
+            deducted: 0
+          };
+        }
+        switch (volumeType) {
+          case "Nadgodziny płatne": acc[userId].paid = totalOvertime; break;
+          case "Nadgodziny do odbioru": acc[userId].off = totalOvertime; break;
+          case "Odebrane częściowo": acc[userId].deducted = totalOvertime; break;
+        }
+        return acc;
+      }, {});
+      allData = Object.values(byUser);
+
+      renderOvertimeForAllUsersTable(allData);
+      renderEmployeeCheckboxes(
+        employeeDropdown,
+        allData.map(u => ({ id: u.userId, firstName: u.firstName, lastName: u.lastName }))
+      );
+    });
+
+  // toggle dropdownów
+  setupDropdownToggle({
+    trigger: sectionToggleBtn,
+    dropdown: sectionDropdown,
+    arrow: sectionArrow
+  });
+  setupDropdownToggle({
+    trigger: employeeToggleBtn,
+    dropdown: employeeDropdown,
+    arrow: employeeArrow
+  });
+
+  // filtracja przy zmianie
+  function onFilterChange(isSectionChange) {
+    const selSections = Array.from(
+      sectionDropdown.querySelectorAll("input.section-checkbox:checked")
+    ).map(cb => cb.value);
+
+    const secCnt = selSections.length;
+    sectionLabel.textContent = secCnt > 0
+      ? `${secCnt} wybranych`
+      : sectionLabel.dataset.default || "Sekcja";
+
+    // 🔥 Jeśli zmienił się filtr sekcji, odśwież dropdown pracowników
+    if (isSectionChange) {
+      const employeesToShow = selSections.length > 0
+        ? allData.filter(row => selSections.includes(String(row.sectionId)))
+        : allData;
+
+      renderEmployeeCheckboxes(
+        employeeDropdown,
+        employeesToShow.map(u => ({
+          id: u.userId,
+          firstName: u.firstName,
+          lastName: u.lastName
+        }))
+      );
+
+      if (selSections.length === 0) {
+        // 🔥 Jeśli brak sekcji – odznacz wszystkich pracowników
+        selectedEmployeeIds = [];
+      } else {
+        // 🔥 Usuń tylko tych, którzy wypadli z dropdowna
+        const currentDropdownUserIds = employeesToShow.map(u => String(u.userId));
+        selectedEmployeeIds = selectedEmployeeIds.filter(id => currentDropdownUserIds.includes(id));
+      }
+
+      // 🔥 Odtwórz zaznaczenia checkboxów
+      employeeDropdown.querySelectorAll("input.employee-checkbox").forEach(cb => {
+        cb.checked = selectedEmployeeIds.includes(cb.value);
+      });
+    }
+
+
+    // 🔥 Aktualizuj zaznaczenia po każdej zmianie checkboxów pracowników
+    selectedEmployeeIds = Array.from(
+      employeeDropdown.querySelectorAll("input.employee-checkbox:checked")
+    ).map(cb => cb.value);
+
+    const empCnt = selectedEmployeeIds.length;
+    employeeLabel.textContent = empCnt > 0
+      ? `${empCnt} wybranych`
+      : employeeLabel.dataset.default || "Pracownik";
+
+    // 🔥 Filtrowanie tabeli
+    filteredData = allData.filter(row =>
+      (selSections.length === 0 || selSections.includes(String(row.sectionId))) &&
+      (selectedEmployeeIds.length === 0 || selectedEmployeeIds.includes(String(row.userId)))
+    );
+
+    renderOvertimeForAllUsersTable(filteredData);
+  }
+
+  // eventy do sekcji i pracowników
+  sectionDropdown.addEventListener("change", () => {
+    onFilterChange(true); // true = zmiana w sekcjach
+  });
+  employeeDropdown.addEventListener("change", () => {
+    onFilterChange(false); // false = zmiana w pracownikach
+  });
+
+  // render tabeli
+  function renderOvertimeForAllUsersTable(rows) {
+    const tbody = document.querySelector("#overtime-table tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    rows.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><input type="checkbox" class="select-overtime-row"
+                   data-user-id="${row.userId}"></td>
+        <td>
+          <a href="/userOvertimeDetails/overtime/${row.userId}" title="Szczegóły">
+            <i class="bx bxs-user-detail"></i>
+          </a>
+        </td>
+        <td>${row.firstName}</td>
+        <td>${row.lastName}</td>
+        <td>${row.paid}</td>
+        <td>${row.off}</td>
+        <td>${row.deducted}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+    document.getElementById("clearOvertimeBtn").addEventListener("click", () => {
+        //reset checkboxów
+        [sectionDropdown, employeeDropdown].forEach(dropdown => {
+            dropdown.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = false)
+        });
+
+        //reset etykiet
+        sectionLabel.textContent = "Sekcja";
+        employeeLabel.textContent = "Pracownik";
+        //reset tabeli
+        renderOvertimeForAllUsersTable(allData);
+    });
+
+    // export danych
+document.getElementById("exportOvertimeSummaryXlsxBtn").addEventListener("click", function () {
+  const rows = Array.from(document.querySelectorAll("#overtime-table tbody tr"));
+  const dataToExport = rows.map(row => {
+    const cells = row.querySelectorAll("td");
+    return {
+      firstName: cells[2].textContent.trim(),
+      lastName: cells[3].textContent.trim(),
+      overtimePaid: parseInt(cells[4].textContent.trim(), 10) || 0,
+      overtimeOff: parseInt(cells[5].textContent.trim(), 10) || 0,
+      deductPartial: parseInt(cells[6].textContent.trim(), 10) || 0
+    };
+  });
+
+  // 🔥 Wyślij POST z JSON
+  fetch("/api/overtime/exportAll", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dataToExport)
+  }).then(res => res.blob())
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Nadgodziny podsumowanie.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+});
+
+
+
+
+});
+
 

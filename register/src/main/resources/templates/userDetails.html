@@ -22,18 +22,13 @@
     <link rel="stylesheet" th:href="@{/css/button.css}">
     <link rel="stylesheet" th:href="@{/css/userDetails.css}">
 
+
     <script th:src="@{/js/script.js}" defer></script>
+    <script th:src="@{/js/filter.js}" defer></script>
     <script th:src="@{/js/json.js}" defer></script>
     <script th:src="@{/js/charts.js}" defer></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!--            <link rel="stylesheet" href="../static/css/sidebarCSS.css">-->
-    <!--            <link rel="stylesheet" href="../static/css/button.css">-->
-    <!--            <link rel="stylesheet" href="../static/css/details.css">-->
-
-    <!--            <script src="../static/js/script.js" defer></script>-->
-    <!--            <script src="../static/js/json.js" defer></script>-->
 
 </head>
 
@@ -56,14 +51,14 @@
         </div>
 
         <ul>
-            <li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
                 <a th:href="@{/index}">
                     <i class="bx bx-home"></i>
                     <span class="nav-item">Dashboard</span>
                 </a>
                 <span class="tooltip">Dashboard</span>
             </li>
-            <li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
                 <a th:href="@{/processes}">
                     <i class="bx bx-windows"></i>
                     <span class="nav-item">Procesy</span>
@@ -132,11 +127,25 @@
     <div class="main-container">
         <div class="filter-container">
             <div class="modalsBtn">
-                <button class="mainBtn" type="button" th:onclick="|window.location.href='@{/details}'|">Powrót</button>
+                <button class="mainBtn return" type="button" th:onclick="|window.location.href='@{/details}'|">Powrót</button>
                 <button class="mainBtn" type="button" th:onclick="|window.location.href='@{/matrix/{userId}(userId=${user.id})}'|">
                     Matryca Kompetencji
                 </button>
-
+                <button class="mainBtn" type="button" th:onclick="|window.location.href='@{/executionReport}'|">
+                    Szczegóły wykonania
+                </button>
+            </div>
+            <div class="dropdown-wrapper">
+                <div class="multiselect-container">
+                    <div class="select-box" id="processUserSelect">
+                        <span id="processUserLabel">Proces</span>
+                        <i class='bx bx-chevron-down' id="processUserArrow"></i>
+                        <div class="process-checkbox-dropdown" id="processDropdownChartUser"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="btnContainer">
+                <button type="submit" class="mainBtn" id="clearAllDataOnUserChart">Wyczyść</button>
             </div>
          </div>
 
@@ -152,12 +161,19 @@
                         <label for="endDate" class="backlog-label" >Do:</label>
                         <input type="date" id="endDate" class="backlog-date-input">
 
-                        <button id="filterButton"><i class='bx bx-search'></i></button>
+                        <button id="filterButton" title="Filtruj"><i class='bx bx-search'></i></button>
                     </div>
                     <div class="changeScaleBtn">
-                        <button id="increaseY"><i class='bx bx-plus'></i></button>
-                        <button id="decreaseY"><i class='bx bx-minus'></i></button>
-                        <button id="reset"><i class='bx bx-reset' ></i></button>
+                        <button id="increaseY" title="Zwiększ oś Y">
+                            <i class='bx bx-plus'></i>
+                        </button>
+                        <button id="decreaseY" title="Zmniejsz oś Y">
+                            <i class='bx bx-minus'></i>
+                        </button>
+                        <button id="reset" title="Resetuj ustawienia">
+                            <i class='bx bx-reset'></i>
+                        </button>
+
                     </div>
                 </div>
 
@@ -165,19 +181,34 @@
                 <canvas id="barChart"></canvas>
             </section>
 
-            <section class="card">
-                <div class="summary-cards">
+            <div class="right-sections">
+                <section class="card">
+                    <div class="summary-cards">
+                        <div class="summary-card">
+                            <h3>Średnia efektywność</h3>
+                            <p id="averageEfficiency">--%</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Średni czas nieoperacyjny</h3>
+                            <p id="nonOperationalHours">-- h</p>
+                        </div>
+                    </div>
+                </section>
+                <section class="card vertical-info-cards">
                     <div class="summary-card">
-                        <h3>Średnia efektywność</h3>
-                        <p id="averageEfficiency">--%</p>
+                        <h3>Imię i nazwisko</h3>
+                        <p th:text="${user.firstName + ' ' + user.lastName}"></p>
                     </div>
                     <div class="summary-card">
-                        <h3>Średni czas nieoperacyjny</h3>
-                        <p id="nonOperationalHours">-- h</p>
+                        <h3>Sekcja</h3>
+                        <p th:text="${user.section.sectionName}"></p>
                     </div>
-                </div>
-            </section>
-
+                    <div class="summary-card">
+                        <h3>Stanowisko</h3>
+                        <p th:text="${user.position.positionName}"></p>
+                    </div>
+                </section>
+            </div>
         </div>
 
     </div>

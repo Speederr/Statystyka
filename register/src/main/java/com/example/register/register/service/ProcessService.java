@@ -77,35 +77,6 @@ public void saveFavoriteProcesses(Long userId, List<Long> processIds) {
         return processes;
     }
 
-//    @Transactional
-//    public void saveUserLevels(Long userId, List<Long> processIds, List<Integer> levels) {
-//        // 1. Usuń wszystkie stare poziomy użytkownika
-//        userProcessLevelRepository.deleteByUserId(userId);
-//
-//        // 2. Pobierz użytkownika raz
-//        User user = userRepository.findById(userId)
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//
-//        List<UserProcessLevel> newLevels = new ArrayList<>();
-//
-//        for (int i = 0; i < processIds.size(); i++) {
-//            Long processId = processIds.get(i);
-//            Integer level = levels.get(i);
-//
-//            BusinessProcess process = processRepository.findById(processId)
-//                    .orElseThrow(() -> new RuntimeException("Process not found"));
-//
-//            UserProcessLevel upl = new UserProcessLevel();
-//            upl.setUser(user);
-//            upl.setProcess(process);
-//            upl.setLevel(level);
-//
-//            newLevels.add(upl);
-//        }
-//
-//        // 3. Zapisz wszystko na raz
-//        userProcessLevelRepository.saveAll(newLevels);
-//    }
 
     @Transactional
     public void saveSingleUserLevel(Long userId, Long processId, Integer level) {

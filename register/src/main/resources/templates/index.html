@@ -21,11 +21,6 @@
     <script th:src="@{/js/json.js}" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!--        <link rel="stylesheet" href="../static/css/sidebarCSS.css">-->
-<!--        <link rel="stylesheet" href="../static/css/index.css">-->
-<!--        <script src="../static/js/script.js" defer></script>-->
-<!--        <script src="../static/js/json.js" defer></script>-->
-
 </head>
 
 <body>
@@ -47,14 +42,14 @@
         </div>
 
         <ul>
-            <li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
                 <a th:href="@{/index}">
                     <i class="bx bx-home"></i>
                     <span class="nav-item">Dashboard</span>
                 </a>
                 <span class="tooltip">Dashboard</span>
             </li>
-            <li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
                 <a th:href="@{/processes}">
                     <i class="bx bx-windows"></i>
                     <span class="nav-item">Procesy</span>
@@ -120,41 +115,103 @@
         <span id="currentDate"></span>
     </div>
 
+    <div class="overtime-wrapper">
+        <section class="volume-type-selector">
+            <div class="vts-container">
+                <div class="vts-header">
+                    <span class="vts-label">Menu</span>
+                    <i class="bx bx-chevron-down vts-arrow"></i>
+                </div>
+                <div class="vts-body">
+                    <label class="radio-item">
+                        <input type="radio" name="volumeType" value="BASIC" checked>
+                        <span>Czas podstawowy</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="volumeType" value="OVERTIME_PAID">
+                        <span>Nadgodziny płatne</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="volumeType" value="OVERTIME_OFF">
+                        <span>Nadgodziny do odbioru</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="volumeType" value="DEDUCT_PARTIAL">
+                        <span>Odbierz nadgodziny</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="volumeType" value="DEDUCT_FULL_DAY">
+                        <span>Odbierz cały dzień</span>
+                    </label>
+                    <div class="overtime-date-picker">
+                       <input type="date" id="overtimeDate" />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="overtimeContainer" class="hidden">
+            <div class="overtime-box">
+                <div class="overtime-label">Płatne</div>
+                <div class="overtime-value" id="overtimePaid">0&nbsp;min</div>
+            </div>
+            <div class="overtime-box">
+                <div class="overtime-label">Do odbioru</div>
+                <div class="overtime-value" id="overtimeOff">0&nbsp;min</div>
+            </div>
+        </section>
+    </div>
+
+
+    <section id="overtimeInputSection" class="hidden">
+        <label for="overtimeMinutes">Czas nadgodzin (w minutach):</label>
+        <div class="overtime-body">
+            <input type="number" id="overtimeMinutes" min="1" step="1" placeholder="np. 60">
+            <button class="mainBtn index" id="confirmOvertime" title="Zapisz nadgodziny">Potwierdź</button>
+        </div>
+    </section>
+
+
+
+
     <div class="container mt-3">
         <!-- Dodanie onsubmit="return false;" zapobiega odświeżeniu strony -->
         <form id="saveForm" onsubmit="return false;">
-            <div class="row">
+            <div class="process-list-wrapper">
+                <div class="row">
 
-                <!-- Sprawdzenie, czy są procesy -->
-                <th:block th:if="${#lists.isEmpty(favoriteProcesses)}">
-                    <h2 style="text-align: center; color: gray;">Brak dodanych procesów</h2>
-                </th:block>
+                    <!-- Sprawdzenie, czy są procesy -->
+                    <th:block th:if="${#lists.isEmpty(favoriteProcesses)}">
+                        <h2 style="text-align: center; color: gray;">Brak dodanych procesów</h2>
+                    </th:block>
 
-                <!-- Pętla iterująca przez procesy -->
-                <th:block th:each="process : ${favoriteProcesses}">
-                    <div class="col-md-6">
-                        <div class="input-container">
-                            <div class="form-floating mb-3 mt-6">
-                                <input type="number" class="form-control"
-                                       th:id="${process.processName}"
-                                       th:placeholder="${process.processName}"
-                                       th:name="quantity"
-                                       th:attr="data-process-id=${process.id}"
-                                       min="1">
+                    <!-- Pętla iterująca przez procesy -->
+                    <th:block th:each="process : ${favoriteProcesses}">
+                        <div class="col-md-6">
+                            <div class="input-container">
+                                <div class="form-floating mb-3 mt-6">
+                                    <input type="number" class="form-control"
+                                           th:id="${process.processName}"
+                                           th:placeholder="${process.processName}"
+                                           th:name="quantity"
+                                           th:attr="data-process-id=${process.id}"
+                                           min="1">
 
-                                <label th:for="${process.processName}" th:text="${process.processName}"></label>
-                                <i class='bx bx-plus add-efficiency' th:attr="data-process-id=${process.id}"></i>
+                                    <label th:for="${process.processName}" th:text="${process.processName}"></label>
+                                    <i class='bx bx-plus add-efficiency' th:attr="data-process-id=${process.id}"></i>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </th:block>
+                    </th:block>
+                </div>
             </div>
         </form>
     </div>
 
     <div class="confirmBtnDiv">
 <!--        <button class="processBtn" id="saveAllBtn" type="button">Zapisz</button>-->
-        <a href="#" class="animated-button" id="saveAllBtn">
+        <a href="#" class="animated-button" id="saveAllBtn" title="Zapisz wolumen">
             <span></span>
             <span></span>
             <span></span>
@@ -192,6 +249,18 @@
         </div>
     </div>
 
+    <div id="confirmModal" class="modal hidden">
+        <div class="confirm-modal-content">
+            <div class="confirm-header">
+                <h5>Uwaga!</h5>
+                <p id="confirmText"></p>
+            </div>
+            <div class="confirm-button">
+                <button id="confirmYes" class="mainBtn confirmBtn">Tak</button>
+                <button id="confirmNo" class="mainBtn confirmBtn" >Nie</button>
+            </div>
+            </div>
+    </div>
 
 
 

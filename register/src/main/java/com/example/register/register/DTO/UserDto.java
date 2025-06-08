@@ -23,22 +23,24 @@ public class UserDto {
 
     @NotBlank(message = "Nazwisko nie może być puste")
     private String lastName;
-
     private String username;
-
     private String email;
-
     private byte[] avatarUrl;
+    private String sectionName;
+    private String teamName;
 
     @NotNull(message = "Identyfikator roli jest wymagany")
     private Long roleId;
 
-    public UserDto(String firstName, String lastName, String username, String email) {
+    public UserDto(String firstName, String lastName, String username, String email, String teamName, String sectionName) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
         this.email = email;
+        this.teamName = teamName;
+        this.sectionName = sectionName;
     }
+
 
     public UserDto(Long id, String firstName, String lastName) {
         this.id = id;

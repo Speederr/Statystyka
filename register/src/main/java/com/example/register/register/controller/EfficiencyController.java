@@ -1,8 +1,10 @@
 package com.example.register.register.controller;
 
+import com.example.register.register.DTO.EfficiencyRequestDTO;
 import com.example.register.register.model.Efficiency;
 import com.example.register.register.model.SavedData;
 import com.example.register.register.model.User;
+import com.example.register.register.model.VolumeType;
 import com.example.register.register.repository.*;
 import com.example.register.register.service.EfficiencyService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,10 +36,12 @@ public class EfficiencyController {
 
 
     @PostMapping("/calculate/{userId}")
-    public ResponseEntity<String> calculateEfficiency(@PathVariable Long userId, @RequestBody Map<Long, Integer> processVolumes) {
-        efficiencyService.calculateAndSaveEfficiency(userId, processVolumes);
-        return ResponseEntity.ok("Efficiency calculated and saved for user " + userId);
+    public ResponseEntity<String> calculateEfficiency(@PathVariable Long userId) {
+        efficiencyService.calculateAndSaveEfficiency(userId);
+        return ResponseEntity.ok("Efficiency calculated for user " + userId);
     }
+
+
 
     @GetMapping("/average/section")
     public ResponseEntity<Map<String, Double>> showSectionEfficiency(@RequestParam String sectionId) {
@@ -91,24 +96,30 @@ public class EfficiencyController {
                 .mapToDouble(sd -> sd.getProcess().getAverageTime() * sd.getQuantity())
                 .sum();
 
-        // 🧮 Średni czas na jednego użytkownika
-        double avgPerUserMinutes = userInSection.isEmpty() ? 0.0 : totalMinutes / userInSection.size();
-        double avgPerUserHours = Math.round((avgPerUserMinutes / 60.0) * 100.0) / 100.0;
+        // 🔄 Zamiana minut na godziny (z zaokrągleniem do 2 miejsc)
+        double totalHours = Math.round((totalMinutes / 60.0) * 100.0) / 100.0;
+        Map<String, Double> result = Map.of("totalNonOperationalTime", totalHours);
 
-        Map<String, Double> result = Map.of("averageNonOperationalTime", avgPerUserHours);
+
+
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/weekly")
     public ResponseEntity<List<Map<String, Object>>> getWeeklyEfficiencyAndNonOperational(
-            @RequestParam(required = false) String sectionId) {
-
+            @RequestParam(required = false) String sectionId,
+            Principal principal
+    ) {
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusDays(6); // Ostatnie 7 dni
 
         List<User> userInSection;
-        if ("all".equalsIgnoreCase(sectionId) || sectionId == null) {
-            userInSection = userRepository.findAll();
+
+        if (sectionId == null || "all".equalsIgnoreCase(sectionId)) {
+            // ⬅️ Zalogowany użytkownik tylko dla widoku indywidualnego
+            User user = userRepository.findByUsername(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            userInSection = List.of(user);
         } else {
             Long id;
             try {
@@ -137,18 +148,19 @@ public class EfficiencyController {
                     .mapToDouble(sd -> sd.getProcess().getAverageTime() * sd.getQuantity())
                     .sum();
 
-            double avgNonOperational = userInSection.isEmpty() ? 0.0 : totalMinutes / userInSection.size();
-            double avgNonOperationalHours = Math.round((avgNonOperational / 60.0) * 100.0) / 100.0;
+            double totalNonOperationalHours = Math.round((totalMinutes / 60.0) * 100.0) / 100.0;
 
             Map<String, Object> dayData = Map.of(
                     "date", date.toString(),
                     "efficiency", avgEfficiency,
-                    "nonOperational", avgNonOperationalHours
+                    "nonOperational", totalNonOperationalHours
             );
             result.add(dayData);
         }
 
         return ResponseEntity.ok(result);
     }
+
+
 
 }

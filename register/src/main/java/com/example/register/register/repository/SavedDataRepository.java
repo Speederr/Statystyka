@@ -1,17 +1,16 @@
 package com.example.register.register.repository;
 
+import com.example.register.register.DTO.OvertimeDTO;
 import com.example.register.register.model.SavedData;
 import com.example.register.register.model.User;
+import com.example.register.register.model.VolumeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface SavedDataRepository  extends JpaRepository<SavedData, Long> {
@@ -23,6 +22,7 @@ public interface SavedDataRepository  extends JpaRepository<SavedData, Long> {
     Long sumQuantityByUserAndDate(@Param("user") User user, @Param("date") LocalDate todaysDate);
 
     List<SavedData> findByUserAndTodaysDate(User user, LocalDate todaysDate);
+    List<SavedData> findByUser_IdAndTodaysDate(Long userId, LocalDate todaysDate);
 
     @Query("SELECT sd.todaysDate, p.processName, SUM(sd.quantity) " +
             "FROM SavedData sd " +
@@ -39,5 +39,21 @@ public interface SavedDataRepository  extends JpaRepository<SavedData, Long> {
     AND s.process.nonOperational = true
     """)
     Double sumNonOperationalHoursByUserId(@Param("userId") Long userId);
+
+    List<SavedData> findByUser_Team_Id(Long teamId);
+
+    @Query("""
+      SELECT COALESCE(SUM(s.overtimeMinutes), 0)
+      FROM SavedData s
+      WHERE s.user.id = :userId
+        AND s.volumeType = :type
+      """)
+    Integer sumOvertimeByUserAndDateAndType(
+            @Param("userId") Long userId,
+            @Param("type") VolumeType type
+    );
+
+    List<SavedData> findAllByUser_IdOrderByTodaysDateAsc(Long userId);
+
 
 }
