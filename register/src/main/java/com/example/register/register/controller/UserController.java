@@ -21,6 +21,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.net.URI;
@@ -32,6 +33,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
+@Slf4j
 @RequestMapping("/api/user/")
 public class UserController {
 
@@ -116,7 +118,7 @@ public class UserController {
 
                 if (roleId != -1) {
                     userService.updateUserRole(userId, roleId);
-                    System.out.println("Updated user ID: " + userId + " with role ID: " + roleId);
+                    log.info("Updated user ID: " + userId + " with role ID: " + roleId);
                 }
             }
 
@@ -126,7 +128,7 @@ public class UserController {
                 try {
                     Long sectionId = Long.parseLong(selectedSection);
                     userService.updateUserSection(userId, sectionId);
-                    System.out.println("Updated user ID: " + userId + " with section ID: " + sectionId);
+                    log.info("Updated user ID: " + userId + " with section ID: " + sectionId);
                 } catch (NumberFormatException e) {
                     System.err.println("Błąd: Nieprawidłowy format ID sekcji dla użytkownika ID: " + userId);
                 }
@@ -137,7 +139,7 @@ public class UserController {
                 try {
                     Long teamId = Long.parseLong(selectedTeam);
                     userService.updateUserTeam(userId, teamId);
-                    System.out.println("Updated user ID: " + userId + " with team ID: " + teamId);
+                    log.info("Updated user ID: " + userId + " with team ID: " + teamId);
                 } catch (NumberFormatException e) {
                     System.err.println("Błąd: Nieprawidłowy format ID zespołu dla użytkownika ID: " + userId);
 
@@ -258,7 +260,7 @@ public class UserController {
     @Transactional
     public ResponseEntity<Void> restorePassword(@RequestParam("email") String email) {
 
-        System.out.println("🔹 Otrzymano żądanie zmiany hasła dla użytkownika: " + email);
+        log.info("🔹 Otrzymano żądanie zmiany hasła dla użytkownika: " + email);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("❌ Użytkownik nie istnieje."));
@@ -266,10 +268,10 @@ public class UserController {
         String temporaryPassword = userService.generateTemporaryPassword();
 
         userService.updateUserPassword(user.getUsername(), temporaryPassword);
-        System.out.println("✅ Hasło użytkownika zostało zaktualizowane!");
+        log.info("✅ Hasło użytkownika zostało zaktualizowane!");
 
         emailService.sendTemporaryPasswordEmail(user.getEmail(), temporaryPassword);
-        System.out.println("📧 Wysłano e-mail z nowym hasłem!");
+        log.info("📧 Wysłano e-mail z nowym hasłem!");
 
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create("/restorePassword?success=emailSent"))
@@ -328,18 +330,18 @@ public class UserController {
     @GetMapping("/avatar")
     public ResponseEntity<String> getUserAvatar(Principal principal) {
         String username = principal.getName();
-        System.out.println("Żądanie avatara dla użytkownika: " + username);
+        log.info("Żądanie avatara dla użytkownika: " + username);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony"));
 
         if (user.getAvatarUrl() == null) {
-            System.out.println("Brak avatara dla użytkownika: " + username);
+            log.info("Brak avatara dla użytkownika: " + username);
             return ResponseEntity.ok("");
         }
 
         String base64Avatar = Base64.getEncoder().encodeToString(user.getAvatarUrl());
-        System.out.println("Avatar wczytany dla użytkownika: " + username);
+        log.info("Avatar wczytany dla użytkownika: " + username);
         return ResponseEntity.ok(base64Avatar);
     }
 

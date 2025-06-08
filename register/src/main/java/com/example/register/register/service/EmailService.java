@@ -1,15 +1,22 @@
 package com.example.register.register.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
+    private final JavaMailSender mailSender;
+    private final String fromAddress;
 
     @Autowired
-    private JavaMailSender mailSender;
+    public EmailService(JavaMailSender mailSender,
+                        @Value("${spring.mail.from}") String fromAddress) {
+        this.mailSender = mailSender;
+        this.fromAddress = fromAddress;
+    }
 
     public void sendUserCreationMail(String to, String name, String last_name, String username, String password) {
         SimpleMailMessage message = new SimpleMailMessage();
@@ -20,6 +27,7 @@ public class EmailService {
                 + "Login: " + username + "\n"
                 + "Hasło tymczasowe: " + password + "\n\n"
                 + "Proszę zmienić hasło po zalogowaniu.");
+        message.setFrom(fromAddress);
 
         mailSender.send(message);
     }
@@ -30,6 +38,7 @@ public class EmailService {
         message.setSubject("🔒 Reset hasła - Twoje nowe hasło tymczasowe");
         message.setText("Twoje nowe tymczasowe hasło to: " + temporaryPassword +
                 "\n\nZaloguj się i zmień je na własne.");
+        message.setFrom(fromAddress);
 
         mailSender.send(message);
     }
@@ -39,7 +48,7 @@ public class EmailService {
         message.setTo(to);
         message.setSubject(subject);
         message.setText(text);
-        message.setFrom("twojemail@gmail.com"); // Możesz podać adres nadawcy
+        message.setFrom(fromAddress);
 
         mailSender.send(message);
     }
