@@ -6,6 +6,7 @@ import com.example.register.register.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class SavedDataService {
     @Autowired
     private SavedDataRepository savedDataRepository;
@@ -53,7 +55,7 @@ public class SavedDataService {
             efficiency = efficiencies.get(0);
         } else {
             // 🔹 Jeśli są duplikaty, usuwamy wszystkie poza pierwszym
-            System.out.println("⚠️ Usuwanie duplikatów efektywności dla użytkownika " + user.getId());
+            log.info("⚠️ Usuwanie duplikatów efektywności dla użytkownika " + user.getId());
             for (int i = 1; i < efficiencies.size(); i++) {
                 efficiencyRepository.delete(efficiencies.get(i));
             }

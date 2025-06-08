@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.security.Principal;
 import java.time.LocalDate;
@@ -20,6 +21,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
+@Slf4j
 @RequestMapping("/api/sections")
 public class SectionController {
 
@@ -155,7 +157,7 @@ public class SectionController {
                 .filter(u -> homeofficeIds.contains(u.getId()))
                 .toList();
 
-        System.out.println("✅ Obecnych: " + presentEmployees.size() +
+        log.info("✅ Obecnych: " + presentEmployees.size() +
                 ", Nieobecnych: " + onLeaveEmployees.size() +
                 ", Niezalogowanych: " + notLoggedEmployees.size() +
                 ", Biuro: " + officeEmployees.size() +

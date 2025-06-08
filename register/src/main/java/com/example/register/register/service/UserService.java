@@ -13,10 +13,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 
 
 @Service
+@Slf4j
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
@@ -42,12 +44,12 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        System.out.println("Trying to load user with username: " + username);
+        log.info("Trying to load user with username: " + username);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found in users table."));
 
-        System.out.println("User found: " + user.getUsername() + " with role: " + user.getRole().getRoleName());
+        log.info("User found: " + user.getUsername() + " with role: " + user.getRole().getRoleName());
 
         // Tworzenie listy autoryzacji na podstawie roli użytkownika
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName().toUpperCase()));
@@ -69,19 +71,19 @@ public class UserService implements UserDetailsService {
     public void updateUserRole(Long userId, int newRoleId) {
         // Zaktualizuj rolę użytkownika w bazie danych
         userRepository.updateUserRoleById(userId, newRoleId);
-        System.out.println("Updated role for userId: " + userId + " to roleId " + newRoleId);
+        log.info("Updated role for userId: " + userId + " to roleId " + newRoleId);
     }
 
     @Transactional
     public void updateUserSection(Long userId, Long newSectionId) {
         userRepository.updateUserSectionById(userId, newSectionId);
-        System.out.println("Updated section for userId: " + userId + " to sectionId " + newSectionId);
+        log.info("Updated section for userId: " + userId + " to sectionId " + newSectionId);
     }
 
     @Transactional
     public void updateUserTeam(Long userId, Long newTeamId) {
         userRepository.updateUserTeamById(userId, newTeamId);
-        System.out.println("Updated team for userId: " + userId + " to teamId " + newTeamId);
+        log.info("Updated team for userId: " + userId + " to teamId " + newTeamId);
     }
 
     @Transactional
@@ -128,7 +130,7 @@ public class UserService implements UserDetailsService {
 
         userRepository.save(user);
         entityManager.flush();
-        System.out.println("✅ Hasło zmienione i zapisane w bazie dla użytkownika: " + username);
+        log.info("✅ Hasło zmienione i zapisane w bazie dla użytkownika: " + username);
     }
 
     //funckja dla admina
