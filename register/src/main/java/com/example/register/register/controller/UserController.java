@@ -1,6 +1,5 @@
 package com.example.register.register.controller;
 
-import com.example.register.register.DTO.OvertimeDTO;
 import com.example.register.register.DTO.UserDto;
 import com.example.register.register.DTO.UserSummaryDTO;
 import com.example.register.register.DTO.UserTableDto;
@@ -25,8 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.util.*;
@@ -34,33 +31,29 @@ import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
-@RequestMapping("/api/user/")
+@RequestMapping("/api/user")
 public class UserController {
 
     private final UserService userService;
     private final UserRepository userRepository;
-    private final PageController pageController;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final PositionRepository positionRepository;
     private final AttendanceRepository attendanceRepository;
     private final EfficiencyRepository efficiencyRepository;
-    private final ProcessRepository processRepository;
     private final SavedDataRepository savedDataRepository;
     private final TeamRepository teamRepository;
     private final SectionRepository sectionRepository;
 
 
-    public UserController(UserService userService, UserRepository userRepository, PageController pageController, PasswordEncoder passwordEncoder, EmailService emailService, PositionRepository positionRepository, AttendanceRepository attendanceRepository, EfficiencyRepository efficiencyRepository, ProcessRepository processRepository, SavedDataRepository savedDataRepository, TeamRepository teamRepository, SectionRepository sectionRepository) {
+    public UserController(UserService userService, UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, PositionRepository positionRepository, AttendanceRepository attendanceRepository, EfficiencyRepository efficiencyRepository, SavedDataRepository savedDataRepository, TeamRepository teamRepository, SectionRepository sectionRepository) {
         this.userService = userService;
         this.userRepository = userRepository;
-        this.pageController = pageController;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.positionRepository = positionRepository;
         this.attendanceRepository = attendanceRepository;
         this.efficiencyRepository = efficiencyRepository;
-        this.processRepository = processRepository;
         this.savedDataRepository = savedDataRepository;
         this.teamRepository = teamRepository;
         this.sectionRepository = sectionRepository;
@@ -118,7 +111,7 @@ public class UserController {
 
                 if (roleId != -1) {
                     userService.updateUserRole(userId, roleId);
-                    log.info("Updated user ID: " + userId + " with role ID: " + roleId);
+                    log.info("Updated user ID: {} with role ID: {}", userId, roleId);
                 }
             }
 
@@ -128,7 +121,7 @@ public class UserController {
                 try {
                     Long sectionId = Long.parseLong(selectedSection);
                     userService.updateUserSection(userId, sectionId);
-                    log.info("Updated user ID: " + userId + " with section ID: " + sectionId);
+                    log.info("Updated user ID: {} with section ID: {}", userId, sectionId);
                 } catch (NumberFormatException e) {
                     System.err.println("Błąd: Nieprawidłowy format ID sekcji dla użytkownika ID: " + userId);
                 }
@@ -139,7 +132,7 @@ public class UserController {
                 try {
                     Long teamId = Long.parseLong(selectedTeam);
                     userService.updateUserTeam(userId, teamId);
-                    log.info("Updated user ID: " + userId + " with team ID: " + teamId);
+                    log.info("Updated user ID: {} with team ID: {}", userId, teamId);
                 } catch (NumberFormatException e) {
                     System.err.println("Błąd: Nieprawidłowy format ID zespołu dla użytkownika ID: " + userId);
 
@@ -240,7 +233,7 @@ public class UserController {
     @Transactional
     public ResponseEntity<Void> restorePassword(@RequestParam("email") String email) {
 
-        log.info("🔹 Otrzymano żądanie zmiany hasła dla użytkownika: " + email);
+        log.info("\uD83D\uDD39 Otrzymano żądanie zmiany hasła dla użytkownika: {}", email);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("❌ Użytkownik nie istnieje."));
@@ -315,7 +308,7 @@ public class UserController {
                 .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony"));
 
         if (user.getAvatarUrl() == null) {
-            log.info("Brak avatara dla użytkownika: " + username);
+            log.info("Brak avatara dla użytkownika: {}", username);
             return ResponseEntity.ok("");
         }
 
@@ -386,7 +379,7 @@ public List<UserTableDto> getAllUsers(Principal principal) {
         List<Efficiency> efficiencies = efficiencyRepository.findAllByUserAndTodaysDate(user, todaysDate);
 
         // Jeśli lista nie jest pusta, zwróć efektywność z pierwszego rekordu, inaczej zwróć 0.0
-        return efficiencies.isEmpty() ? 0.0 : efficiencies.get(0).getEfficiency();
+        return efficiencies.isEmpty() ? 0.0 : efficiencies.getFirst().getEfficiency();
     }
 
     private Double getNonOperationalTime(User user, LocalDate date) {

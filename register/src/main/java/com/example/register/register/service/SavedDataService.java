@@ -34,7 +34,7 @@ public class SavedDataService {
             throw new RuntimeException("❌ Lista danych jest pusta!");
         }
 
-        User user = dataList.get(0).getUser();
+        User user = dataList.getFirst().getUser();
         LocalDate todaysDate = LocalDate.now();
 
         // 🔹 1️⃣ Zapisanie danych do `saved_data`
@@ -52,14 +52,14 @@ public class SavedDataService {
             efficiency.setEfficiency(0.0);
         } else if (efficiencies.size() == 1) {
             // 🔹 Jeśli jest JEDEN wpis, aktualizujemy go
-            efficiency = efficiencies.get(0);
+            efficiency = efficiencies.getFirst();
         } else {
             // 🔹 Jeśli są duplikaty, usuwamy wszystkie poza pierwszym
-            log.info("⚠️ Usuwanie duplikatów efektywności dla użytkownika " + user.getId());
+            log.info("Usuwanie duplikatów efektywności dla użytkownika {}", user.getId());
             for (int i = 1; i < efficiencies.size(); i++) {
                 efficiencyRepository.delete(efficiencies.get(i));
             }
-            efficiency = efficiencies.get(0);
+            efficiency = efficiencies.getFirst();
         }
 
         // 🔹 3️⃣ Pobranie wszystkich zapisanych ilości dla użytkownika i daty

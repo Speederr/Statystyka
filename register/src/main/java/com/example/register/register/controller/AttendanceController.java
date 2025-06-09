@@ -4,10 +4,8 @@ import com.example.register.register.model.Attendance;
 import com.example.register.register.model.User;
 import com.example.register.register.repository.AttendanceRepository;
 import com.example.register.register.repository.UserRepository;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -56,7 +54,7 @@ public ResponseEntity<Map<String, Integer>> getWorkModeSummary(@RequestParam(req
     List<User> users;
 
     if (sectionId != null && !"all".equalsIgnoreCase(sectionId)) {
-        Long id;
+        long id;
         try {
             id = Long.parseLong(sectionId);
         } catch (NumberFormatException e) {

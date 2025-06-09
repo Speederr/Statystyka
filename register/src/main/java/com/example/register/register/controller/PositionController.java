@@ -5,7 +5,6 @@ import com.example.register.register.repository.PositionRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/position")

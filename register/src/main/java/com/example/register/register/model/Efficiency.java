@@ -34,9 +34,4 @@ public class Efficiency {
     private LocalDate todaysDate;
 
 
-    public Efficiency(User user, LocalDate todaysDate, Double efficiency) {
-        this.user = user;
-        this.todaysDate = todaysDate;
-        this.efficiency = efficiency;
-    }
 }

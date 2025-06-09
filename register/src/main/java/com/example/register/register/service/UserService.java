@@ -44,12 +44,12 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        log.info("Trying to load user with username: " + username);
+        log.info("Trying to load user with username: {}", username);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found in users table."));
 
-        log.info("User found: " + user.getUsername() + " with role: " + user.getRole().getRoleName());
+        log.info("User found: {} with role: {}", user.getUsername(), user.getRole().getRoleName());
 
         // Tworzenie listy autoryzacji na podstawie roli użytkownika
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName().toUpperCase()));
@@ -62,28 +62,23 @@ public class UserService implements UserDetailsService {
     }
 
 
-
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
-
     @Transactional
     public void updateUserRole(Long userId, int newRoleId) {
         // Zaktualizuj rolę użytkownika w bazie danych
         userRepository.updateUserRoleById(userId, newRoleId);
-        log.info("Updated role for userId: " + userId + " to roleId " + newRoleId);
+        log.info("Updated role for userId: {} to roleId {}", userId, newRoleId);
     }
 
     @Transactional
     public void updateUserSection(Long userId, Long newSectionId) {
         userRepository.updateUserSectionById(userId, newSectionId);
-        log.info("Updated section for userId: " + userId + " to sectionId " + newSectionId);
+        log.info("Updated section for userId: {} to sectionId {}", userId, newSectionId);
     }
 
     @Transactional
     public void updateUserTeam(Long userId, Long newTeamId) {
         userRepository.updateUserTeamById(userId, newTeamId);
-        log.info("Updated team for userId: " + userId + " to teamId " + newTeamId);
+        log.info("Updated team for userId: {} to teamId {}", userId, newTeamId);
     }
 
     @Transactional
@@ -91,27 +86,10 @@ public class UserService implements UserDetailsService {
         Optional<User> user = userRepository.findById(userId);
 
         if (user.isPresent()) {
-            String username = user.get().getUsername();
             userRepository.deleteUserById(userId);
         } else {
             throw new EntityNotFoundException("User with id " + userId + " not found.");
         }
-    }
-
-    @Transactional
-    public boolean isFirstLogin(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found in form_users."));
-
-        return user.isFirstLogin();
-    }
-
-    @Transactional
-    public void updateFirstLoginStatus(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        user.setFirstLogin(false);
-        userRepository.save(user);
     }
 
     @Transactional
@@ -130,7 +108,7 @@ public class UserService implements UserDetailsService {
 
         userRepository.save(user);
         entityManager.flush();
-        log.info("✅ Hasło zmienione i zapisane w bazie dla użytkownika: " + username);
+        log.info("Hasło zmienione i zapisane w bazie dla użytkownika: {}", username);
     }
 
     //funckja dla admina

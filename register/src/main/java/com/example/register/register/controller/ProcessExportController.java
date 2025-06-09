@@ -1,7 +1,5 @@
 package com.example.register.register.controller;
 
-import com.example.register.register.model.BusinessProcess;
-import com.example.register.register.service.ProcessService;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -17,12 +15,6 @@ import java.util.Map;
 
 @RestController
 public class ProcessExportController {
-
-    private final ProcessService processService;
-
-    public ProcessExportController(ProcessService processService) {
-        this.processService = processService;
-    }
 
 
     @PostMapping("/export/processes")

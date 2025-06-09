@@ -1,3 +1,47 @@
+//document.addEventListener("DOMContentLoaded", () => {
+//    const loginForm = document.getElementById("login-form");
+//    const errorDiv = document.getElementById("error");
+//
+//    if (loginForm) {
+//        loginForm.addEventListener("submit", function (e) {
+//            e.preventDefault();
+//
+//            const username = document.getElementById("username").value;
+//            const password = document.getElementById("password").value;
+//
+//            fetch("/api/auth/login", {
+//                method: "POST",
+//                headers: {
+//                    "Content-Type": "application/json"
+//                },
+//                body: JSON.stringify({ username, password })
+//            })
+//            .then(response => {
+//                if (!response.ok) {
+//                    throw new Error("Błąd logowania");
+//                }
+//                return response.json();
+//            })
+//            .then(data => {
+//                console.log("✅ Zalogowano:", data);
+//
+//                // ✅ Przekierowanie zgodnie z odpowiedzią z backendu
+//                if (data.redirect) {
+//                    window.location.href = data.redirect;
+//                } else {
+//                    // domyślnie na /index, jeśli brak redirectu
+//                    window.location.href = "/index";
+//                }
+//            })
+//            .catch(error => {
+//                console.error("⛔", error);
+//                if (errorDiv) errorDiv.style.display = "block";
+//            });
+//        });
+//    }
+//});
+
+
 function displayMessage(type, message) {
     Swal.fire({
         icon: type, // 'success' lub 'error'

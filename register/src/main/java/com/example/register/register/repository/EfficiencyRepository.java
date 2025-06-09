@@ -20,9 +20,6 @@ public interface EfficiencyRepository extends JpaRepository<Efficiency, Long> {
     @Query("SELECT e FROM Efficiency e WHERE e.user.section.id = :sectionId AND e.todaysDate = :date")
     List<Efficiency> findAllBySectionIdAndDate(@Param("sectionId") Long sectionId, @Param("date") LocalDate date);
 
-    @Query("SELECT e FROM Efficiency e WHERE e.user.team.id = :teamId AND e.todaysDate = :date")
-    List<Efficiency> findAllByTeamIdAndDate(@Param("teamId") Long teamId, @Param("date") LocalDate date);
-
     @Query("SELECT e FROM Efficiency e WHERE e.todaysDate = :date")
     List<Efficiency> findAllByDate(@Param("date") LocalDate date);
 

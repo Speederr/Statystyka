@@ -14,68 +14,16 @@ import java.util.List;
 @Service
 public class EfficiencyService {
 
-    private final ProcessRepository processRepository;
     private final EfficiencyRepository efficiencyRepository;
     private final UserRepository userRepository;
     private final SavedDataRepository savedDataRepository;
 
-    public EfficiencyService(ProcessRepository processRepository, EfficiencyRepository efficiencyRepository, UserRepository userRepository, SavedDataRepository savedDataRepository) {
-        this.processRepository = processRepository;
+    public EfficiencyService(EfficiencyRepository efficiencyRepository, UserRepository userRepository, SavedDataRepository savedDataRepository) {
         this.efficiencyRepository = efficiencyRepository;
         this.userRepository = userRepository;
         this.savedDataRepository = savedDataRepository;
     }
 
-//    @Transactional
-//    public void calculateAndSaveEfficiency(Long userId) {
-//        LocalDate today = LocalDate.now();
-//
-//        // 1) Pobierz wszystkie SavedData na dziś
-//        List<SavedData> allEntries = savedDataRepository
-//                .findByUser_IdAndTodaysDate(userId, today);
-//
-//        // 2) Numerator: suma czasu na procesy operacyjne
-//        double totalTaskTime = allEntries.stream()
-//                .filter(e -> !e.getProcess().isNonOperational())
-//                .mapToDouble(e -> e.getQuantity() * e.getProcess().getAverageTime())
-//                .sum();
-//
-//        // 3) Czas na procesy nieoperacyjne
-//        double totalNonOpTime = allEntries.stream()
-//                .filter(e -> e.getProcess().isNonOperational())
-//                .mapToDouble(e -> e.getQuantity() * e.getProcess().getAverageTime())
-//                .sum();
-//
-//        // 4) Suma wszystkich zapisanych minut nadgodzin
-//        int totalOvertimeMinutes = allEntries.stream()
-//                .mapToInt(SavedData::getOvertimeMinutes)
-//                .sum();
-//
-//        // 5) Denominator: 465 + overtime – nonOp
-//        final int baseTime = 465;
-//        double operationalWindow = Math.max(baseTime + totalOvertimeMinutes - totalNonOpTime, 1);
-//
-//        // 6) Oblicz procent efektywności
-//        double efficiencyPercent = totalTaskTime / operationalWindow * 100;
-//        efficiencyPercent = Math.round(efficiencyPercent * 100.0) / 100.0;
-//
-//        // 7) Upsert rekordu Efficiency
-//        Efficiency eff = efficiencyRepository
-//                .findByUser_IdAndTodaysDate(userId, today)
-//                .orElseGet(() -> {
-//                    // stworzenie nowego wpisu
-//                    User user = userRepository.findById(userId)
-//                            .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-//                    Efficiency e = new Efficiency();
-//                    e.setUser(user);
-//                    e.setTodaysDate(today);
-//                    return e;
-//                });
-//
-//        // 8) Ustaw nową wartość i zapisz
-//        eff.setEfficiency(efficiencyPercent);
-//        efficiencyRepository.save(eff);
-//    }
 @Transactional
 public void calculateAndSaveEfficiency(Long userId) {
     LocalDate today = LocalDate.now();
@@ -114,11 +62,11 @@ public void calculateAndSaveEfficiency(Long userId) {
             .mapToInt(SavedData::getOvertimeMinutes)
             .sum();
 
-    // 7) Ustal bazowe okno: 465 – odebrane
-    final int BASE = 465;
+    // 7) Ustal bazowe okno: 435 – odebrane
+    final int BASE = 435;
     int baseWindow = Math.max(BASE - sumDeduct, 0);
 
-    // 8) Całkowite okno = (465-deduct) + paid + off – nonOp
+    // 8) Całkowite okno = (435-deduct) + paid + off – nonOp
     double operationalWindow = Math.max(baseWindow + sumPaid + sumOff - totalNonOpTime, 1);
 
     // 9) % efektywności

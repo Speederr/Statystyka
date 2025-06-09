@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
 
 <head>
     <meta charset="UTF-8">
@@ -128,7 +130,7 @@
         </div>
     </div>
 
-        <br />
+    <br/>
 
     <div class="role">
         <form th:action="@{/api/user/saveUsers}" method="post" id="users-form">
@@ -149,7 +151,8 @@
                     <tbody>
                     <tr th:each="user : ${users}">
                         <td class="checkbox-cell">
-                            <input type="checkbox" class="checkbox-button" th:if="${!user.isSuperAdmin}" name="selectedUsers" th:value="${user.id}">
+                            <input type="checkbox" class="checkbox-button" th:if="${!user.isSuperAdmin}"
+                                   name="selectedUsers" th:value="${user.id}">
                         </td>
                         <td th:text="${user.firstName}">Imię</td>
                         <td th:text="${user.lastName}">Nazwisko</td>
@@ -170,7 +173,8 @@
                             </th:block>
                         </td>
                         <td class="select-cell">
-                            <select class="select-section" th:attr="name='sections[' + ${user.id} + ']'" th:if="${user.team != null}">
+                            <select class="select-section" th:attr="name='sections[' + ${user.id} + ']'"
+                                    th:if="${user.team != null}">
                                 <option th:each="section : ${user.team.sections}"
                                         th:value="${section.id}"
                                         th:text="${section.sectionName}"
@@ -179,10 +183,14 @@
                             </select>
                         </td>
                         <td class="select-cell">
-                            <select class="select-role" th:attr="name='roles[' + ${user.id} + ']'" th:value="${user.role.roleName}" th:if="${!user.isSuperAdmin}">
+                            <select class="select-role" th:attr="name='roles[' + ${user.id} + ']'"
+                                    th:value="${user.role.roleName}" th:if="${!user.isSuperAdmin}">
                                 <option value="Admin" th:selected="${user.role.roleName == 'Admin'}">Admin</option>
-                                <option value="Manager" th:selected="${user.role.roleName == 'Manager'}">Manager</option>
-                                <option value="Coordinator" th:selected="${user.role.roleName == 'Coordinator'}">Coordinator</option>
+                                <option value="Manager" th:selected="${user.role.roleName == 'Manager'}">Manager
+                                </option>
+                                <option value="Coordinator" th:selected="${user.role.roleName == 'Coordinator'}">
+                                    Coordinator
+                                </option>
                                 <option value="User" th:selected="${user.role.roleName == 'User'}">User</option>
                             </select>
                         </td>
@@ -263,7 +271,7 @@
         </div>
     </div>
 
-<!--    Modal do dodania nowego zespołu -->
+    <!--    Modal do dodania nowego zespołu -->
     <div id="teamModal" class="modal">
         <div class="modal-content">
             <form id="teamForm">
@@ -281,34 +289,32 @@
         </div>
     </div>
 
-<!--    Modal do dodania nowej sekcji   -->
-<div id="sectionModal" class="modal">
-    <div class="modal-content">
-        <form id="sectionForm">
-            <div class="title">
-                <h4>Nowa Sekcja</h4>
-                <span class="close" id="closeSectionModalBtn">&times;</span>
-            </div>
+    <!--    Modal do dodania nowej sekcji   -->
+    <div id="sectionModal" class="modal">
+        <div class="modal-content">
+            <form id="sectionForm">
+                <div class="title">
+                    <h4>Nowa Sekcja</h4>
+                    <span class="close" id="closeSectionModalBtn">&times;</span>
+                </div>
 
-            <label for="sectionTeam">Zespół:</label>
-            <select id="sectionTeam" name="teamId">
-                <option value="">Wybierz zespół</option>
-            </select>
+                <label for="sectionTeam">Zespół:</label>
+                <select id="sectionTeam" name="teamId">
+                    <option value="">Wybierz zespół</option>
+                </select>
 
-            <label for="sectionName">Nazwa Sekcji</label>
-            <input class="formInput" type="text" id="sectionName" required>
+                <label for="sectionName">Nazwa Sekcji</label>
+                <input class="formInput" type="text" id="sectionName" required>
 
-            <div class="btnContainer">
-                <button type="submit" class="mainBtn">Dodaj</button>
-            </div>
-        </form>
+                <div class="btnContainer">
+                    <button type="submit" class="mainBtn">Dodaj</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
 
-
-
-<input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
+    <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
 </div>
 
 </body>

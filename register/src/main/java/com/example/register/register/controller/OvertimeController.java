@@ -8,6 +8,7 @@ import com.example.register.register.model.User;
 import com.example.register.register.repository.SavedDataRepository;
 import com.example.register.register.repository.UserRepository;
 import com.example.register.register.service.OvertimeService;
+import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -72,69 +73,77 @@ public class OvertimeController {
     }
 
     @PostMapping("/exportAll")
-    public void exportOvertimeToXlsx(@RequestBody List<OvertimeExportDto> exportData, HttpServletResponse response) throws IOException {
-
+    public void exportOvertimeToXlsx(@RequestBody List<OvertimeExportDto> exportData, HttpServletResponse response) {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=Nadgodziny podsumowanie.xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=Nadgodziny_podsumowanie.xlsx");
 
-        XSSFWorkbook workbook = new XSSFWorkbook();
-        XSSFSheet sheet = workbook.createSheet("Podsumowanie");
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("Podsumowanie");
 
-        Row header = sheet.createRow(0);
-        header.createCell(0).setCellValue("Imię");
-        header.createCell(1).setCellValue("Nazwisko");
-        header.createCell(2).setCellValue("Nadgodziny płatne");
-        header.createCell(3).setCellValue("Nadgodziny do odbioru");
-        header.createCell(4).setCellValue("Odebrane");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Imię");
+            header.createCell(1).setCellValue("Nazwisko");
+            header.createCell(2).setCellValue("Nadgodziny płatne");
+            header.createCell(3).setCellValue("Nadgodziny do odbioru");
+            header.createCell(4).setCellValue("Odebrane");
 
-        int rowNum = 1;
-        for (OvertimeExportDto entry : exportData) {
-            Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(entry.firstName());
-            row.createCell(1).setCellValue(entry.lastName());
-            row.createCell(2).setCellValue(entry.overtimePaid());
-            row.createCell(3).setCellValue(entry.overtimeOff());
-            row.createCell(4).setCellValue(entry.deductPartial());
+            int rowNum = 1;
+            for (OvertimeExportDto entry : exportData) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(entry.firstName());
+                row.createCell(1).setCellValue(entry.lastName());
+                row.createCell(2).setCellValue(entry.overtimePaid());
+                row.createCell(3).setCellValue(entry.overtimeOff());
+                row.createCell(4).setCellValue(entry.deductPartial());
+            }
+
+            try (ServletOutputStream out = response.getOutputStream()) {
+                workbook.write(out);
+                response.flushBuffer();
+            }
+        } catch (IOException e) {
+            // nie próbuj pisać do response jeśli już otwarty
+            System.err.println("❌ Błąd eksportu do Excela: " + e.getMessage());
         }
-
-        workbook.write(response.getOutputStream());
-        workbook.close();
     }
 
-    @PostMapping("/exportOvertimeForDate")
-    public void exportOvertimeForDate(@RequestBody List<SavedDataDto> filteredData, HttpServletResponse response) throws IOException {
 
-        // 🔽 Konfiguracja odpowiedzi
+    @PostMapping("/exportOvertimeForDate")
+    public void exportOvertimeForDate(@RequestBody List<SavedDataDto> filteredData, HttpServletResponse response) {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=Nadgodziny_szczegoly.xlsx");
 
-        XSSFWorkbook workbook = new XSSFWorkbook();
-        XSSFSheet sheet = workbook.createSheet("Szczegóły");
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("Szczegóły");
 
-        // ✅ Nagłówki
-        Row header = sheet.createRow(0);
-        header.createCell(0).setCellValue("Proces");
-        header.createCell(1).setCellValue("Ilość");
-        header.createCell(2).setCellValue("Data dodania");
-        header.createCell(3).setCellValue("Pracownik");
-        header.createCell(4).setCellValue("Rodzaj czasu pracy");
-        header.createCell(5).setCellValue("Czas(min)");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Proces");
+            header.createCell(1).setCellValue("Ilość");
+            header.createCell(2).setCellValue("Data dodania");
+            header.createCell(3).setCellValue("Pracownik");
+            header.createCell(4).setCellValue("Rodzaj czasu pracy");
+            header.createCell(5).setCellValue("Czas(min)");
 
-        // ✅ Dane
-        int rowNum = 1;
-        for (SavedDataDto data : filteredData) {
-            Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(data.processName());
-            row.createCell(1).setCellValue(data.quantity());
-            row.createCell(2).setCellValue(data.todaysDate().toString());
-            row.createCell(3).setCellValue(data.username());
-            row.createCell(4).setCellValue(data.volumeType());
-            row.createCell(5).setCellValue(data.overtimeMinutes());
+            int rowNum = 1;
+            for (SavedDataDto data : filteredData) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(data.processName());
+                row.createCell(1).setCellValue(data.quantity());
+                row.createCell(2).setCellValue(data.todaysDate().toString());
+                row.createCell(3).setCellValue(data.username());
+                row.createCell(4).setCellValue(data.volumeType());
+                row.createCell(5).setCellValue(data.overtimeMinutes());
+            }
+
+            try (ServletOutputStream out = response.getOutputStream()) {
+                workbook.write(out);
+                response.flushBuffer();
+            }
+        } catch (IOException e) {
+            System.err.println("❌ Błąd eksportu do Excela: " + e.getMessage());
         }
-
-        workbook.write(response.getOutputStream());
-        workbook.close();
     }
+
 
 
 }

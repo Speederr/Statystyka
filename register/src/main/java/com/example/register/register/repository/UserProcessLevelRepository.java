@@ -8,10 +8,8 @@ import java.util.List;
 
 @Repository
 public interface UserProcessLevelRepository extends JpaRepository<UserProcessLevel, Long> {
+
     List<UserProcessLevel> findByUserId(Long userId);
-
-    void deleteByUserId(Long userId); // Usuwamy stare przed zapisem nowych
-
     void deleteByUserIdAndProcessId(Long userId, Long processId);
 
 }

@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 
@@ -27,7 +26,7 @@ public class SavedData {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "process_id", nullable = true)
+    @JoinColumn(name = "process_id")
     private BusinessProcess process;
 
     @Column(name = "quantity", nullable = false)

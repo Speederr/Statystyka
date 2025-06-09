@@ -5,7 +5,6 @@ import com.example.register.register.model.UserMessage;
 import com.example.register.register.repository.MessageRepository;
 import com.example.register.register.repository.UserRepository;
 import com.example.register.register.service.EmailService;
-import com.example.register.register.service.UserMessageService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -26,14 +25,13 @@ public class MessageController {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final UserMessageService userMessageService;
 
-    public MessageController(MessageRepository messageRepository, UserRepository userRepository, EmailService emailService, SimpMessagingTemplate messagingTemplate, UserMessageService userMessageService) {
+
+    public MessageController(MessageRepository messageRepository, UserRepository userRepository, EmailService emailService, SimpMessagingTemplate messagingTemplate) {
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.messagingTemplate = messagingTemplate;
-        this.userMessageService = userMessageService;
     }
 
     @PostMapping("/send")
@@ -54,7 +52,7 @@ public class MessageController {
             return ResponseEntity.badRequest().body(Map.of("error", "Nie znaleziono e-maila dla użytkownika."));
         }
 
-        log.info("🔹 Nadawca wiadomości: " + senderUsername + " | E-mail: " + senderEmail);
+        log.info("Nadawca wiadomości: {} | E-mail: {}", senderUsername, senderEmail);
 
         // Pobranie listy odbiorców (podzielonej po przecinku)
         List<String> recipients = Arrays.stream(messageRequest.getRecipient().split(","))
@@ -67,7 +65,7 @@ public class MessageController {
                 .collect(Collectors.toList());
 
         if (!invalidRecipients.isEmpty()) {
-            log.info("❌ Następujący odbiorcy nie istnieją: " + String.join(", ", invalidRecipients));
+            log.info("Następujący odbiorcy nie istnieją: {}", String.join(", ", invalidRecipients));
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Nie znaleziono odbiorców: " + String.join(", ", invalidRecipients)));
         }
 
@@ -83,7 +81,7 @@ public class MessageController {
             messageRepository.save(message);
         });
 
-        log.info("✅ Wiadomość została zapisana dla wszystkich odbiorców!");
+        log.info("Wiadomość została zapisana dla wszystkich odbiorców!");
 
         // Wysyłanie e-maila do każdego odbiorcy
         try {
@@ -93,11 +91,11 @@ public class MessageController {
                         messageRequest.getSubject(),
                         messageRequest.getMessage()
                 );
-                log.info("📧 E-mail został wysłany do: " + recipient);
+                log.info("E-mail został wysłany do: {}", recipient);
                 messagingTemplate.convertAndSend("/topic/notifications", "new_message");
             }
         } catch (Exception e) {
-            log.info("❌ Błąd wysyłania e-maila: " + e.getMessage());
+            log.info("Błąd wysyłania e-maila: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Nie udało się wysłać e-maila do wszystkich odbiorców."));
         }
 
@@ -112,7 +110,7 @@ public class MessageController {
         }
 
         String username = principal.getName();
-        log.info("🔍 Username zalogowanego użytkownika: " + username);
+        log.info("Username zalogowanego użytkownika: {}", username);
 
         // Pobierz email użytkownika na podstawie username
         String email = userRepository.findByUsername(username)
@@ -123,11 +121,11 @@ public class MessageController {
             return ResponseEntity.status(404).body(Collections.singletonMap("error", "Nie znaleziono e-maila dla użytkownika."));
         }
 
-        log.info("📩 E-mail użytkownika: " + email);
+        log.info("E-mail użytkownika: {}", email);
 
         // Pobranie wiadomości na podstawie e-maila
         List<UserMessage> receivedMessages = messageRepository.findByRecipientAndDeletedByRecipientFalse(email);
-        log.info("📥 Odebrane wiadomości: " + receivedMessages.size());
+        log.info("Odebrane wiadomości: {}", receivedMessages.size());
 
         // 🔹 Modyfikujemy dane przed zwróceniem
         List<Map<String, Object>> response = receivedMessages.stream()
@@ -166,7 +164,7 @@ public class MessageController {
                     .body(Collections.singletonMap("error", "Nie znaleziono e-maila dla użytkownika."));
         }
 
-        log.info("📤 Pobieranie wysłanych wiadomości dla: " + currentEmail);
+        log.info("\uD83D\uDCE4 Pobieranie wysłanych wiadomości dla: {}", currentEmail);
 
         // Pobranie wysłanych wiadomości na podstawie e-maila nadawcy
         List<UserMessage> sentMessages = messageRepository.findBySenderAndDeletedBySenderFalse(currentEmail);
@@ -276,7 +274,7 @@ public class MessageController {
         }
 
         String username = principal.getName(); // 🛠 Pobieramy LOGIN użytkownika
-        log.info("🔹 Sprawdzanie użytkownika: " + username);
+        log.info("Sprawdzanie użytkownika: {}", username);
 
         // 🛠 Pobierz email użytkownika na podstawie loginu
         String userEmail = userRepository.findByUsername(username)
@@ -284,15 +282,15 @@ public class MessageController {
                 .orElse(null);
 
         if (userEmail == null) {
-            log.info("⚠️ Błąd: Nie znaleziono emaila dla użytkownika " + username);
+            log.info("Błąd: Nie znaleziono emaila dla użytkownika {}", username);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("count", 0));
         }
 
-        log.info("📩 Sprawdzanie nieprzeczytanych wiadomości dla: " + userEmail);
+        log.info("Sprawdzanie nieprzeczytanych wiadomości dla: {}", userEmail);
 
         // 🛠 Używamy emaila zamiast loginu
         int unreadCount = messageRepository.countByRecipientAndReadByRecipientFalse(userEmail);
-        log.info("🔢 Liczba nieprzeczytanych wiadomości: " + unreadCount);
+        log.info("Liczba nieprzeczytanych wiadomości: {}", unreadCount);
 
         return ResponseEntity.ok(Map.of("count", unreadCount));
     }
@@ -347,7 +345,7 @@ public class MessageController {
         List<UserMessage> updatedMessages = messageRepository.findAllById(messageIds);
 
         updatedMessages.forEach(msg ->
-                log.info("ID: " + msg.getId() + " | Read by Recipient: " + msg.isReadByRecipient() + " | Read by Sender: " + msg.isReadBySender())
+                log.info("ID: {} | Read by Recipient: {} | Read by Sender: {}", msg.getId(), msg.isReadByRecipient(), msg.isReadBySender())
         );
 
         return ResponseEntity.ok(Map.of("success", "Wiadomości oznaczone jako przeczytane"));
@@ -388,25 +386,25 @@ public class MessageController {
 
     @GetMapping("/{messageId}")
     public ResponseEntity<UserMessage> getMessageById(@PathVariable Long messageId, Principal principal) {
-        log.info("🔹 Otrzymano żądanie GET dla wiadomości ID: " + messageId); // LOG
+        log.info("Otrzymano żądanie GET dla wiadomości ID: {}", messageId); // LOG
 
         String username = principal.getName(); // Pobranie loginu użytkownika
-        log.info("🔹 Żądanie od użytkownika (login): " + username); // LOG
+        log.info("Żądanie od użytkownika (login): {}", username); // LOG
 
         // Pobranie użytkownika i jego e-maila
         Optional<User> optionalUser = userRepository.findByUsername(username);
         if (optionalUser.isEmpty()) {
-            log.info("❌ Użytkownik nie znaleziony.");
+            log.info("Użytkownik nie znaleziony.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
 
         String userEmail = optionalUser.get().getEmail(); // Pobranie e-maila użytkownika
-        log.info("🔹 E-mail zalogowanego użytkownika: " + userEmail);
+        log.info(" E-mail zalogowanego użytkownika: {}", userEmail);
 
         // Pobranie wiadomości z bazy danych
         Optional<UserMessage> optionalMessage = messageRepository.findById(messageId);
         if (optionalMessage.isEmpty()) {
-            log.info("❌ Wiadomość nie istnieje.");
+            log.info("Wiadomość nie istnieje.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
 

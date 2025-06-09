@@ -1,6 +1,5 @@
 package com.example.register.register.repository;
 
-import com.example.register.register.DTO.OvertimeDTO;
 import com.example.register.register.model.SavedData;
 import com.example.register.register.model.User;
 import com.example.register.register.model.VolumeType;
@@ -52,8 +51,6 @@ public interface SavedDataRepository  extends JpaRepository<SavedData, Long> {
             @Param("userId") Long userId,
             @Param("type") VolumeType type
     );
-
-    List<SavedData> findAllByUser_IdOrderByTodaysDateAsc(Long userId);
 
 
 }

@@ -118,7 +118,7 @@ public class SectionController {
                     .filter(u -> u.getTeam() != null && u.getTeam().getId().equals(teamId))
                     .toList();
         } else {
-            Long id;
+            long id;
             try {
                 id = Long.parseLong(sectionId);
             } catch (NumberFormatException e) {
@@ -126,8 +126,6 @@ public class SectionController {
                         .body(Map.of("error", "Nieprawidłowe sectionId"));
             }
 
-            Section section = sectionRepository.findById(id)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sekcja nie istnieje"));
 
             allEmployees = userRepository.findAllEmployees().stream()
                     .filter(u -> u.getSection() != null && u.getSection().getId().equals(id))
@@ -157,12 +155,7 @@ public class SectionController {
                 .filter(u -> homeofficeIds.contains(u.getId()))
                 .toList();
 
-        log.info("✅ Obecnych: " + presentEmployees.size() +
-                ", Nieobecnych: " + onLeaveEmployees.size() +
-                ", Niezalogowanych: " + notLoggedEmployees.size() +
-                ", Biuro: " + officeEmployees.size() +
-                ", Zdalnie: " + homeofficeEmployees.size() +
-                ", Całkowita liczba: " + totalEmployees);
+        log.info("✅ Obecnych: {}, Nieobecnych: {}, Niezalogowanych: {}, Biuro: {}, Zdalnie: {}, Całkowita liczba: {}", presentEmployees.size(), onLeaveEmployees.size(), notLoggedEmployees.size(), officeEmployees.size(), homeofficeEmployees.size(), totalEmployees);
 
         Map<String, Object> response = new HashMap<>();
         response.put("presentCount", presentEmployees.size());

@@ -39,11 +39,10 @@ public class ProcessService {
     }
 
     public List<BusinessProcess> getFavoriteProcesses(Long userId) {
-        List<BusinessProcess> favorites = processRepository.findFavoritesByUserId(userId)
+        return processRepository.findFavoritesByUserId(userId)
                 .stream()
                 .sorted(Comparator.comparing(BusinessProcess::getProcessName))
                 .collect(Collectors.toList());
-        return favorites;
     }
 
 
@@ -73,7 +72,7 @@ public void saveFavoriteProcesses(Long userId, List<Long> processIds) {
 
     public List<BusinessProcess> getProcessesByTeamId(Long teamId) {
         List<BusinessProcess> processes = processRepository.findByTeamId(teamId);
-        log.info("🔎 Procesy znalezione dla teamId " + teamId + ": " + processes.size());
+        log.info("Procesy znalezione dla teamId {}: {}", teamId, processes.size());
         return processes;
     }
 

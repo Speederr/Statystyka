@@ -1,10 +1,7 @@
 package com.example.register.register.controller;
 
-import com.example.register.register.DTO.EfficiencyRequestDTO;
 import com.example.register.register.model.Efficiency;
-import com.example.register.register.model.SavedData;
 import com.example.register.register.model.User;
-import com.example.register.register.model.VolumeType;
 import com.example.register.register.repository.*;
 import com.example.register.register.service.EfficiencyService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +48,7 @@ public class EfficiencyController {
         if ("all".equalsIgnoreCase(sectionId)) {
             efficiencies = efficiencyRepository.findAllByDate(today);
         } else {
-            Long id;
+            long id;
             try {
                 id = Long.parseLong(sectionId);
             } catch (NumberFormatException e) {
@@ -80,7 +77,7 @@ public class EfficiencyController {
         if ("all".equalsIgnoreCase(sectionId)) {
             userInSection = userRepository.findAll();
         } else {
-            Long id;
+            long id;
             try {
                 id = Long.parseLong(sectionId);
             } catch (NumberFormatException e) {
@@ -121,7 +118,7 @@ public class EfficiencyController {
                     .orElseThrow(() -> new RuntimeException("User not found"));
             userInSection = List.of(user);
         } else {
-            Long id;
+            long id;
             try {
                 id = Long.parseLong(sectionId);
             } catch (NumberFormatException e) {
