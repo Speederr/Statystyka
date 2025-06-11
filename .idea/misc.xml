@@ -13,6 +13,7 @@
       <item index="8" class="java.lang.String" itemvalue="org.springframework.web.bind.annotation.PutMapping" />
     </list>
     <writeAnnotations>
+      <writeAnnotation name="jakarta.persistence.Column" />
       <writeAnnotation name="org.springframework.beans.factory.annotation.Autowired" />
     </writeAnnotations>
   </component>

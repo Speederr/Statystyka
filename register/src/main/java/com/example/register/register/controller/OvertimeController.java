@@ -1,15 +1,14 @@
 package com.example.register.register.controller;
 
-import com.example.register.register.DTO.OvertimeDTO;
-import com.example.register.register.DTO.OvertimeDetailDTO;
-import com.example.register.register.DTO.OvertimeExportDto;
-import com.example.register.register.DTO.SavedDataDto;
+import com.example.register.register.DTO.*;
 import com.example.register.register.model.User;
+import com.example.register.register.repository.OvertimePayoutHistoryRepository;
 import com.example.register.register.repository.SavedDataRepository;
 import com.example.register.register.repository.UserRepository;
 import com.example.register.register.service.OvertimeService;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -24,6 +23,7 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/api/overtime")
 public class OvertimeController {
@@ -34,10 +34,22 @@ public class OvertimeController {
     private UserRepository userRepository;
     @Autowired
     private SavedDataRepository savedDataRepository;
+    @Autowired
+    private OvertimePayoutHistoryRepository overtimePayoutHistoryRepository;
 
     @GetMapping("/get-all-overtime")
-    public ResponseEntity<List<OvertimeDTO>> getAllOvertime() {
-       List<OvertimeDTO> list = overtimeService.getOvertimeSummary();
+    public ResponseEntity<List<OvertimeTableDTO>> getAllOvertime(Principal principal) {
+        String username = principal.getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony."));
+
+        Long teamId = user.getTeam().getId();
+
+//       List<OvertimeDTO> list = overtimeService.getOvertimeSummary(teamId);
+        List<OvertimeTableDTO> list = overtimeService.getOvertimeTableForTeam(teamId);
+        System.out.println("OvertimeTableDTO: " + list); // loguj wynik
+
         return ResponseEntity.ok(list);
     }
 
@@ -142,6 +154,24 @@ public class OvertimeController {
         } catch (IOException e) {
             System.err.println("❌ Błąd eksportu do Excela: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/archive-paid")
+    @Transactional
+    public ResponseEntity<String> archivePaidOvertime(@RequestBody List<Long> userIds,
+                                                      @RequestParam(required = false) String note,
+                                                      Principal principal) {
+        String adminName = principal.getName();
+
+        userIds.forEach(userId -> {
+            int paid = overtimeService.getPaidOvertimeForUser(userId);
+            if (paid > 0) {
+                overtimeService.savePayoutHistory(userId, paid, adminName, note);
+                overtimeService.resetPaidOvertime(userId);
+            }
+        });
+
+        return ResponseEntity.ok("Zarchiwizowano nadgodziny dla wybranych użytkowników.");
     }
 
 

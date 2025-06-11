@@ -52,5 +52,13 @@ public interface SavedDataRepository  extends JpaRepository<SavedData, Long> {
             @Param("type") VolumeType type
     );
 
+    @Query("""
+    SELECT COALESCE(SUM(sd.overtimeMinutes), 0)
+    FROM SavedData sd
+    WHERE sd.user.id = :userId
+      AND sd.volumeType = com.example.register.register.model.VolumeType.OVERTIME_PAID
+""")
+    int getPaidOvertimeForUser(@Param("userId") Long userId);
+
 
 }

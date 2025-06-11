@@ -2896,6 +2896,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!tbody) return;
     tbody.innerHTML = "";
     rows.forEach(row => {
+    console.log(rows);
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td><input type="checkbox" class="select-overtime-row"
@@ -2998,4 +2999,46 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("❌ Błąd przy eksporcie XLSX:", err);
       });
   });
+});
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Obsługa przycisku archiwizacji
+    const payoutBtn = document.getElementById("payoutOvertimeBtn");
+    if (!payoutBtn) return;
+
+    payoutBtn.addEventListener("click", function () {
+        // Zbierz zaznaczone userId z checkboxów
+        const selected = Array.from(document.querySelectorAll(".select-overtime-row:checked"))
+            .map(cb => Number(cb.getAttribute("data-user-id")));
+
+        if (selected.length === 0) {
+            alert("Zaznacz przynajmniej jednego użytkownika!");
+            return;
+        }
+
+        // (Opcjonalnie) Pytanie o notatkę
+        const note = prompt("Podaj notatkę do archiwizacji (opcjonalnie):");
+
+        // Wywołanie endpointu /archive-paid
+        fetch("/api/overtime/archive-paid" + (note ? `?note=${encodeURIComponent(note)}` : ""), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(selected)
+        })
+            .then(response => {
+                if (!response.ok) throw new Error("Błąd archiwizacji!");
+                return response.text();
+            })
+            .then(msg => {
+                alert(msg);
+                // Odśwież tabelę (np. ponownie pobierz dane z backendu)
+                location.reload();
+            })
+            .catch(err => {
+                alert("Błąd archiwizacji: " + err.message);
+            });
+    });
 });

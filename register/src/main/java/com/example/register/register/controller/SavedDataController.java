@@ -4,8 +4,10 @@ import com.example.register.register.DTO.*;
 import com.example.register.register.model.*;
 import com.example.register.register.repository.ProcessRepository;
 import com.example.register.register.repository.SavedDataRepository;
+import com.example.register.register.repository.OvertimeBalanceRepository;
 import com.example.register.register.repository.UserRepository;
 import com.example.register.register.service.EfficiencyService;
+import com.example.register.register.service.OvertimeBalanceService;
 import com.example.register.register.service.SavedDataService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -44,6 +46,12 @@ public class SavedDataController {
 
     @Autowired
     private EfficiencyService efficiencyService;
+
+    @Autowired
+    private OvertimeBalanceService overtimeBalanceService;
+
+    @Autowired
+    private OvertimeBalanceRepository overtimeBalanceRepository;
 
     @PostMapping("/save")
     @Transactional
@@ -106,6 +114,20 @@ public class SavedDataController {
                     data.setOvertimeMinutes(0);
                 }
             }
+
+            if (
+                    data.getVolumeType() == VolumeType.OVERTIME_PAID ||
+                            data.getVolumeType() == VolumeType.OVERTIME_OFF ||
+                            data.getVolumeType() == VolumeType.DEDUCT_PARTIAL ||
+                            data.getVolumeType() == VolumeType.DEDUCT_FULL_DAY
+            ) {
+                if(data.getOvertimeMinutes() != null && data.getOvertimeMinutes() > 0) {
+                    overtimeBalanceService.addOrUpdateBalance(
+                            data.getUser(), data.getVolumeType(), data.getOvertimeMinutes()
+                    );
+                }
+            }
+
         }
 
         // zapisujemy wszystkie rekordy
@@ -117,11 +139,28 @@ public class SavedDataController {
     // 🔵 2️⃣ Zapis dla pojedynczego procesu (kliknięcie `+`)
     @PostMapping("/save-single")
     public ResponseEntity<String> saveSingleData(@RequestBody SingleSaveDTO req) {
+        // 1) Tworzenie encji SavedData
+        SavedData data = toEntity(req);
 
-        // 1) Zapis wolumenu (zawsze new)
-        savedDataService.saveData(List.of(toEntity(req)));
+        // 2) zapis nadgodzin do tabeli overtimeBalance
+        if (
+                data.getVolumeType() == VolumeType.OVERTIME_PAID ||
+                        data.getVolumeType() == VolumeType.OVERTIME_OFF ||
+                        data.getVolumeType() == VolumeType.DEDUCT_PARTIAL ||
+                        data.getVolumeType() == VolumeType.DEDUCT_FULL_DAY
+        ) {
+            if (data.getOvertimeMinutes() != null && data.getOvertimeMinutes() > 0) {
+                overtimeBalanceService.addOrUpdateBalance(
+                        data.getUser(), data.getVolumeType(), data.getOvertimeMinutes()
+                );
+            }
+        }
 
-        // 2) Automatyczne przeliczenie efektywności (upsert w tabeli Efficiency)
+
+        // 3) Zapis wolumenu (zawsze new)
+        savedDataService.saveData(List.of(data));
+
+        // 4) Automatyczne przeliczenie efektywności (upsert w tabeli Efficiency)
         efficiencyService.calculateAndSaveEfficiency(req.getUserId());
 
         return ResponseEntity.ok("✅ Wolumen zapisany i efektywność zaktualizowana!");
@@ -142,6 +181,7 @@ public class SavedDataController {
         sd.setOvertimeMinutes(req.getOvertimeMinutes() == null ? 0 : req.getOvertimeMinutes());
         return sd;
     }
+
 
 
 
@@ -273,26 +313,52 @@ public class SavedDataController {
         return savedDataService.getMixedChartForUser(userId);
     }
 
+//    @GetMapping("/overtime/{userId}")
+//    public OvertimeSummaryDTO getOvertimeSummary(
+//            @PathVariable Long userId
+//    ) {
+//
+//        int paid = savedDataRepository
+//                .sumOvertimeByUserAndDateAndType(userId, VolumeType.OVERTIME_PAID);
+//
+//        int offRaw = savedDataRepository
+//                .sumOvertimeByUserAndDateAndType(userId, VolumeType.OVERTIME_OFF);
+//
+//        int deductedPartial = savedDataRepository
+//                .sumOvertimeByUserAndDateAndType(userId, VolumeType.DEDUCT_PARTIAL);
+//
+//        int deductedFullDay = savedDataRepository
+//                .sumOvertimeByUserAndDateAndType(userId, VolumeType.DEDUCT_FULL_DAY);
+//
+//        // odejmujemy oba rodzaje odbiorów od offRaw
+//        int off = offRaw - deductedPartial - deductedFullDay;
+//
+//        return new OvertimeSummaryDTO(paid, off);
+//    }
+
     @GetMapping("/overtime/{userId}")
-    public OvertimeSummaryDTO getOvertimeSummary(
-            @PathVariable Long userId
-    ) {
+    public OvertimeSummaryDTO getOvertimeSummary(@PathVariable Long userId) {
+        int paid = overtimeBalanceRepository
+                .findByUserIdAndVolumeType(userId, VolumeType.OVERTIME_PAID)
+                .map(OvertimeBalance::getOvertimeMinutes)
+                .orElse(0);
 
-        int paid = savedDataRepository
-                .sumOvertimeByUserAndDateAndType(userId, VolumeType.OVERTIME_PAID);
+        int offRaw = overtimeBalanceRepository
+                .findByUserIdAndVolumeType(userId, VolumeType.OVERTIME_OFF)
+                .map(OvertimeBalance::getOvertimeMinutes)
+                .orElse(0);
 
-        int offRaw = savedDataRepository
-                .sumOvertimeByUserAndDateAndType(userId, VolumeType.OVERTIME_OFF);
+        int deductedPartial = overtimeBalanceRepository
+                .findByUserIdAndVolumeType(userId, VolumeType.DEDUCT_PARTIAL)
+                .map(OvertimeBalance::getOvertimeMinutes)
+                .orElse(0);
 
-        int deductedPartial = savedDataRepository
-                .sumOvertimeByUserAndDateAndType(userId, VolumeType.DEDUCT_PARTIAL);
+        int deductedFullDay = overtimeBalanceRepository
+                .findByUserIdAndVolumeType(userId, VolumeType.DEDUCT_FULL_DAY)
+                .map(OvertimeBalance::getOvertimeMinutes)
+                .orElse(0);
 
-        int deductedFullDay = savedDataRepository
-                .sumOvertimeByUserAndDateAndType(userId, VolumeType.DEDUCT_FULL_DAY);
-
-        // odejmujemy oba rodzaje odbiorów od offRaw
-//        int off = Math.max(offRaw - deductedPartial - deductedFullDay, 0);
-        int off = offRaw - deductedPartial - deductedFullDay;
+        int off = offRaw + deductedPartial + deductedFullDay;
 
         return new OvertimeSummaryDTO(paid, off);
     }

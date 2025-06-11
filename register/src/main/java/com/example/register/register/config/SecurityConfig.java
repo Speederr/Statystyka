@@ -40,7 +40,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // 🔓 Publiczne endpointy
-                        .requestMatchers("/register", "/login","/api/auth/login", "/firstLogin", "/restorePassword",
+                        .requestMatchers("/register", "/login", "/firstLogin", "/restorePassword",
                                 "/api/user/restorePassword","/error", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/availability").permitAll()
 
@@ -76,7 +76,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/overtime/exportAll", "/api/overtime/exportOvertimeForDate").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.POST, "/api/user/avatar").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/user/changePasswordInSettings").authenticated()
-                        .requestMatchers(HttpMethod.POST,"/api/attendance/update").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.POST,"/api/attendance/update", "/api/overtime/archive-paid").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/user/avatar", "/api/position/{positionId}").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/user/whoami", "/api/user/setup-data").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/user/complete-setup").authenticated()
@@ -147,7 +147,8 @@ public class SecurityConfig {
                                 "/matrix/saveSingle",
                                 "/api/saved-data/deduct-full-day",
                                 "/api/overtime/exportAll",
-                                "/api/overtime/exportOvertimeForDate"
+                                "/api/overtime/exportOvertimeForDate",
+                                "/api/overtime/archive-paid"
 
                         )
                 );

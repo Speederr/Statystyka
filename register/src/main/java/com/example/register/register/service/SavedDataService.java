@@ -26,6 +26,8 @@ public class SavedDataService {
     private UserRepository userRepository;
     @Autowired
     private AttendanceRepository attendanceRepository;
+    @Autowired
+    private OvertimeBalanceService overtimeBalanceService;
 
     final int FULL_DAY = 480;
 
@@ -144,17 +146,25 @@ public class SavedDataService {
         if (offRaw <= 0) {
             return;
         }
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found: " + userId ));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId ));
 
+        // Zapisz w saved_data jak było dotychczas:
         SavedData sd = new SavedData();
-        sd.setUser(userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId)));
+        sd.setUser(user);
         sd.setProcess(null);
         sd.setQuantity(0L);
         sd.setTodaysDate(date);
         sd.setVolumeType(VolumeType.DEDUCT_FULL_DAY);
         sd.setOvertimeMinutes(FULL_DAY);
         savedDataRepository.save(sd);
+
+        // 🟦 Dodaj wpis do overtime_balance:
+        overtimeBalanceService.addOrUpdateBalance(
+                user,
+                VolumeType.DEDUCT_FULL_DAY,
+                FULL_DAY
+        );
 
         Attendance attendance = attendanceRepository.findByUserAndAttendanceDate(user, date).orElseGet(() -> {
             Attendance a = new Attendance();
@@ -168,5 +178,6 @@ public class SavedDataService {
         attendanceRepository.save(attendance);
 
     }
+
     
 }

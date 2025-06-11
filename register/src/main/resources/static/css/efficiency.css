@@ -629,3 +629,7 @@ cursor: pointer;
   }
 
 /* ============================================ FILTRY END =============================================== */
+.bottom-button-container {
+    display: flex;
+    justify-content: center;
+}
