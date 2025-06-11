@@ -2781,26 +2781,15 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch("/api/overtime/get-all-overtime")
     .then(res => res.json())
     .then(raw => {
-      const byUser = raw.reduce((acc, {userId, firstName, lastName, volumeType, totalOvertime, sectionId}) => {
-        if (!acc[userId]) {
-          acc[userId] = {
-            userId,
-            firstName,
-            lastName,
-            sectionId,
-            paid: 0,
-            off: 0,
-            deducted: 0
-          };
-        }
-        switch (volumeType) {
-          case "Nadgodziny płatne": acc[userId].paid = totalOvertime; break;
-          case "Nadgodziny do odbioru": acc[userId].off = totalOvertime; break;
-          case "Odebrane częściowo": acc[userId].deducted = totalOvertime; break;
-        }
-        return acc;
-      }, {});
-      allData = Object.values(byUser);
+      allData = raw.map(row => ({
+        userId: row.userId,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        sectionId: row.sectionId,
+        paid: row.paid,
+        off: row.off,
+        deducted: row.deducted
+      }));
 
       renderOvertimeForAllUsersTable(allData);
       renderEmployeeCheckboxes(
