@@ -1,46 +1,3 @@
-//document.addEventListener("DOMContentLoaded", () => {
-//    const loginForm = document.getElementById("login-form");
-//    const errorDiv = document.getElementById("error");
-//
-//    if (loginForm) {
-//        loginForm.addEventListener("submit", function (e) {
-//            e.preventDefault();
-//
-//            const username = document.getElementById("username").value;
-//            const password = document.getElementById("password").value;
-//
-//            fetch("/api/auth/login", {
-//                method: "POST",
-//                headers: {
-//                    "Content-Type": "application/json"
-//                },
-//                body: JSON.stringify({ username, password })
-//            })
-//            .then(response => {
-//                if (!response.ok) {
-//                    throw new Error("Błąd logowania");
-//                }
-//                return response.json();
-//            })
-//            .then(data => {
-//                console.log("✅ Zalogowano:", data);
-//
-//                // ✅ Przekierowanie zgodnie z odpowiedzią z backendu
-//                if (data.redirect) {
-//                    window.location.href = data.redirect;
-//                } else {
-//                    // domyślnie na /index, jeśli brak redirectu
-//                    window.location.href = "/index";
-//                }
-//            })
-//            .catch(error => {
-//                console.error("⛔", error);
-//                if (errorDiv) errorDiv.style.display = "block";
-//            });
-//        });
-//    }
-//});
-
 
 function displayMessage(type, message) {
     Swal.fire({
@@ -82,8 +39,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
-
-
 
 function togglePasswordVisibility(showPasswordIconId, passwordFieldId) {
     try {
@@ -227,17 +182,26 @@ function toggleNavBar() {
         let btn = document.querySelector('#btn');
         let sidebar = document.querySelector('.sidebar');
 
-        if (sidebar) {
+        if (sidebar && btn) {
             btn.onclick = function () {
                 sidebar.classList.toggle('active');
+
+                // Poczekaj na zakończenie animacji (jeśli sidebar ją ma)
+                setTimeout(() => {
+                    if (typeof calendar !== 'undefined' && calendar) {
+                        calendar.updateSize();
+                    }
+                }, 500); // dopasuj do czasu animacji w CSS (np. 300ms)
             };
         }
     } catch (error) {
         console.error("Wystąpił błąd w toggleNavBar:", error);
     }
 }
-// Wywołaj funkcję toggleNavBar, aby przypisać zdarzenie
+
 toggleNavBar();
+
+
 
 document.addEventListener('DOMContentLoaded', function () {
     const openModalBtn = document.getElementById('openModalBtn');
@@ -262,70 +226,25 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-document.addEventListener('DOMContentLoaded', function () {
-    const addNewProcessModal = document.getElementById('addNewProcessModal');
-    const closeProcessModalBtn = document.getElementById('closeProcessModalBtn');
-    const processModal = document.getElementById('processModal');
-
-    if (addNewProcessModal && closeProcessModalBtn && processModal) {
-        addNewProcessModal.addEventListener('click', function () {
-            processModal.style.display = 'block';
-        });
-
-        closeProcessModalBtn.addEventListener('click', function () {
-            processModal.style.display = 'none';
-        });
-
-        window.addEventListener('click', function (event) {
-            if (event.target === processModal) {
-                processModal.style.display = 'none';
-            }
-        });
-    }
-});
 
 document.addEventListener('DOMContentLoaded', function () {
-    const openTeamModal = document.getElementById('newTeamModalBtn');
-    const closeTeamModal = document.getElementById('closeTeamModalBtn');
-    const teamModal = document.getElementById('teamModal');
-
-    if (openTeamModal && closeTeamModal && teamModal) {
-        openTeamModal.addEventListener('click', function () {
-            teamModal.style.display = 'block';
+    // Otwieranie modalów
+    document.querySelectorAll('[data-open-modal]').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const modalId = btn.getAttribute('data-open-modal');
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.remove('hidden');
         });
+    });
 
-        closeTeamModal.addEventListener('click', function () {
-            teamModal.style.display = 'none';
+    // Zamknięcie modalów
+    document.querySelectorAll('[data-close-modal]').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const modalId = btn.getAttribute('data-close-modal');
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.add('hidden');
         });
-
-        window.addEventListener('click', function (event) {
-            if (event.target === teamModal) {
-                teamModal.style.display = 'none';
-            }
-        });
-    }
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-    const openSectionModal = document.getElementById('newSectionModalBtn');
-    const closeSectionModal = document.getElementById('closeSectionModalBtn');
-    const sectionModal = document.getElementById('sectionModal');
-
-    if (openSectionModal && closeSectionModal && sectionModal) {
-        openSectionModal.addEventListener('click', function () {
-            sectionModal.style.display = 'block';
-        });
-
-        closeSectionModal.addEventListener('click', function () {
-            sectionModal.style.display = 'none';
-        });
-
-        window.addEventListener('click', function (event) {
-            if (event.target === sectionModal) {
-                sectionModal.style.display = 'none';
-            }
-        });
-    }
+    });
 });
 
 
@@ -339,153 +258,110 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-//document.addEventListener("DOMContentLoaded", function () {
-//  if (!window.location.pathname.includes("/index")) return;
-//
-//    const teamSelect = document.getElementById("team");
-//    const sectionSelect = document.getElementById("section");
-//    const positionSelect = document.getElementById("position");
-//    const setupForm = document.getElementById("setupForm");
-//    const modal = document.getElementById("firstLoginModal");
-//
-//    const teamSectionMap = {};
-//
-//    // 🔽 Pobranie danych zespołów, sekcji i stanowisk
-//    fetch("/api/user/setup-data")
-//        .then(res => res.json())
-//        .then(data => {
-//            // Zespoły
-//            data.teams.forEach(team => {
-//                const option = new Option(team.teamName, team.id);
-//                teamSelect.appendChild(option);
-//                teamSectionMap[team.id] = team.sections; // przypisz sekcje do zespołu
-//            });
-//
-//            // Stanowiska
-//            data.positions.forEach(pos => {
-//                const option = new Option(pos.positionName, pos.id);
-//                positionSelect.appendChild(option);
-//            });
-//        })
-//        .catch(err => console.error("❌ Błąd ładowania danych setupu:", err));
-//
-//    // 🔁 Dynamiczna zmiana sekcji przy zmianie zespołu
-//    teamSelect.addEventListener("change", function () {
-//        const selectedTeamId = this.value;
-//        sectionSelect.innerHTML = "<option value=''>Wybierz sekcję</option>";
-//
-//        if (teamSectionMap[selectedTeamId]) {
-//            teamSectionMap[selectedTeamId].forEach(section => {
-//                const option = new Option(section.sectionName, section.id);
-//                sectionSelect.appendChild(option);
-//            });
-//        }
-//    });
-document.addEventListener("DOMContentLoaded", function () {
-    const path = window.location.pathname;
 
-    if (!["/index", "/adminPanel"].some(p => path.includes(p))) return;
-
-    const teamSelect = document.getElementById("team");
-    const sectionSelect = document.getElementById("section");
-    const positionSelect = document.getElementById("position");
-    const setupForm = document.getElementById("setupForm");
-    const modal = document.getElementById("firstLoginModal");
-
-    if (!teamSelect || !sectionSelect || !positionSelect) return;
-
-    const teamSectionMap = {};
-
-    fetch("/api/user/setup-data")
-        .then(res => res.json())
-        .then(data => {
-            // Zespoły
-            data.teams.forEach(team => {
-                const option = new Option(team.teamName, team.id);
-                teamSelect.appendChild(option);
-                teamSectionMap[team.id] = team.sections; // przypisanie sekcji
-            });
-
-            // Stanowiska
-            data.positions.forEach(pos => {
-                const option = new Option(pos.positionName, pos.id);
-                positionSelect.appendChild(option);
-            });
-        })
-        .catch(err => console.error("❌ Błąd ładowania danych setupu:", err));
-
-    teamSelect.addEventListener("change", function () {
-        const selectedTeamId = this.value;
-        sectionSelect.innerHTML = "<option value=''>Wybierz sekcję</option>";
-
-        if (teamSectionMap[selectedTeamId]) {
-            teamSectionMap[selectedTeamId].forEach(section => {
-                const option = new Option(section.sectionName, section.id);
-                sectionSelect.appendChild(option);
-            });
-        }
-    });
-
-
-    // 🔁 Sprawdzenie, czy pokazać modal (pierwsze logowanie)
-    fetch("/api/user/whoami")
-        .then(res => res.json())
-        .then(user => {
-            // Sprawdź czy hasło zostało zmienione i czy pola są puste
-            if (user.passwordChanged && !user.isCreateByAdmin &&
-                (!user.team || !user.section || !user.position)) {
-                modal?.classList.remove("hidden");
-            }
-        })
-        .catch(err => console.error("❌ Błąd pobierania danych użytkownika:", err));
-
-      // 🔁 Obsługa formularza zapisu danych – tylko jeśli istnieje
-      if (setupForm) {
-        setupForm.addEventListener("submit", function (e) {
-          e.preventDefault();
-
-          const formData = new FormData(setupForm);
-
-          fetch("/api/user/complete-setup", {
-            method: "POST",
-            body: formData
-          })
-            .then(res => {
-              if (res.ok) {
-                displayMessage('success', 'Dane zostały zaktualizowane!');
-                modal?.classList.add("hidden");
-                setTimeout(() => location.reload(), 3000);
-              } else {
-                displayMessage('error', 'Błąd zapisu danych.');
-              }
-            })
-            .catch(err => {
-              console.error("❌ Błąd wysyłki danych:", err);
-              displayMessage('error', 'Wystąpił błąd połączenia.');
-            });
-        });
-      }
-});
 
 
 function handleBack() {
     const path = window.location.pathname;
 
+    // Obsługa /matrix/{userId}
     if (path.startsWith("/matrix")) {
         if (path === "/matrix") {
-            // Jesteś na /matrix => wróć na /index
             window.location.href = "/processes";
         } else {
-            // Jesteś na /matrix/{userId} => wróć na /userDetails/{userId}
-            const userId = path.split("/")[2]; // wyciągnij userId z URL
+            const userId = path.split("/")[2];
             window.location.href = `/userDetails/${userId}`;
         }
-    } else {
-        // Bezpiecznik: jakby coś było nie tak, wracamy na index
-        window.location.href = "/index";
+        return;
     }
+
+    // Obsługa /soft-skills/{userId}
+    if (path.startsWith("/soft-skills")) {
+        if (path === "/soft-skills") {
+            window.location.href = "/processes";
+        } else {
+            const userId = path.split("/")[2];
+            window.location.href = `/userDetails/${userId}`;
+        }
+        return;
+    }
+
+    // Obsługa /app-matrix/{userId}
+    if (path.startsWith("/app-matrix")) {
+        if (path === "/app-matrix") {
+            window.location.href = "/processes";
+        } else {
+            const userId = path.split("/")[2];
+            window.location.href = `/userDetails/${userId}`;
+        }
+        return;
+    }
+
+    // Domyślnie wracaj na index
+    window.location.href = "/index";
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+    const tooltipToggle = document.getElementById("tooltipToggle");
+    const passwordTooltip = document.getElementById("passwordTooltip");
+    const arrowIcon = document.getElementById("arrowIcon");
+    const flexFirstLoginContainer = document.querySelector(`.login.active`);
 
+    if (tooltipToggle && passwordTooltip && arrowIcon && flexFirstLoginContainer) {
+        tooltipToggle.addEventListener("click", () => {
+            passwordTooltip.classList.toggle("active");
+            arrowIcon.classList.toggle("open");
+            flexFirstLoginContainer.classList.toggle("tooltip-open");
+        });
+    }
+});
+document.addEventListener("DOMContentLoaded", function () {
+    const passwordInput = document.getElementById('new-password');
+    if (!passwordInput) return;
 
+    // Wzorce do sprawdzania
+    const rules = [
+        {
+            selector: '[data-rule="length"]',
+            validate: val => val.length >= 8
+        },
+        {
+            selector: '[data-rule="uppercase"]',
+            validate: val => /[A-Z]/.test(val)
+        },
+        {
+            selector: '[data-rule="lowercase"]',
+            validate: val => /[a-z]/.test(val)
+        },
+        {
+            selector: '[data-rule="digit"]',
+            validate: val => /\d/.test(val)
+        },
+        {
+            selector: '[data-rule="special"]',
+            validate: val => /[@_$!%*?&]/.test(val)
+        }
+    ];
+
+    passwordInput.addEventListener('input', function () {
+        const value = passwordInput.value;
+
+        rules.forEach(rule => {
+            const span = document.querySelector(rule.selector);
+            if (!span) return;
+            const icon = span.querySelector('.rule-icon');
+            if (!icon) return;
+
+            if (rule.validate(value)) {
+                icon.classList.remove('bx-x');
+                icon.classList.add('bx-check');
+                icon.style.color = '#22c55e'; // zielony
+            } else {
+                icon.classList.remove('bx-check');
+                icon.classList.add('bx-x');
+                icon.style.color = '#e73c3c'; // czerwony
+            }
+        });
+    });
+});
 //console.log("Skrypt SCRIPT został załadowany");

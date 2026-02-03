@@ -80,6 +80,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -127,7 +134,7 @@
     <form id="overtimeForm" th:action=@{/UserOvertimeDetails} method="get" class="filter-form">
         <div class="filter-container-overtime-user">
             <div class="left-side">
-                <button class="mainBtn return" type="button" th:onclick="|window.location.href='@{/overtimeReport}'|">Powrót</button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/overtimeReport}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
             </div>
 
             <div class="center-side">

@@ -14,14 +14,18 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 
 @RestController
@@ -45,10 +49,7 @@ public class OvertimeController {
                 .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony."));
 
         Long teamId = user.getTeam().getId();
-
-//       List<OvertimeDTO> list = overtimeService.getOvertimeSummary(teamId);
         List<OvertimeTableDTO> list = overtimeService.getOvertimeTableForTeam(teamId);
-        System.out.println("OvertimeTableDTO: " + list); // loguj wynik
 
         return ResponseEntity.ok(list);
     }
@@ -58,30 +59,26 @@ public class OvertimeController {
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDateOvertime,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDateOvertime,
-            Principal principal
+            Principal principal,
+            Authentication authentication
     ) {
-
-        if (userId == null) {
-            String username = principal.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony"));
-            userId = user.getId();
-        }
+        Long resolvedUserId = resolveAllowedUserId(userId, principal, authentication);
 
         LocalDate today = LocalDate.now();
         LocalDate effectiveEndDate = (endDateOvertime != null) ? endDateOvertime : today;
         LocalDate effectiveStartDate = (startDateOvertime != null) ? startDateOvertime : effectiveEndDate.minusDays(6);
 
-        return overtimeService.getDetailsForUserAndDateRange(userId, effectiveStartDate, effectiveEndDate);
+        return overtimeService.getDetailsForUserAndDateRange(resolvedUserId, effectiveStartDate, effectiveEndDate);
     }
 
 
     @GetMapping("/{userId}/details")
-    public List<OvertimeDetailDTO> getUserOvertimeDetails(@PathVariable Long userId) {
+    public List<OvertimeDetailDTO> getUserOvertimeDetails(@PathVariable Long userId, Principal principal, Authentication authentication) {
+        Long resolvedUserId = resolveAllowedUserId(userId, principal, authentication);
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusDays(6);
 
-        return overtimeService.getDetailsForUserAndDateRange(userId, startDate, today);
+        return overtimeService.getDetailsForUserAndDateRange(resolvedUserId, startDate, today);
     }
 
     @PostMapping("/exportAll")
@@ -95,9 +92,8 @@ public class OvertimeController {
             Row header = sheet.createRow(0);
             header.createCell(0).setCellValue("Imię");
             header.createCell(1).setCellValue("Nazwisko");
-            header.createCell(2).setCellValue("Nadgodziny płatne");
-            header.createCell(3).setCellValue("Nadgodziny do odbioru");
-            header.createCell(4).setCellValue("Odebrane");
+            header.createCell(2).setCellValue("Nadgodziny płatne(min)");
+            header.createCell(3).setCellValue("Nadgodziny do odbioru(min)");
 
             int rowNum = 1;
             for (OvertimeExportDto entry : exportData) {
@@ -106,7 +102,7 @@ public class OvertimeController {
                 row.createCell(1).setCellValue(entry.lastName());
                 row.createCell(2).setCellValue(entry.overtimePaid());
                 row.createCell(3).setCellValue(entry.overtimeOff());
-                row.createCell(4).setCellValue(entry.deductPartial());
+
             }
 
             try (ServletOutputStream out = response.getOutputStream()) {
@@ -164,14 +160,52 @@ public class OvertimeController {
         String adminName = principal.getName();
 
         userIds.forEach(userId -> {
-            int paid = overtimeService.getPaidOvertimeForUser(userId);
-            if (paid > 0) {
-                overtimeService.savePayoutHistory(userId, paid, adminName, note);
-                overtimeService.resetPaidOvertime(userId);
-            }
+            overtimeService.archivePaidOvertime(userId, adminName, note);
+            overtimeService.resetPaidOvertime(userId);
         });
 
         return ResponseEntity.ok("Zarchiwizowano nadgodziny dla wybranych użytkowników.");
+    }
+
+
+    @GetMapping("/archive")
+    public List<OvertimePayoutHistoryDTO> getAllOvertimeHistory(Principal principal) {
+        return overtimeService.getAll(principal);
+    }
+
+    private Long resolveAllowedUserId(Long requestedUserId, Principal principal, Authentication authentication) {
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony."));
+
+        boolean elevatedRole = authentication.getAuthorities().stream().anyMatch(authority ->
+                "ROLE_ADMIN".equals(authority.getAuthority())
+                        || "ROLE_MANAGER".equals(authority.getAuthority())
+                        || "ROLE_COORDINATOR".equals(authority.getAuthority())
+        );
+
+        Long effectiveUserId = requestedUserId != null ? requestedUserId : currentUser.getId();
+
+        if (!elevatedRole) {
+            if (requestedUserId != null && !requestedUserId.equals(currentUser.getId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Brak dostępu do danych innego użytkownika.");
+            }
+            return currentUser.getId();
+        }
+
+        if (effectiveUserId.equals(currentUser.getId())) {
+            return effectiveUserId;
+        }
+
+        User targetUser = userRepository.findById(effectiveUserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nie znaleziono użytkownika."));
+
+        Long currentTeamId = currentUser.getTeam() != null ? currentUser.getTeam().getId() : null;
+        Long targetTeamId = targetUser.getTeam() != null ? targetUser.getTeam().getId() : null;
+        if (!Objects.equals(currentTeamId, targetTeamId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Brak dostępu do użytkownika spoza zespołu.");
+        }
+
+        return effectiveUserId;
     }
 
 

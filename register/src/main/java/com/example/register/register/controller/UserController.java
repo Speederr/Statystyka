@@ -102,10 +102,10 @@ public class UserController {
             String selectedRole = roles.get("roles[" + userId + "]");
             if (selectedRole != null) {
                 int roleId = switch (selectedRole) {
-                    case "Admin" -> 1;
-                    case "Manager" -> 2;
-                    case "Coordinator" -> 3;
-                    case "User" -> 4;
+                    case "ADMIN" -> 1;
+                    case "MANAGER" -> 2;
+                    case "COORDINATOR" -> 3;
+                    case "USER" -> 4;
                     default -> -1;
                 };
 
@@ -281,8 +281,6 @@ public class UserController {
         return ResponseEntity.ok(userDto);
     }
 
-
-
     @PostMapping("/avatar")
     public ResponseEntity<String> uploadAvatar(@RequestParam("avatar") MultipartFile file, Principal principal) {
 
@@ -355,12 +353,19 @@ public List<UserTableDto> getAllUsers(Principal principal) {
 
     // 2. Pobierz tylko użytkowników z tego samego zespołu
     return userRepository.findByTeamId(teamId).stream()
+            .filter(user -> {
+                String role = user.getRole().getRoleName().toLowerCase();
+                return !role.equals("admin") && !role.equals("manager");
+            })
+            .sorted(Comparator.comparing(User::getLastName)
+                    .thenComparing(User::getFirstName))
             .map(user -> new UserTableDto(
                     user.getId(),
                     user.getFirstName(),
                     user.getLastName(),
                     getUserEfficiency(user, today),
                     getNonOperationalTime(user, today),
+                    user.getPosition().getId(),
                     positionRepository.findById(user.getPosition().getId())
                             .map(Position::getPositionName).orElse("Brak"),
                     getAttendanceStatus(user, today)
@@ -395,6 +400,10 @@ public List<UserTableDto> getAllUsers(Principal principal) {
     public ResponseEntity<List<UserDto>> getEmployeesBySection(@PathVariable Long sectionId) {
         List<User> users = userRepository.findBySection_Id(sectionId);
         List<UserDto> result = users.stream()
+                .filter(user -> {
+                    String role = user.getRole().getRoleName().toLowerCase();
+                    return !role.equals("admin") && !role.equals("manager");
+                })
                 .map(user -> new UserDto(user.getId(), user.getFirstName(), user.getLastName()))
                 .toList();
         return ResponseEntity.ok(result);
@@ -413,6 +422,7 @@ public List<UserTableDto> getAllUsers(Principal principal) {
                 user.getLastName(),
                 getUserEfficiency(user, today),
                 getNonOperationalTime(user, today),
+                user.getPosition().getId(),
                 positionRepository.findById(user.getPosition().getId())
                         .map(Position::getPositionName).orElse("Brak"),
                 getAttendanceStatus(user, today)
@@ -427,12 +437,17 @@ public List<UserTableDto> getAllUsers(Principal principal) {
 
         // Pobieramy użytkowników na podstawie listy ID
         return userRepository.findAllById(ids).stream()
+                .filter(user -> {
+                    String role = user.getRole().getRoleName().toLowerCase();
+                    return !role.equals("admin") && !role.equals("manager");
+                })
                 .map(user -> new UserTableDto(
                         user.getId(),
                         user.getFirstName(),
                         user.getLastName(),
                         getUserEfficiency(user, today),  // Metoda do pobierania efektywności
                         getNonOperationalTime(user, today),  // Metoda do pobierania czasu nieoperacyjnego
+                        user.getPosition().getId(),
                         positionRepository.findById(user.getPosition().getId()).map(Position::getPositionName).orElse("Brak"),
                         getAttendanceStatus(user, today)  // Metoda do pobierania statusu obecności
                 ))
@@ -445,12 +460,17 @@ public List<UserTableDto> getAllUsers(Principal principal) {
         List<User> users = userRepository.findBySection_Id(sectionId);
 
         List<UserTableDto> result = users.stream()
+                .filter(user -> {
+                    String role = user.getRole().getRoleName().toLowerCase();
+                    return !role.equals("admin") && !role.equals("manager");
+                })
                 .map(user -> new UserTableDto(
                         user.getId(),
                         user.getFirstName(),
                         user.getLastName(),
                         getUserEfficiency(user, today),
                         getNonOperationalTime(user, today),
+                        user.getPosition().getId(),
                         positionRepository.findById(user.getPosition().getId()).map(Position::getPositionName).orElse("Brak"),
                         getAttendanceStatus(user, today)
                 ))

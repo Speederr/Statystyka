@@ -38,4 +38,7 @@ public class BusinessProcess {
     @ManyToOne
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
+
+    @Column(name = "active", nullable = false)
+    private boolean active;
 }

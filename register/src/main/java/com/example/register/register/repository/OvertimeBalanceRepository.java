@@ -16,20 +16,6 @@ public interface OvertimeBalanceRepository extends JpaRepository <OvertimeBalanc
     Optional<OvertimeBalance> findByUserAndVolumeType(User user, VolumeType type);
 
     @Query("""
-      SELECT new com.example.register.register.DTO.OvertimeDTO(
-        ob.user.id,
-        ob.user.firstName,
-        ob.user.lastName,
-        ob.volumeType,
-        ob.overtimeMinutes,
-        ob.user.section.id
-      )
-      FROM OvertimeBalance ob
-      WHERE ob.user.team.id = :teamId
-    """)
-    List<OvertimeDTO> findCurrentOvertimeByTeamId(@Param("teamId") Long teamId);
-
-    @Query("""
     SELECT new com.example.register.register.DTO.OvertimeTableDTO(
         ob.user.id,
         ob.user.firstName,
@@ -47,9 +33,9 @@ public interface OvertimeBalanceRepository extends JpaRepository <OvertimeBalanc
 
 
     @Query("""
-    SELECT ob FROM OvertimeBalance ob
-    WHERE ob.user.id = :userId AND ob.volumeType = :type
+SELECT SUM(ob.overtimeMinutes) FROM OvertimeBalance ob
+WHERE ob.user.id = :userId AND ob.volumeType = :type
 """)
-    Optional<OvertimeBalance> findByUserIdAndVolumeType(@Param("userId") Long userId, @Param("type") VolumeType type);
+    Integer sumOvertimeByUserAndType(@Param("userId") Long userId, @Param("type") VolumeType type);
 
 }

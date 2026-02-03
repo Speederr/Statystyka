@@ -1,10 +1,13 @@
 package com.example.register.register.service;
 
+import com.example.register.register.DTO.BacklogProcessWithHoursDto;
 import com.example.register.register.model.Backlog;
 import com.example.register.register.model.BusinessProcess;
+import com.example.register.register.model.Team;
 import com.example.register.register.repository.BacklogRepository;
 import com.example.register.register.repository.ProcessRepository;
 import com.example.register.register.repository.SavedDataRepository;
+import com.example.register.register.repository.TeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,38 +25,33 @@ public class BacklogService {
     private  ProcessRepository processRepository;
     @Autowired
     private SavedDataRepository savedDataRepository;
-
+    @Autowired
+    private TeamRepository teamRepository;
 
     @Transactional
-    public void saveBacklog(Map<Long, Integer> backlogData) {
+    public void saveBacklog(Team team, Map<Long, Integer> backlogData) {
         LocalDate today = LocalDate.now();
-
         backlogData.forEach((processId, taskCount) -> {
-            if (taskCount == 0) {
-                return; // Ignorujemy wartości 0
-            }
-
+            if (taskCount == 0) return;
             BusinessProcess process = processRepository.findById(processId)
                     .orElseThrow(() -> new RuntimeException("Nie znaleziono procesu o ID: " + processId));
-
-            // 🔹 Pobranie backlogu dla danego procesu i daty
-            Optional<Backlog> existingBacklog = backlogRepository.findByProcessAndDate(process, today);
-
-            if (existingBacklog.isPresent()) {
-                // 🔹 Jeśli backlog już istnieje → nadpisujemy wartość
-                Backlog backlog = existingBacklog.get();
+            Optional<Backlog> existing = backlogRepository.findByProcessAndTeamAndDate(process, team, today);
+            if (existing.isPresent()) {
+                Backlog backlog = existing.get();
                 backlog.setTaskCount(taskCount);
                 backlogRepository.save(backlog);
             } else {
-                // 🔹 Jeśli backlog dla tej daty nie istnieje → tworzymy nowy wpis
                 Backlog newBacklog = new Backlog();
                 newBacklog.setProcess(process);
+                newBacklog.setTeam(team); // <--- tutaj ustawiasz team
                 newBacklog.setDate(today);
                 newBacklog.setTaskCount(taskCount);
                 backlogRepository.save(newBacklog);
             }
         });
     }
+
+
 
     public List<Backlog> getBacklogBetweenDates(LocalDate start, LocalDate end) {
         return backlogRepository.findByDateBetween(start, end);
@@ -83,5 +81,19 @@ public class BacklogService {
                         )
                 ));
     }
+
+    public List<BacklogProcessWithHoursDto> getProcessesForBacklogWithHours(Long teamId, LocalDate date) {
+        List<Object[]> rows = backlogRepository.findProcessesBacklogWithHours(teamId, date);
+        List<BacklogProcessWithHoursDto> result = new ArrayList<>();
+        for (Object[] row : rows) {
+            String name = (String) row[0];
+            int taskCount = ((Number) row[1]).intValue();
+            double hours = ((Number) row[2]).doubleValue();
+            result.add(new BacklogProcessWithHoursDto(name, taskCount, hours));
+        }
+        return result;
+    }
+
+
 
 }

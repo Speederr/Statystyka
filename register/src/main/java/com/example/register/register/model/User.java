@@ -48,9 +48,9 @@ public class User {
     @JoinColumn(name = "position_id", nullable = false)
     private Position position;
 
-    @Lob
-    @Column(columnDefinition = "LONGBLOB")
+    @Column(name = "avatar_url", columnDefinition = "bytea")
     private byte[] avatarUrl;
+
 
     @Column(name = "is_super_admin", nullable = false)
     private boolean isSuperAdmin;

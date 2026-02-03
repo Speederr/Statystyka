@@ -3,15 +3,17 @@ package com.example.register.register.controller;
 import com.example.register.register.DTO.BacklogExportDto;
 import com.example.register.register.model.Backlog;
 import com.example.register.register.model.BusinessProcess;
+import com.example.register.register.model.Team;
 import com.example.register.register.model.User;
+import com.example.register.register.repository.BacklogRepository;
 import com.example.register.register.repository.ProcessRepository;
 import com.example.register.register.repository.UserRepository;
 import com.example.register.register.service.BacklogService;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,58 +24,56 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
+@RequiredArgsConstructor
 @RequestMapping("/backlog")
 public class BacklogController {
 
     private final BacklogService backlogService;
     private final ProcessRepository processRepository;
     private final UserRepository userRepository;
+    private final BacklogRepository backlogRepository;
 
-    @Autowired
-    public BacklogController(BacklogService backlogService, ProcessRepository processRepository, UserRepository userRepository) {
-        this.backlogService = backlogService;
-        this.processRepository = processRepository;
-        this.userRepository = userRepository;
+    @GetMapping
+    public String showBacklogForm(Model model, Principal principal) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+
+        String username = principal.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika: " + username));
+
+        Long teamId = user.getTeam().getId();
+        List<BusinessProcess> processes = processRepository.findByTeamIdAndActive(teamId, true);
+
+        Map<Long, Integer> backlogData = backlogService.getBacklogForTeam(teamId);
+
+        Map<Long, Double> backlogHoursData = new HashMap<>();
+        for (BusinessProcess process : processes) {
+            int taskCount = backlogData.getOrDefault(process.getId(), 0);
+            double backlogHours = taskCount * process.getAverageTime();
+            backlogHoursData.put(process.getId(), backlogHours);
+        }
+
+        model.addAttribute("processes", processes);
+        model.addAttribute("backlogData", backlogData);
+        model.addAttribute("backlogHoursData", backlogHoursData);
+
+        return "backlog";
     }
-
-@GetMapping
-public String showBacklogForm(Model model, Principal principal) {
-    if (principal == null) {
-        return "redirect:/login";
-    }
-
-    String username = principal.getName();
-    User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika: " + username));
-
-    Long teamId = user.getTeam().getId();
-    List<BusinessProcess> processes = processRepository.findByTeamId(teamId);
-    Map<Long, Integer> backlogData = backlogService.getBacklogForTeam(teamId);
-
-    Map<Long, Double> backlogHoursData = new HashMap<>();
-    for (BusinessProcess process : processes) {
-        int taskCount = backlogData.getOrDefault(process.getId(), 0);
-        double backlogHours = taskCount * process.getAverageTime();
-        backlogHoursData.put(process.getId(), backlogHours);
-    }
-
-    model.addAttribute("processes", processes);
-    model.addAttribute("backlogData", backlogData);
-    model.addAttribute("backlogHoursData", backlogHoursData);
-
-    return "backlog";
-}
 
     @PostMapping("/save")
     @ResponseBody
-    public ResponseEntity<Map<String, String>> saveBacklog(@RequestParam Map<String, String> backlogData) {
+    public ResponseEntity<Map<String, String>> saveBacklog(@RequestParam Map<String, String> backlogData, Principal principal) {
+        String username = principal.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika: " + username));
+        Team team = user.getTeam();
+
         Map<Long, Integer> backlogMap = backlogData.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith("process_"))
                 .collect(Collectors.toMap(
@@ -81,14 +81,13 @@ public String showBacklogForm(Model model, Principal principal) {
                         entry -> entry.getValue().isEmpty() ? 0 : Integer.parseInt(entry.getValue())
                 ));
 
-        backlogService.saveBacklog(backlogMap);
+        backlogService.saveBacklog(team, backlogMap);
 
-        // ✅ Zwrot JSON jako odpowiedź
         Map<String, String> response = new HashMap<>();
         response.put("message", "Backlog został zapisany!");
-
         return ResponseEntity.ok(response);
     }
+
 
     @GetMapping("/hours")
     public ResponseEntity<Map<LocalDate, Double>> getBacklogHours(Principal principal) {
@@ -165,6 +164,8 @@ public String showBacklogForm(Model model, Principal principal) {
         workbook.write(response.getOutputStream());
         workbook.close();
     }
+
+
 
 
 

@@ -22,13 +22,6 @@
     <script th:src="@{/js/filter.js}" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!--            <link rel="stylesheet" href="../static/css/sidebarCSS.css">-->
-<!--            <link rel="stylesheet" href="../static/css/button.css">-->
-<!--            <link rel="stylesheet" href="../static/css/details.css">-->
-
-<!--            <script src="../static/js/script.js" defer></script>-->
-<!--            <script src="../static/js/json.js" defer></script>-->
-
 </head>
 
 <body>
@@ -79,6 +72,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -126,8 +126,8 @@
     <div class="main-container">
         <div class="filter-container">
             <div class="modalsBtn">
-                <button class="mainBtn return" type="button" th:onclick="|window.location.href='@{/efficiency}'|">Powrót</button>
-                <button class="mainBtn" type="button" th:onclick="|window.location.href='@{/chartDetails}'|">Wykres</button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/efficiency}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/chartDetails}'|"><i class='bx bx-bar-chart' ></i>Wykres</button>
             </div>
             <div class="filter-data-container">
                 <div class="data-container">
@@ -149,7 +149,7 @@
                     </div>
             </div>
             <div class="btnContainer">
-                <button type="submit" class="mainBtn">Wyczyść</button>
+                <button type="submit" class="btn-back"><i class='bx bx-eraser'></i>Wyczyść</button>
             </div>
         </div>
 

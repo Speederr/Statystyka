@@ -81,6 +81,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -128,11 +135,17 @@
     <div class="main-container">
         <div class="filter-container">
             <div class="modalsBtn">
-                <button class="mainBtn return" type="button" th:onclick="|window.location.href='@{/details}'|">Powrót</button>
-                <button class="mainBtn" type="button" th:onclick="|window.location.href='@{/matrix/{userId}(userId=${user.id})}'|">
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/details}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/matrix/{userId}(userId=${user.id})}'|"><i class='bx bxs-user-check'></i>
                     Matryca Kompetencji
                 </button>
-                <button class="mainBtn" type="button" th:onclick="|window.location.href='@{/executionReport}'|">
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/app-matrix/{userId}(userId=${user.id})}'|"><i class='bx bx-desktop'></i>
+                    Aplikacje
+                </button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/soft-skills/{userId}(userId=${user.id})}'|"><i class='bx bx-conversation'></i>
+                    Kompetencje miękkie
+                </button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/executionReport}'|"><i class='bx bxs-report' ></i>
                     Szczegóły wykonania
                 </button>
             </div>
@@ -146,7 +159,7 @@
                 </div>
             </div>
             <div class="btnContainer">
-                <button type="submit" class="mainBtn" id="clearAllDataOnUserChart">Wyczyść</button>
+                <button type="submit" class="btn-back" id="clearAllDataOnUserChart"><i class='bx bx-eraser' ></i>Wyczyść</button>
             </div>
          </div>
 

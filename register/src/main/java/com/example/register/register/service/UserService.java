@@ -194,7 +194,7 @@ public class UserService implements UserDetailsService {
 
 
     public boolean isPasswordComplexEnough(String password) {
-        String passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&_])[A-Za-z\\d@$!%*?&_]{8,12}$";
+        String passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&_])[A-Za-z\\d@$!%*?&_]{8,}$";
         return password.matches(passwordPattern);
     }
 

@@ -74,6 +74,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -121,7 +128,7 @@
 
     <div class="mainContainer">
         <div class="modalsBtn">
-            <button class="mainBtn return" th:onclick="|window.location.href='@{/efficiency}'|">Powrót</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/efficiency}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
         </div>
 
     <form th:action="@{/backlog/save}" method="post" id="backlog-form">
@@ -162,7 +169,7 @@
         </div>
 
         <div class="editBtn">
-            <button class="mainBtn" type="submit">Zapisz</button>
+            <button class="btn-back" type="submit">Zapisz</button>
         </div>
     </form>
     </div>

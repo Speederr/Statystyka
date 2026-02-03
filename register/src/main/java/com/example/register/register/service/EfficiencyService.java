@@ -32,6 +32,31 @@ public void calculateAndSaveEfficiency(Long userId) {
     List<SavedData> allEntries = savedDataRepository
             .findByUser_IdAndTodaysDate(userId, today);
 
+    // Dodaj obsługę odbioru całego dnia – NAJPIERW!
+    final int BASE = 435;
+    int sumDeductFullDay = allEntries.stream()
+            .filter(e -> e.getVolumeType() == VolumeType.DEDUCT_FULL_DAY)
+            .mapToInt(SavedData::getOvertimeMinutes)
+            .sum();
+
+    if (sumDeductFullDay >= BASE) {
+        // Cały dzień odebrany – efektywność = 0%
+        Efficiency eff = efficiencyRepository
+                .findByUser_IdAndTodaysDate(userId, today)
+                .orElseGet(() -> {
+                    User u = userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+                    Efficiency ne = new Efficiency();
+                    ne.setUser(u);
+                    ne.setTodaysDate(today);
+                    return ne;
+                });
+        eff.setEfficiency(0.0);
+        efficiencyRepository.save(eff);
+        return;
+    }
+
+    // Dalej normalne liczenie efektywności:
     // 2) Czas operacyjny (taski)
     double totalTaskTime = allEntries.stream()
             .filter(e -> !e.getProcess().isNonOperational())
@@ -56,14 +81,12 @@ public void calculateAndSaveEfficiency(Long userId) {
             .mapToInt(SavedData::getOvertimeMinutes)
             .sum();
 
-    // 6) Częściowe odebranie – odejmujemy bezpośrednio od bazowego 465
+    // 6) Częściowe odebranie – odejmujemy bezpośrednio od bazowego
     int sumDeduct = allEntries.stream()
             .filter(e -> e.getVolumeType() == VolumeType.DEDUCT_PARTIAL)
             .mapToInt(SavedData::getOvertimeMinutes)
             .sum();
 
-    // 7) Ustal bazowe okno: 435 – odebrane
-    final int BASE = 435;
     int baseWindow = Math.max(BASE - sumDeduct, 0);
 
     // 8) Całkowite okno = (435-deduct) + paid + off – nonOp
@@ -87,10 +110,5 @@ public void calculateAndSaveEfficiency(Long userId) {
     eff.setEfficiency(efficiencyPercent);
     efficiencyRepository.save(eff);
 }
-
-
-
-
-
 
 }

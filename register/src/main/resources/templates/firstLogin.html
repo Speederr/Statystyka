@@ -10,8 +10,11 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script th:src="@{/js/script.js}" defer></script>
-     <link rel="stylesheet" th:href="@{/css/style.css}">
+<!--     <link rel="stylesheet" th:href="@{/css/style.css}">-->
+     <link rel="stylesheet" th:href="@{/css/modal.css}">
     <link rel="stylesheet" th:href="@{/css/button.css}">
+    <link rel="stylesheet" th:href="@{/css/settings.css}">
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 </head>
@@ -40,43 +43,75 @@
     </div>
 </div>
 <main>
-<p th:if="${param.error == 'mismatch'}">Hasła nie są identyczne, spróbuj ponownie.</p>
+    <p th:if="${param.error == 'mismatch'}">Hasła nie są identyczne, spróbuj ponownie.</p>
 
-     <div class="loader"></div>
+         <div class="loader"></div>
 
-<div id="first-login-window" class="login active">
-        <form id="new-user-form" method="post" th:action="@{/api/user/changePassword}">
-            <div class="inputs">
-                <h1 class="loginTitle">Pierwsze logowanie</h1>
-
-                <label for="username">Nazwa użytkownika</label>
-                <div class="input-box">
-                    <input type="text" id="username" name="username" required autofocus>
+    <div id="first-login-window" class="login active">
+        <div class="form-section-first-login">
+            <form id="new-user-form" method="post" th:action="@{/api/user/changePassword}">
+                <div class="inputs">
+                    <div class="title-header" id="tooltipToggle">
+                        <h1 class="loginTitle">Pierwsze logowanie</h1><i class='bx bx-chevron-down' id="arrowIcon"></i>
+                    </div>
+                    <label for="username">Nazwa użytkownika</label>
+                    <div class="input-box">
+                        <input type="text" id="username" name="username" required autofocus>
+                    </div>
+                    <label for="temporary-password">Tymczasowe hasło</label>
+                    <div class="input-box">
+                        <input type="password" id="temporary-password" name="temporary-password" required
+                               autocomplete="new-password">
+                        <i class="fa-solid fa-eye-slash" id="show-temporary-password"></i>
+                    </div>
+                    <label for="new-password">Nowe hasło</label>
+                    <div class="input-box">
+                        <input type="password" id="new-password" name="newPassword" required autocomplete="new-password">
+                        <i class="fa-solid fa-eye-slash" id="show-new-password"></i>
+                    </div>
+                    <label for="confirm-password">Potwierdź hasło</label>
+                    <div class="input-box">
+                        <input type="password" id="confirm-password" name="confirmPassword" required>
+                        <i class="fa-solid fa-eye-slash" id="show-confirm-password"></i>
+                    </div>
                 </div>
-                <label for="temporary-password">Tymczasowe hasło</label>
-                <div class="input-box">
-                    <input type="password" id="temporary-password" name="temporary-password" required
-                           autocomplete="new-password">
-                    <i class="fa-solid fa-eye-slash" id="show-temporary-password"></i>
+            <label>Mam już konto -- <a th:href="@{/login}">Zaloguj</a></label>
+                <div class="btnContainer">
+                    <button type="submit" class="loginFormBtn">Zmień hasło</button>
                 </div>
-                <label for="new-password">Nowe hasło</label>
-                <div class="input-box">
-                    <input type="password" id="new-password" name="newPassword" required autocomplete="new-password">
-                    <i class="fa-solid fa-eye-slash" id="show-new-password"></i>
-                </div>
-                <label for="confirm-password">Potwierdź hasło</label>
-                <div class="input-box">
-                    <input type="password" id="confirm-password" name="confirmPassword" required>
-                    <i class="fa-solid fa-eye-slash" id="show-confirm-password"></i>
+            </form>
+        </div>
+            <div class="password-tooltip" id="passwordTooltip">
+                <h2>Hasło - wymagania</h2>
+                <div class="password-container">
+                        <span data-rule="length">
+                        <i class='bx bxs-right-arrow-alt'></i>
+                        Conajmniej 8 znaków
+                        <i class='bx bx-x rule-icon'></i>
+                        </span>
+                        <span data-rule="uppercase">
+                        <i class='bx bxs-right-arrow-alt'></i>
+                        Przynajmniej 1 wielką literę
+                        <i class='bx bx-x rule-icon'></i>
+                        </span>
+                        <span data-rule="lowercase">
+                        <i class='bx bxs-right-arrow-alt'></i>
+                        Przynajmniej 1 małą literę
+                        <i class='bx bx-x rule-icon'></i>
+                        </span>
+                        <span data-rule="digit">
+                        <i class='bx bxs-right-arrow-alt'></i>
+                        Przynajmniej 1 cyfrę
+                        <i class='bx bx-x rule-icon'></i>
+                        </span>
+                        <span data-rule="special">
+                        <i class='bx bxs-right-arrow-alt'></i>
+                        Przynajmniej 1 znak specjalny. <br> Dozwolone znaki: @ _ ! % * ? & $
+                        <i class='bx bx-x rule-icon'></i>
+                        </span>
                 </div>
             </div>
-        <label>Mam już konto -- <a th:href="@{/login}">Zaloguj</a></label>
-            <div class="btnContainer">
-                <button type="submit" class="mainBtn">Zmień hasło</button>
-            </div>
-        </form>
-</div>
-
+    </div>
 </main>
 <footer>
     <p>&copy; Statystyka 2025</p>

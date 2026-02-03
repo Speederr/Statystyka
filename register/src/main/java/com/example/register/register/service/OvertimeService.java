@@ -2,20 +2,22 @@ package com.example.register.register.service;
 
 import com.example.register.register.DTO.OvertimeDTO;
 import com.example.register.register.DTO.OvertimeDetailDTO;
+import com.example.register.register.DTO.OvertimePayoutHistoryDTO;
 import com.example.register.register.DTO.OvertimeTableDTO;
 import com.example.register.register.model.OvertimePayoutHistory;
 import com.example.register.register.model.SavedData;
+import com.example.register.register.model.User;
 import com.example.register.register.model.VolumeType;
-import com.example.register.register.repository.OvertimeBalanceRepository;
-import com.example.register.register.repository.OvertimePayoutHistoryRepository;
-import com.example.register.register.repository.OvertimeRepository;
-import com.example.register.register.repository.SavedDataRepository;
+import com.example.register.register.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -29,10 +31,10 @@ public class OvertimeService {
     private OvertimePayoutHistoryRepository overtimePayoutHistoryRepository;
     @Autowired
     private OvertimeBalanceRepository overtimeBalanceRepository;
+    @Autowired
+    private UserRepository userRepository;
 
-//    public List<OvertimeDTO> getOvertimeSummary(Long teamId) {
-//        return overtimeBalanceRepository.findCurrentOvertimeByTeamId(teamId);
-//    }
+
     public List<OvertimeTableDTO> getOvertimeTableForTeam(Long teamId) {
         return overtimeBalanceRepository.findTableDataByTeamId(teamId);
     }
@@ -43,10 +45,6 @@ public class OvertimeService {
 
     public void resetPaidOvertime(Long userId) {
         overtimeRepository.updatePaidOvertimeToZero(userId);
-    }
-
-    public int getPaidOvertimeForUser(Long userId) {
-        return savedDataRepository.getPaidOvertimeForUser(userId);
     }
 
     public void savePayoutHistory(Long userId, int minutes, String admin, String note) {
@@ -60,5 +58,22 @@ public class OvertimeService {
         overtimePayoutHistoryRepository.save(history);
     }
 
+    @Transactional
+    public void archivePaidOvertime(Long userId, String adminName, String note) {
+        int paid = savedDataRepository.getPaidOvertimeForUser(userId);
+        if (paid > 0) {
+            savePayoutHistory(userId, paid, adminName, note);
+            savedDataRepository.archivePaidOvertime(userId);
+        }
+    }
 
+
+    public List<OvertimePayoutHistoryDTO> getAll(Principal principal) {
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony"));
+
+        Long teamId = user.getTeam().getId();
+
+        return overtimePayoutHistoryRepository.findAllWithUserNamesByTeamId(teamId);
+    }
 }

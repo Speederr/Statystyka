@@ -74,6 +74,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -121,7 +128,7 @@
     <form th:action="@{/backlogDetails}" method="get" class="filter-form">
         <div class="filter-container">
             <div class="modalsBtn">
-                <button class="mainBtn return" type="button" th:onclick="|window.location.href='@{/efficiency}'|">Powrót</button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/efficiency}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
             </div>
             <div class="filter-date-container">
                 <div class="date-container">
@@ -133,11 +140,11 @@
                     <input class="date-input" type="date" id="endDate" name="endDate" th:value="${endDate}">
                 </div>
                 <div class="date-btn">
-                    <button type="submit" class="filter-button">Filtruj</button>
+                    <button type="submit" class="btn-back"><i class='bx bx-search-alt-2' ></i>Filtruj</button>
                 </div>
             </div>
             <div class="xlsx-btn">
-                <button type="button" class="filter-button"  id="exportBacklogBtn">XLSX</button>
+                <button type="button" class="btn-back"  id="exportBacklogBtn"><i class='bx bxs-file-export'></i>XLSX</button>
             </div>
         </div>
     </form>

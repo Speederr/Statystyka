@@ -14,8 +14,16 @@ public interface ProcessRepository extends JpaRepository<BusinessProcess, Long> 
     @NonNull
     List<BusinessProcess> findAll();
 
-    @Query("SELECT f.process FROM UserFavorites f WHERE f.user.id = :userId")
+    List<BusinessProcess> findByTeamIdAndActiveTrueOrderByProcessNameAsc(Long teamId);
+    List<BusinessProcess> findByTeamIdAndActive(Long teamId, boolean active);
+
+    @Query("""
+    SELECT uf.process FROM UserFavorites uf
+    WHERE uf.user.id = :userId AND uf.process.active = true
+    """)
     List<BusinessProcess> findFavoritesByUserId(@Param("userId") Long userId);
+
+
 
     List<BusinessProcess> findByTeamId(Long teamId);
 

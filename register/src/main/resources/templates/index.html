@@ -17,6 +17,12 @@
     <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
     <link rel="stylesheet" th:href="@{/css/index.css}">
     <link rel="stylesheet" th:href="@{/css/button.css}">
+    <link rel="stylesheet" th:href="@{/css/modal.css}">
+
+<!--    <link rel="stylesheet" href="../static/css/button.css">-->
+<!--    <link rel="stylesheet" href="../static/css/sidebarCSS.css">-->
+<!--    <link rel="stylesheet" href="../static/css/modal.css">-->
+
     <script th:src="@{/js/script.js}" defer></script>
     <script th:src="@{/js/json.js}" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -71,6 +77,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -85,8 +98,10 @@
                 </a>
                 <span class="tooltip">Panel Admina</span>
             </li>
+
         </ul>
     </div>
+
     <ul>
         <li>
             <a th:href="@{/logout}">
@@ -163,17 +178,13 @@
         </section>
     </div>
 
-
     <section id="overtimeInputSection" class="hidden">
         <label for="overtimeMinutes">Czas nadgodzin (w minutach):</label>
         <div class="overtime-body">
             <input type="number" id="overtimeMinutes" min="1" step="1" placeholder="np. 60">
-            <button class="mainBtn index" id="confirmOvertime" title="Zapisz nadgodziny">Potwierdź</button>
+            <button class="btn-back" id="confirmOvertime" title="Zapisz nadgodziny"><i class='bx bx-check'></i>Potwierdź</button>
         </div>
     </section>
-
-
-
 
     <div class="container mt-3">
         <!-- Dodanie onsubmit="return false;" zapobiega odświeżeniu strony -->
@@ -210,7 +221,6 @@
     </div>
 
     <div class="confirmBtnDiv">
-<!--        <button class="processBtn" id="saveAllBtn" type="button">Zapisz</button>-->
         <a href="#" class="animated-button" id="saveAllBtn" title="Zapisz wolumen">
             <span></span>
             <span></span>
@@ -224,26 +234,45 @@
         <div class="modal-content">
             <form id="setupForm">
                 <div class="title">
-                    <h4>Uzupełnij dane</h4>
+                    <h4>Dokończ rejestrację</h4>
                 </div>
 
-                <label for="team">Zespół:</label>
-                <select id="team" name="teamId" required>
-                    <option value="">Wybierz zespół</option>
-                </select>
+                <div class="field-with-plus">
+                    <label for="team">Zespół:</label>
+                    <div class="select-plus">
+                        <select id="team" name="teamId" required>
+                            <option value="">Wybierz zespół</option>
+                        </select>
+                        <button type="button" class="open-modal-btn" data-open-modal="teamModal">
+                            <i class='bx bx-plus'></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="field-with-plus">
+                    <label for="section">Sekcja:</label>
+                    <div class="select-plus">
+                        <select id="section" name="sectionId" required>
+                            <option value="">Wybierz sekcję</option>
+                        </select>
+                        <button type="button" class="open-modal-btn" data-open-modal="sectionModal">
+                            <i class='bx bx-plus'></i>
+                        </button>
 
-                <label for="section">Sekcja:</label>
-                <select id="section" name="sectionId" required>
-                    <option value="">Wybierz sekcję</option>
-                </select>
-
-                <label for="position">Stanowisko:</label>
-                <select id="position" name="positionId" required>
-                    <option value="">Wybierz stanowisko</option>
-                </select>
-
+                    </div>
+                </div>
+                <div class="field-with-plus">
+                    <label for="position">Stanowisko:</label>
+                    <div class="select-plus">
+                        <select id="position" name="positionId" required>
+                            <option value="">Wybierz stanowisko</option>
+                        </select>
+                        <button type="button" class="open-modal-btn" data-open-modal="positionModal">
+                            <i class='bx bx-plus'></i>
+                        </button>
+                    </div>
+                </div>
                 <div class="btnContainer">
-                    <button type="submit" class="mainBtn">Zapisz</button>
+                    <button type="submit" class="btn-save">Zapisz</button>
                 </div>
             </form>
         </div>
@@ -256,13 +285,71 @@
                 <p id="confirmText"></p>
             </div>
             <div class="confirm-button">
-                <button id="confirmYes" class="mainBtn confirmBtn">Tak</button>
-                <button id="confirmNo" class="mainBtn confirmBtn" >Nie</button>
+                <button id="confirmYes" class="btn-save">Tak</button>
+                <button id="confirmNo" class="btn-cancel" >Nie</button>
             </div>
             </div>
     </div>
 
+    <!--    Modal do dodania nowego zespołu -->
+    <div id="teamModal" class="modal hidden">
+        <div class="modal-content">
+            <form id="teamForm">
+                <div class="title">
+                    <h4>Nowy Zespół</h4>
+                    <span class="close" data-close-modal="teamModal">&times;</span>
+                </div>
+                <label for="teamName">Nazwa Zespołu</label>
+                <input class="formInput" type="text" id="teamName" required>
 
+                <div class="btnContainer">
+                    <button type="submit" class="btn-save">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!--    Modal do dodania nowej sekcji   -->
+    <div id="sectionModal" class="modal hidden">
+        <div class="modal-content">
+            <form id="sectionForm">
+                <div class="title">
+                    <h4>Nowa Sekcja</h4>
+                    <span class="close" data-close-modal="sectionModal">&times;</span>
+                </div>
+
+                <label for="sectionTeam">Zespół:</label>
+                <select id="sectionTeam" name="teamId">
+                    <option value="">Wybierz zespół</option>
+                </select>
+
+                <label for="sectionName">Nazwa Sekcji</label>
+                <input class="formInput" type="text" id="sectionName" required>
+
+                <div class="btnContainer">
+                    <button type="submit" class="btn-save">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!--    Modal do dodania nowego stanowiska -->
+    <div id="positionModal" class="modal hidden">
+        <div class="modal-content">
+            <form id="positionForm">
+                <div class="title">
+                    <h4>Dodaj stanowisko</h4>
+                    <span class="close" data-close-modal="positionModal">&times;</span>
+                </div>
+                <label for="positionName">Nazwa stanowiska</label>
+                <input class="formInput" type="text" id="positionName" required>
+
+                <div class="btnContainer">
+                    <button type="submit" class="btn-save">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
 

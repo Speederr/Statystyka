@@ -154,6 +154,7 @@ public ResponseEntity<String> saveNewProcess(@RequestParam("teamId") Long teamId
     Team team = teamRepository.findById(teamId)
             .orElseThrow(() -> new RuntimeException("Nie znaleziono zespołu: " + teamId));
     process.setTeam(team);
+    process.setActive(true);
     processRepository.save(process);
     return ResponseEntity.ok("Proces został dodany");
 }
@@ -205,6 +206,11 @@ public ResponseEntity<String> saveNewProcess(@RequestParam("teamId") Long teamId
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Void> updateProcessStatus(@PathVariable Long id, @RequestBody boolean active) {
+        processService.updateStatus(id, active);
+        return ResponseEntity.ok().build();
+    }
 
 
 }

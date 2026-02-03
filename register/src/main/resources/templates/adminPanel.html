@@ -14,8 +14,11 @@
     <link rel="stylesheet" th:href="@{/css/adminPanel.css}">
     <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
     <link rel="stylesheet" th:href="@{/css/button.css}">
-    <script th:src="@{/js/json.js}" defer></script>
+    <link rel="stylesheet" th:href="@{/css/modal.css}">
+
     <script th:src="@{/js/script.js}" defer></script>
+    <script th:src="@{/js/json.js}" defer></script>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
@@ -69,7 +72,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
-
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -115,14 +124,14 @@
         <h1>Uprawnienia</h1>
         <span id="currentDate"></span>
     </header>
-
     <!-- Przycisk do otwarcia modala -->
     <div class="mainContainer">
         <div class="modalsBtn">
-            <button class="mainBtn" id="openModalBtn">Dodaj Użytkownika</button>
-            <button class="mainBtn" id="newTeamModalBtn">Dodaj Zespół</button>
-            <button class="mainBtn" id="newSectionModalBtn">Dodaj Sekcję</button>
-            <button class="mainBtn" th:onclick="|window.location.href='@{/averageTime}'|">Edytuj Czasy</button>
+            <button class="btn-back" data-open-modal="userModal"><i class='bx bx-user-plus' ></i>Dodaj Użytkownika</button>
+            <button class="btn-back" data-open-modal="teamModal"><i class='bx bx-list-plus'></i>Dodaj Zespół</button>
+            <button class="btn-back" data-open-modal="sectionModal"><i class='bx bx-list-plus'></i>Dodaj Sekcję</button>
+            <button class="btn-back" data-open-modal="positionModal"><i class='bx bx-list-plus'></i>Dodaj Stanowisko</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/averageTime}'|"><i class='bx bx-time'></i>Edytuj Czasy</button>
         </div>
         <div class="search-bar">
             <input type="text" id="search-user-messages" placeholder="Wyszukaj...">
@@ -159,7 +168,7 @@
                         <td th:text="${user.username}">Login</td>
                         <td th:text="${user.email}">Email</td>
                         <td>
-                            <th:block th:if="${loggedUser.role.roleName == 'Admin'}">
+                            <th:block th:if="${loggedUser.role.roleName == 'ADMIN'}">
                                 <select th:attr="name='teams[' + ${user.id} + ']'" class="team-select">
                                     <option th:each="team : ${teams}"
                                             th:value="${team.id}"
@@ -168,7 +177,7 @@
                                     </option>
                                 </select>
                             </th:block>
-                            <th:block th:unless="${loggedUser.role.roleName == 'Admin'}"
+                            <th:block th:unless="${loggedUser.role.roleName == 'ADMIN'}"
                                       th:text="${user.team.teamName}">
                             </th:block>
                         </td>
@@ -185,13 +194,13 @@
                         <td class="select-cell">
                             <select class="select-role" th:attr="name='roles[' + ${user.id} + ']'"
                                     th:value="${user.role.roleName}" th:if="${!user.isSuperAdmin}">
-                                <option value="Admin" th:selected="${user.role.roleName == 'Admin'}">Admin</option>
-                                <option value="Manager" th:selected="${user.role.roleName == 'Manager'}">Manager
+                                <option value="ADMIN" th:selected="${user.role.roleName == 'ADMIN'}">Admin</option>
+                                <option value="MANAGER" th:selected="${user.role.roleName == 'MANAGER'}">Manager
                                 </option>
-                                <option value="Coordinator" th:selected="${user.role.roleName == 'Coordinator'}">
+                                <option value="COORDINATOR" th:selected="${user.role.roleName == 'COORDINATOR'}">
                                     Coordinator
                                 </option>
-                                <option value="User" th:selected="${user.role.roleName == 'User'}">User</option>
+                                <option value="USER" th:selected="${user.role.roleName == 'USER'}">User</option>
                             </select>
                         </td>
                     </tr>
@@ -201,8 +210,8 @@
 
             <!-- 📌 WYCIĄGNIĘTE PRZYCISKI POZA TABELĘ, ALE W TYM SAMYM FORMULARZU -->
             <div class="new-form-button-container">
-                <button type="submit" class="mainBtn">Zapisz</button>
-                <button type="button" id="deleteButton" class="mainBtn">Usuń</button>
+                <button type="submit" class="btn-save"><i class='bx bx-save' ></i>Zapisz</button>
+                <button type="button" id="deleteButton" class="btn-delete"><i class='bx bx-trash'></i>Usuń</button>
 
             </div>
         </form>
@@ -210,92 +219,106 @@
 
 
     <!-- Modal do tworzenia nowego usera -->
-    <div id="userModal" class="modal">
-        <div class="modal-content">
+    <div id="userModal" class="modal hidden">
+        <div class="user-modal-content">
             <form th:action="@{/api/user/addUser}" th:object="${user}" method="post" id="form-container">
                 <div id="title">
                     <h3>Dodaj Użytkownika</h3>
-                    <span class="close" id="closeModalBtn">&times;</span>
+                    <span class="close" data-close-modal="userModal">&times;</span>
                 </div>
-                <label for="firstName">Imię</label>
-                <input type="text" name="firstName" id="firstName" required>
 
-                <label for="lastName">Nazwisko</label>
-                <input type="text" name="lastName" id="lastName" required>
+                <div class="form-field">
+                    <label for="firstName">Imię</label>
+                    <input type="text" name="firstName" id="firstName" required>
+                </div>
+                <div class="form-field">
+                    <label for="lastName">Nazwisko</label>
+                    <input type="text" name="lastName" id="lastName" required>
+                </div>
+                <div class="form-field">
+                    <label for="username">Login</label>
+                    <input type="text" name="username" id="username" required>
+                </div>
+                <div class="form-field">
+                    <label for="email">Email</label>
+                    <input type="text" name="email" id="email" required>
+                    <div id="usernameFeedback"></div>
+                </div>
+                <div class="form-field">
+                    <label for="team">Zespół:</label>
+                    <select id="team" name="teamId">
+                        <option value="">Wybierz zespół</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="section">Sekcja:</label>
+                    <select id="section" name="sectionId">
+                        <option value="">Wybierz sekcję</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="position">Stanowisko:</label>
+                    <select id="position" name="positionId">
+                        <option value="">Wybierz stanowisko</option>
+                    </select>
+                </div>
 
-                <label for="username">Login</label>
-                <input type="text" name="username" id="username" required>
-
-                <label for="email">Email</label>
-                <input type="text" name="email" id="email" required>
-                <div id="usernameFeedback"></div> <!-- This is where the validation userMessage will appear -->
-
-                <label for="team">Zespół:</label>
-                <select id="team" name="teamId">
-                    <option value="">Wybierz zespół</option>
-                </select>
-
-                <label for="section">Sekcja:</label>
-                <select id="section" name="sectionId">
-                    <option value="">Wybierz sekcję</option>
-                </select>
-
-                <label for="position">Stanowisko:</label>
-                <select id="position" name="positionId">
-                    <option value="">Wybierz stanowisko</option>
-                </select>
-
-                <label>Rola</label>
-                <div class="radio-group">
-                    <div class="radio-item">
-                        <input type="radio" id="admin" name="id_role" value="1" required>
-                        <label for="admin">Admin</label>
-                    </div>
-                    <div class="radio-item">
-                        <input type="radio" id="manager" name="id_role" value="2" required>
-                        <label for="manager">Kierownik</label>
-                    </div>
-                    <div class="radio-item">
-                        <input type="radio" id="coordinator" name="id_role" value="3" required>
-                        <label for="coordinator">Koordynator</label>
-                    </div>
-                    <div class="radio-item">
-                        <input type="radio" id="uzytkownik" name="id_role" value="4" required>
-                        <label for="uzytkownik">Użytkownik</label>
+                <!-- Radio group & przycisk na pełną szerokość -->
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label>Rola</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="admin" name="id_role" value="1" required>
+                            <label for="admin">Admin</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="manager" name="id_role" value="2" required>
+                            <label for="manager">Kierownik</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="coordinator" name="id_role" value="3" required>
+                            <label for="coordinator">Koordynator</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="uzytkownik" name="id_role" value="4" required>
+                            <label for="uzytkownik">Użytkownik</label>
+                        </div>
                     </div>
                 </div>
-                <div class="btnContainer">
-                    <button type="submit" class="formBtn" id="submit-button">Dodaj</button>
+
+                <div class="form-field btnContainer" style="grid-column: 1 / -1;">
+                    <button type="submit" class="btn-save" id="submit-button"><i class='bx bxs-plus-square'></i>Dodaj</button>
                 </div>
             </form>
         </div>
     </div>
 
+
     <!--    Modal do dodania nowego zespołu -->
-    <div id="teamModal" class="modal">
+    <div id="teamModal" class="modal hidden">
         <div class="modal-content">
             <form id="teamForm">
                 <div class="title">
                     <h4>Nowy Zespół</h4>
-                    <span class="close" id="closeTeamModalBtn">&times;</span>
+                    <span class="close" data-close-modal="teamModal">&times;</span>
                 </div>
                 <label for="teamName">Nazwa Zespołu</label>
                 <input class="formInput" type="text" id="teamName" required>
 
                 <div class="btnContainer">
-                    <button type="submit" class="mainBtn">Dodaj</button>
+                    <button type="submit" class="btn-save"><i class='bx bxs-plus-square'></i>Dodaj</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!--    Modal do dodania nowej sekcji   -->
-    <div id="sectionModal" class="modal">
+    <div id="sectionModal" class="modal hidden">
         <div class="modal-content">
             <form id="sectionForm">
                 <div class="title">
                     <h4>Nowa Sekcja</h4>
-                    <span class="close" id="closeSectionModalBtn">&times;</span>
+                    <span class="close" data-close-modal="sectionModal">&times;</span>
                 </div>
 
                 <label for="sectionTeam">Zespół:</label>
@@ -307,12 +330,29 @@
                 <input class="formInput" type="text" id="sectionName" required>
 
                 <div class="btnContainer">
-                    <button type="submit" class="mainBtn">Dodaj</button>
+                    <button type="submit" class="btn-save"><i class='bx bxs-plus-square'></i>Dodaj</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!--    Modal do dodania nowego stanowiska -->
+    <div id="positionModal" class="modal hidden">
+        <div class="modal-content">
+            <form id="positionForm">
+                <div class="title">
+                    <h4>Dodaj stanowisko</h4>
+                    <span class="close" data-close-modal="positionModal">&times;</span>
+                </div>
+                <label for="positionName">Nazwa stanowiska</label>
+                <input class="formInput" type="text" id="positionName" required>
+
+                <div class="btnContainer">
+                    <button type="submit" class="btn-save"><i class='bx bxs-plus-square'></i>Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
 </div>

@@ -11,8 +11,9 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+<!--    <link rel="stylesheet" th:href="@{/css/style.css}">-->
     <link rel="stylesheet" th:href="@{/css/button.css}">
+    <link rel="stylesheet" th:href="@{/css/modal.css}">
     <script th:src="@{/js/script.js}" defer></script>
 
 </head>
@@ -45,7 +46,7 @@
         </div>
 
         <!-- Role -->
-        <label>Rola</label>
+        <label class="roleLabel">Rola</label>
         <div class="radio-group">
             <div class="radio-item">
                 <input type="radio" id="admin" name="id_role" value="1" required>
@@ -67,7 +68,7 @@
 
 
         <div class="btnContainer">
-                <button type="submit" class="mainBtn">Utwórz konto</button> <br/>
+                <button type="submit" class="loginFormBtn">Utwórz konto</button> <br/>
             </div>
 
             <div class="bottomLink">

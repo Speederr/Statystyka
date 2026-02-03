@@ -73,6 +73,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -119,14 +126,17 @@
 
     <div class="modalsBtn efficiency">
         <div class="left-main-side">
-            <button class="mainBtn" th:onclick="|window.location.href='@{/details}'|">Pracownicy</button>
-            <button class="mainBtn" th:onclick="|window.location.href='@{/executionReport}'|">Raport wykonania</button>
-            <button class="mainBtn" th:onclick="|window.location.href='@{/overtimeReport}'|">Nadgodziny - podsumowanie</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/details}'|"><i class='bx bx-user-circle'></i>Pracownicy</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/executionReport}'|"><i class='bx bxs-report' ></i>Raport wykonania</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/overtimeReport}'|"><i class='bx bx-time-five' ></i>Nadgodziny - podsumowanie</button>
+        </div>
+        <div class="center">
+            <button class="btn-back" th:onclick="|window.location.href='@{/analize}'|"><i class='bx bx-analyse' ></i>Analiza</button>
         </div>
         <div class="right-main-side">
-            <button class="mainBtn" th:onclick="|window.location.href='@{/backlog}'|">Dodaj backlog</button>
-            <button class="mainBtn" th:onclick="|window.location.href='@{/backlogDetails}'|">Backlog - szczegóły</button>
-            <button class="mainBtn" th:onclick="|window.location.href='@{/averageTime}'|">Edytuj czasy</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/backlog}'|"><i class='bx bxs-file-plus'></i>Dodaj backlog</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/backlogDetails}'|"><i class='bx bx-detail' ></i>Backlog - szczegóły</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/averageTime}'|"><i class='bx bx-time' ></i>Edytuj czasy</button>
         </div>
         </div>
 
@@ -257,12 +267,12 @@
             </div>
         </section>
 
-        <section class="card large-card">
-            <h2 class="chartsTitle">Wpływ wolumenów</h2>
-            <div class="chart-container">
-                <canvas id="analysisChart"></canvas>
-            </div>
-        </section>
+<!--        <section class="card large-card">-->
+<!--            <h2 class="chartsTitle">Wpływ wolumenów</h2>-->
+<!--            <div class="chart-container">-->
+<!--                <canvas id="analysisChart"></canvas>-->
+<!--            </div>-->
+<!--        </section>-->
 
         <!-- Tooltip poza canvasem -->
         <div id="chartjs-tooltip" class="custom-tooltip">

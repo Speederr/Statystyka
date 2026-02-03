@@ -80,7 +80,7 @@ public class SavedDataService {
 
 
     /**
-    * ✅ Oblicza efektywność dla użytkownika i danego dnia
+    * Oblicza efektywność dla użytkownika i danego dnia
     */
     private double calculateEfficiency(User user, LocalDate todaysDate, Long totalQuantity) {
     if (totalQuantity == null || totalQuantity == 0) {
@@ -95,19 +95,19 @@ public class SavedDataService {
     List<SavedData> savedDataList = savedDataRepository.findByUserAndTodaysDate(user, todaysDate);
 
     // 🔹 Obliczenie całkowitego czasu operacyjnego
-    double totalOperationalTime = savedDataList.stream()
-            .filter(sd -> !sd.getProcess().isNonOperational()) // Tylko operacyjne
+        double totalOperationalTime = savedDataList.stream()
+            .filter(sd -> sd.getProcess() != null && !sd.getProcess().isNonOperational())
             .mapToDouble(sd -> sd.getQuantity() * processTimes.getOrDefault(sd.getProcess().getId(), 0.0))
             .sum();
 
     // 🔹 Obliczenie całkowitego czasu nieoperacyjnego
-    double totalNonOperationalTime = savedDataList.stream()
-            .filter(sd -> sd.getProcess().isNonOperational()) // Tylko nieoperacyjne
+        double totalNonOperationalTime = savedDataList.stream()
+            .filter(sd -> sd.getProcess() != null && sd.getProcess().isNonOperational())
             .mapToDouble(sd -> sd.getQuantity() * processTimes.getOrDefault(sd.getProcess().getId(), 0.0))
             .sum();
 
     // 🔹 Czas operacyjny uwzględniający nieoperacyjne zadania (max 1 min, żeby uniknąć dzielenia przez 0)
-    double operationalTime = Math.max(465 - totalNonOperationalTime, 1);
+    double operationalTime = Math.max(435 - totalNonOperationalTime, 1);
 
     // 🔹 Wyliczenie efektywności
     double efficiency = (totalOperationalTime / operationalTime) * 100;
@@ -140,12 +140,16 @@ public class SavedDataService {
 
     @Transactional
     public void deductFullDay(Long userId, LocalDate date) {
-        int offRaw = savedDataRepository
-                .sumOvertimeByUserAndDateAndType(userId, VolumeType.OVERTIME_OFF);
+        /**
+         * Zabezpieczenie na wartość zerową - gdy pracownik ma 0 nadgodzin do odbioru to nie może odebrać całego dnia.
+         */
+//             int offRaw = savedDataRepository
+//                .sumOvertimeByUserAndDateAndType(userId, VolumeType.OVERTIME_OFF);
+//
+//        if (offRaw <= 0) {
+//            return;
+//        }
 
-        if (offRaw <= 0) {
-            return;
-        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId ));
 
@@ -160,10 +164,11 @@ public class SavedDataService {
         savedDataRepository.save(sd);
 
         // 🟦 Dodaj wpis do overtime_balance:
-        overtimeBalanceService.addOrUpdateBalance(
+        overtimeBalanceService.addOvertimeEvent(
                 user,
                 VolumeType.DEDUCT_FULL_DAY,
-                FULL_DAY
+                FULL_DAY,
+                date
         );
 
         Attendance attendance = attendanceRepository.findByUserAndAttendanceDate(user, date).orElseGet(() -> {

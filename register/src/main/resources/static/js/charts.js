@@ -5,6 +5,7 @@ const userId = document.getElementById("userId").value;
 
 
 
+
 function updateChart(presentCount, onLeaveCount, notLoggedCount, presentNames, onLeaveNames, notLoggedNames, totalEmployees) {
     const canvas = document.getElementById("availabilityChart");
     const ctx = canvas.getContext("2d");
@@ -192,14 +193,20 @@ function loadWorkModeSummary(sectionId = "all") {
             const total = data.total || 0;
             const office = data.office || 0;
             const homeoffice = data.homeoffice || 0;
+            const officeNames = data.officeNames || [];
+            const homeofficeNames = data.homeofficeNames || [];
 
             const active = office + homeoffice;
             document.getElementById("workModeCount").textContent = `${active}/${total}`;
             document.getElementById("legendOfficeCount").textContent = office;
             document.getElementById("legendHomeofficeCount").textContent = homeoffice;
+
+            // 🔥 Wywołanie aktualizacji wykresu:
+            updateRemoteChart(office, homeoffice, officeNames, homeofficeNames);
         })
         .catch(err => console.error("❌ Błąd ładowania danych trybu pracy:", err));
 }
+
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -439,7 +446,6 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(([efficiencyData, nonOpData]) => {
                 const efficiency = efficiencyData.averageSectionEfficiency || 0;
                 const nonOperational = nonOpData.totalNonOperationalTime || 0;
-               // updateEfficiencyVsNonOperationalChart(efficiency, nonOperational);
             })
             .catch(err => console.error("❌ Błąd ładowania danych wykresu dziennego:", err));
     }
@@ -886,24 +892,30 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-
-document.getElementById("filterButton").addEventListener("click", () => {
-    const reportDateInput = document.getElementById("reportDate");
-    if (!reportDateInput) {
-      //  console.warn("⛔ Element #reportDate nie został znaleziony.");
+document.addEventListener("DOMContentLoaded", function () {
+    const filterBtn = document.getElementById("filterButton");
+    if (!filterBtn) {
+       // console.warn("⛔ Nie znaleziono #filterButton w DOM!");
         return;
     }
+    filterBtn.addEventListener("click", () => {
+        const reportDateInput = document.getElementById("reportDate");
+        if (!reportDateInput) {
+          //  console.warn("⛔ Element #reportDate nie został znaleziony.");
+            return;
+        }
 
-    const reportDate = reportDateInput.value;
-    const sectionIds = getSelectedSectionIds();
-    const userIds = getSelectedUserIds();
-    const processIds = getSelectedProcessNames();
+        const reportDate = reportDateInput.value;
+        const sectionIds = getSelectedSectionIds();
+        const userIds = getSelectedUserIds();
+        const processIds = getSelectedProcessNames();
 
-    renderChart({
-      date: reportDate,
-      sectionIds,
-      userIds,
-      processIds
+        renderChart({
+          date: reportDate,
+          sectionIds,
+          userIds,
+          processIds
+        });
     });
 });
 
@@ -967,3 +979,123 @@ function setupYAxisControls(getChartInstance, config) {
   updateYAxis();
 
 }
+
+
+const forecastForm = document.getElementById('forecastForm');
+if (forecastForm) {
+  forecastForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const date = document.getElementById('startDate').value;
+    const forecastedImpact = Number(document.getElementById('forecastedImpact').value) || 0;
+
+    const params = new URLSearchParams({
+      workers: document.getElementById('workers').value,
+      days: document.getElementById('days').value,
+      startDate: date,
+      minutesPerWorker: document.getElementById('minutesPerWorker').value,
+      forecastedImpact: forecastedImpact
+    });
+
+    // Fetch 1: forecast
+    const forecastPromise = fetch('/api/forecast?' + params)
+      .then(res => res.json());
+
+    // Fetch 2: present employees (nowy endpoint)
+    const attendancePromise = fetch('/api/attendance/present/count?date=' + date)
+      .then(res => res.json());
+
+    // Poczekaj na obie odpowiedzi równocześnie
+    const [forecastData, attendanceData] = await Promise.all([forecastPromise, attendancePromise]);
+
+    // Kafelki
+    document.getElementById('avgEfficiencyCard').innerText = `${forecastData.meta.avgEfficiency.toFixed(0)}%`;
+    document.getElementById('startBacklogCard').innerText = `${forecastData.meta.startBacklogHours.toFixed(0)}h`;
+    document.getElementById('presentEmployeesCard').innerText = attendanceData.presentCount;
+    document.getElementById('forecastedImpactCard').innerText = `${forecastData.meta.forecastedImpact.toFixed(0)}h`;
+
+    // Wykres
+    const labels = forecastData.values.map(d => d.date);
+    const backlogHours = forecastData.values.map(d => d.backlogHours);
+
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(document.getElementById('forecastChart'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Backlog (godziny)',
+          data: backlogHours,
+          fill: false,
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          datalabels: {
+            anchor: 'end',
+            align: 'top',
+            color: '#254e7b',
+            font: { weight: 'bold', size: 14 },
+            formatter: value => value.toFixed(1)
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let value = context.parsed.y;
+                return `Backlog (godziny): ${value.toFixed(1)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: "Backlog w godzinach" }
+          },
+          x: {
+            title: { display: true, text: "Data" }
+          }
+        }
+      },
+      plugins: [ChartDataLabels]
+    });
+  });
+}
+
+
+document.addEventListener('DOMContentLoaded', async function() {
+  // Sprawdź, czy pole daty istnieje
+  const startDateInput = document.getElementById('startDate');
+  if (startDateInput) {
+    startDateInput.valueAsDate = new Date();
+  }
+
+  // Sprawdź, czy pole dni istnieje
+  const daysInput = document.getElementById('days');
+  if (daysInput) {
+    daysInput.value = 7;
+  }
+
+  // Sprawdź, czy pole workers istnieje, zanim pobierzesz dane
+  const workersInput = document.getElementById('workers');
+  if (workersInput) {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    try {
+      const resp = await fetch('/api/attendance/present/count?date=' + today);
+      const data = await resp.json();
+      workersInput.value = data.presentCount;
+    } catch (e) {
+      workersInput.value = 1; // fallback, jak nie działa api
+    }
+  }
+
+  // Sprawdź, czy istnieje forecastForm, zanim spróbujesz wysłać submit
+  const forecastForm = document.getElementById('forecastForm');
+  if (forecastForm) {
+    forecastForm.dispatchEvent(new Event('submit', {cancelable: true}));
+  }
+});

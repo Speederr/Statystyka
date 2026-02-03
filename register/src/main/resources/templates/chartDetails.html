@@ -80,6 +80,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -127,7 +134,7 @@
     <div class="main-container">
     <div class="filter-container">
         <div class="modalsBtn">
-            <button class="mainBtn return" type="button" th:onclick="|window.location.href='@{/details}'|">Powrót</button>
+            <button class="btn-back" type="button" th:onclick="|window.location.href='@{/details}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
         </div>
         <div class="filter-data-container-chart">
             <div class="data-container">
@@ -158,7 +165,7 @@
             </div>
         </div>
             <div class="btnContainer">
-                <button type="submit" class="mainBtn" id="clearFiltersBtn" >Wyczyść</button>
+                <button type="submit" class="btn-back" id="clearFiltersBtn"><i class='bx bx-eraser'></i>Wyczyść</button>
             </div>
     </div>
 </div>

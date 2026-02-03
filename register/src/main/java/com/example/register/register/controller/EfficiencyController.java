@@ -110,21 +110,29 @@ public class EfficiencyController {
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusDays(6); // Ostatnie 7 dni
 
-        List<User> userInSection;
+        // 1. Pobierz usera i jego team
+        User loggedUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika!"));
 
+        Long teamId = loggedUser.getTeam().getId();
+
+        // 2. Pobierz userów tylko z tego teamu
+        List<User> usersInTeam = userRepository.findByTeam_Id(teamId);
+
+        // 3. Ograniczaj dalej do sekcji jeśli trzeba
+        List<User> usersToCheck;
         if (sectionId == null || "all".equalsIgnoreCase(sectionId)) {
-            // ⬅️ Zalogowany użytkownik tylko dla widoku indywidualnego
-            User user = userRepository.findByUsername(principal.getName())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            userInSection = List.of(user);
+            usersToCheck = usersInTeam;
         } else {
-            long id;
+            long section;
             try {
-                id = Long.parseLong(sectionId);
+                section = Long.parseLong(sectionId);
             } catch (NumberFormatException e) {
                 return ResponseEntity.badRequest().build();
             }
-            userInSection = userRepository.findBySection_Id(id);
+            usersToCheck = usersInTeam.stream()
+                    .filter(u -> u.getSection() != null && u.getSection().getId().equals(section))
+                    .toList();
         }
 
         List<Map<String, Object>> result = new ArrayList<>();
@@ -132,7 +140,7 @@ public class EfficiencyController {
         for (int i = 0; i < 7; i++) {
             LocalDate date = startDate.plusDays(i);
 
-            List<Efficiency> efficiencies = userInSection.stream()
+            List<Efficiency> efficiencies = usersToCheck.stream()
                     .flatMap(user -> efficiencyRepository.findAllByUserAndTodaysDate(user, date).stream())
                     .toList();
 
@@ -140,7 +148,7 @@ public class EfficiencyController {
                     .mapToDouble(Efficiency::getEfficiency)
                     .average().orElse(0.0);
 
-            double totalMinutes = userInSection.stream()
+            double totalMinutes = usersToCheck.stream()
                     .flatMap(user -> savedDataRepository.findNonOperationalSavedDataByUserIdAndDate(user.getId(), date).stream())
                     .mapToDouble(sd -> sd.getProcess().getAverageTime() * sd.getQuantity())
                     .sum();
@@ -157,6 +165,7 @@ public class EfficiencyController {
 
         return ResponseEntity.ok(result);
     }
+
 
 
 

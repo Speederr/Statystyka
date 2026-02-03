@@ -58,5 +58,8 @@ public class SavedData {
     @Column(name="overtime_minutes", nullable=false)
     private Integer overtimeMinutes = 0;
 
+    @Column(name = "archived", nullable = false)
+    private boolean archived = false;
+
 }
 

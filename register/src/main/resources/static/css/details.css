@@ -1,7 +1,6 @@
 .filter-container {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 30px;
 }
 .filter-data-container-chart {
     display: flex;
@@ -124,6 +123,7 @@ table tbody tr td i:hover {
 .select-box #selectedLabel {
     line-height: 28px;
 }
+  /* dropdowny */
 .process-checkbox-dropdown,
 .section-checkbox-dropdown,
 .checkbox-dropdown {
@@ -143,6 +143,7 @@ table tbody tr td i:hover {
 
 }
 
+
 .section-checkbox-dropdown.show {
   max-height: 200px;
   opacity: 1;
@@ -159,18 +160,60 @@ table tbody tr td i:hover {
   opacity: 1;
   overflow-y: auto;
 }
+
+.process-checkbox-dropdown,
+.checkbox-dropdown,
+.section-checkbox-dropdown {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px #37558522, 0 1.5px 6px #0001;
+      min-width: 220px;
+      max-width: 300px;
+      border: 1px solid #e2e6ee;
+      z-index: 1000;
+  }
+
 .process-checkbox-dropdown label,
-.section-checkbox-dropdown label,
-.checkbox-dropdown label {
-  display: block;
-  padding: 8px;
-  cursor: pointer;
-}
+.checkbox-dropdown label,
+.section-checkbox-dropdown label {
+      display: flex;
+      align-items: center;
+      padding: 7px 20px 7px 16px;
+      gap: 12px;
+      cursor: pointer;
+      border: none;
+      border-radius: 7px;
+      transition: background 0.12s;
+      font-size: 1.02em;
+  }
+
 .process-checkbox-dropdown label:hover,
-.section-checkbox-dropdown label:hover,
-.checkbox-dropdown label:hover {
-  background-color: #efefef;
-}
+.checkbox-dropdown label:hover,
+.section-checkbox-dropdown label:hover {
+      background: #f4f8ff;
+      color: #234e85;
+
+.process-checkbox-dropdown input[type="checkbox"]:checked + span,
+.checkbox-dropdown input[type="checkbox"]:checked + span,
+.section-checkbox-dropdown input[type="checkbox"]:checked + span {
+      color: #2166dd;
+      font-weight: 600;
+  }
+
+.process-checkbox-dropdown label + label,
+.checkbox-dropdown label + label,
+.section-checkbox-dropdown label + label {
+      border-top: 1px solid #f0f1f6;
+  }
+
+.process-checkbox-dropdown input[type="checkbox"],
+.checkbox-dropdown input[type="checkbox"],
+.section-checkbox-dropdown input[type="checkbox"] {
+      accent-color: #2567d8;
+      width: 17px;
+      height: 17px;
+      margin-right: 2px;
+  }
 
 .rotate {
   transform: rotate(180deg);

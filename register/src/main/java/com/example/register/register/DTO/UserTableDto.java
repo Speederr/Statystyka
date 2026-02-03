@@ -16,6 +16,7 @@ public class UserTableDto {
     private String lastName;
     private Double efficiency;
     private Double nonOperational;
+    private Long positionId;
     private String positionName;
     private String attendanceStatus; // ✅ Teraz przechowuje status obecności ("Obecny" / "Nieobecny")
 

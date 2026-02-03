@@ -33,7 +33,7 @@ public class MatrixController {
     public ResponseEntity<String> saveSingleCompetency(@RequestBody SaveSingleRequestDTO request) {
         processService.saveSingleUserLevel(request.getUserId(), request.getProcessId(), request.getLevel());
         return ResponseEntity.ok("OK");
-}
+    }
 
     private void prepareMatrixData(User user, Model model) throws JsonProcessingException {
         Team team = user.getTeam();
@@ -61,6 +61,7 @@ public class MatrixController {
     public String getCompetencyMatrix(Model model, Principal principal) throws JsonProcessingException {
         User user = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found."));
+        model.addAttribute("browsedUser", user); // <-- dodaj to, jeśli nie ma w prepareMatrixData
         prepareMatrixData(user, model);
         return "matrix";
     }
@@ -69,6 +70,7 @@ public class MatrixController {
     public String getOneUserCompetencyMatrix(@PathVariable Long userId, Model model) throws JsonProcessingException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found."));
+        model.addAttribute("browsedUser", user); // <-- dodaj to, jeśli nie ma w prepareMatrixData
         prepareMatrixData(user, model);
         return "matrix";
     }

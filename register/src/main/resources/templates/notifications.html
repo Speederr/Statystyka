@@ -69,7 +69,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
-
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -100,6 +106,8 @@
 
 <div class="main-content">
     <div class="loader"></div>
+
+    <div class="popup"></div>
 
     <div class="error-container" id="err-container">
         <p th:if="${error}" class="error">
@@ -164,7 +172,7 @@
                     <label for="messageContent" class="form__label"></label>
                 </div>
                 <div class="btnContainer">
-                    <button type="submit" class="mainBtn">Wyślij</button>
+                    <button type="submit" class="btn-back">Wyślij</button>
                 </div>
             </form>
         </div>
@@ -193,7 +201,7 @@
 
                 <!-- Przycisk na dole -->
                 <div class="btnContainer">
-                    <button type="button" class="mainBtn" id="closeMessageBtn">Zamknij</button>
+                    <button type="button" class="btn-back" id="closeMessageBtn">Zamknij</button>
                 </div>
             </div>
         </div>

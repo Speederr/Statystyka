@@ -4,8 +4,8 @@ public record OvertimeTableDTO(
         Long userId,
         String firstName,
         String lastName,
-        Long paid,
-        Long off,
+        Long overtimePaid,
+        Long overtimeOff,
         Long deducted,
         Long sectionId
 ) {}

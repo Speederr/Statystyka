@@ -15,6 +15,7 @@ body {
     margin-top: 20px; /* Dodanie odstępu od góry */
 }
 
+/*
 #team, #section, #sectionTeam, #position,
 input {
     background: rgba(255, 255, 255, 0.3);
@@ -26,7 +27,7 @@ input {
     color: black;
     width: 100%;
 }
-
+*/
 label {
     color: black;
     font-weight: bold;
@@ -86,7 +87,7 @@ table tbody tr:nth-child(even) {
 table tbody tr:hover {
     background-color: #d0e4ff; /* Lekko niebieskie podświetlenie na hover */
 }
-
+/*
 #sectionForm,
 #teamForm,
 #form-container {
@@ -103,7 +104,7 @@ table tbody tr:hover {
 }
 
 .modal {
-    display: none;
+    display: block;
     position: fixed;
     z-index: 10;
     left: 0;
@@ -112,14 +113,17 @@ table tbody tr:hover {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.4);
 }
-
+.modal.hidden {
+  display: none !important;
+}
 .modal-content {
     margin: 3% auto;
     padding: 20px;
     width: 30%;
     border-radius: 8px;
 }
-
+*/
+/*
 .title,
 #title {
     display: flex;
@@ -139,7 +143,7 @@ table tbody tr:hover {
     font-weight: bold;
     cursor: pointer;
 }
-
+*/
 /* Nagłówek formularza z ikoną */
 .min-max {
     display: flex;
@@ -160,12 +164,12 @@ table tbody tr:hover {
     font-size: 24px;
     cursor: pointer;
 }
+/*
 
-/* Grupa radio */
 .radio-group {
     display: flex;
-    flex-direction: column; /* Ustawia radio buttony w kolumnie */
-    align-items: flex-start; /* Wyrównuje do lewej */
+    flex-direction: column;
+    align-items: flex-start;
     gap: 5px;
 }
 
@@ -173,10 +177,10 @@ table tbody tr:hover {
     height: 35px;
     margin-left: 30px;
     display: flex;
-    align-items: center; /* Ustawia etykietę obok radio buttona */
-    gap: 5px; /* Odstęp między radio buttonem a etykietą */
+    align-items: center;
+    gap: 5px;
 }
-
+*/
 
 /* Ukrywanie formularza */
 .collapsed {
@@ -202,14 +206,12 @@ table tbody tr:hover {
     text-align: center;
 }
 .new-form-button-container {
-    background-color: #eee;
-    padding: 0.4rem 0.8rem;
     transition: all 0.5s ease-out;
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    margin: 0px 20px;
+    gap: 12px;
 }
 
 .new-form-button-container .new-form-button {

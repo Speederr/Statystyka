@@ -31,4 +31,10 @@ public class Backlog {
     @Column(name = "task_count", nullable = false)
     private int taskCount;
 
+    @ManyToOne
+    @JoinColumn(name = "team_id", nullable = false)
+    private Team team;
+
+
+
 }

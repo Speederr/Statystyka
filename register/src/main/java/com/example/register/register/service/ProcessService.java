@@ -8,6 +8,7 @@ import com.example.register.register.repository.ProcessRepository;
 import com.example.register.register.repository.UserFavoritesRepository;
 import com.example.register.register.repository.UserProcessLevelRepository;
 import com.example.register.register.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -46,35 +47,41 @@ public class ProcessService {
     }
 
 
-@Transactional
-public void saveFavoriteProcesses(Long userId, List<Long> processIds) {
-    User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika"));
 
-    List<BusinessProcess> favoriteProcesses = processRepository.findAllById(processIds);
+    @Transactional
+    public void saveFavoriteProcesses(Long userId, List<Long> processIds) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika"));
 
-    // 🔹 Usuń stare ulubione procesy użytkownika
-    userFavoritesRepository.deleteByUser(user);
+        // 🔹 Pobierz tylko aktywne procesy z przekazanej listy
+        List<BusinessProcess> favoriteProcesses = processRepository.findAllById(processIds).stream()
+                .filter(BusinessProcess::isActive)
+                .toList();
 
-    // 🔹 Utwórz nowe ulubione procesy
-    Set<UserFavorites> favoriteProcessesSet = favoriteProcesses.stream()
-            .map(process -> {
-                UserFavorites uf = new UserFavorites();
-                uf.setUser(user);
-                uf.setProcess(process);
-                return uf;
-            })
-            .collect(Collectors.toSet());
+        // 🔹 Usuń stare ulubione procesy użytkownika
+        userFavoritesRepository.deleteByUser(user);
 
-    // 🔹 Zapisz nowe ulubione procesy
-    userFavoritesRepository.saveAll(favoriteProcessesSet);
-}
+        // 🔹 Utwórz nowe ulubione procesy (tylko aktywne)
+        Set<UserFavorites> favoriteProcessesSet = favoriteProcesses.stream()
+                .map(process -> {
+                    UserFavorites uf = new UserFavorites();
+                    uf.setUser(user);
+                    uf.setProcess(process);
+                    return uf;
+                })
+                .collect(Collectors.toSet());
+
+        // 🔹 Zapisz nowe ulubione procesy
+        userFavoritesRepository.saveAll(favoriteProcessesSet);
+    }
+
 
     public List<BusinessProcess> getProcessesByTeamId(Long teamId) {
-        List<BusinessProcess> processes = processRepository.findByTeamId(teamId);
-        log.info("Procesy znalezione dla teamId {}: {}", teamId, processes.size());
+        List<BusinessProcess> processes = processRepository.findByTeamIdAndActiveTrueOrderByProcessNameAsc(teamId);
+        log.info("✅ Aktywne procesy znalezione dla teamId {}: {}", teamId, processes.size());
         return processes;
     }
+
 
 
     @Transactional
@@ -98,6 +105,14 @@ public void saveFavoriteProcesses(Long userId, List<Long> processIds) {
 
         // Zapisz do bazy
         userProcessLevelRepository.save(userProcessLevel);
+    }
+
+    public void updateStatus(Long processId, boolean active) {
+        BusinessProcess process = processRepository.findById(processId)
+                .orElseThrow(() -> new EntityNotFoundException("Proces nie istnieje."));
+
+        process.setActive(active);
+        processRepository.save(process);
     }
 
 

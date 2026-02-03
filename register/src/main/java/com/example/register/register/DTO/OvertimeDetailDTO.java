@@ -8,7 +8,7 @@ public record OvertimeDetailDTO(
         String processName,
         Long quantity,
         LocalDate date,
-        String username,
+        String userFullName,
         VolumeType volumeType,
         Integer overtimeMinutes
 ) {}

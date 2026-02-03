@@ -1,3 +1,4 @@
+let dropdownZ = 1000; // lub inny, jeśli masz coś na stronie z z-index 9999+
 
 // ✅ Funkcja do czyszczenia wszystkich pól input po zapisie
 function clearInputFields() {
@@ -112,7 +113,7 @@ document.addEventListener("DOMContentLoaded", function () {
     editButton.addEventListener("click", function () {
         if (!isEditing) {
             toggleEditMode(true);
-            editButton.textContent = "Zapisz";
+            editButton.innerHTML = "<i class='bx bx-save'></i> Zapisz";
         } else {
             const updatePromises = Array.from(minuteInputs).map(input => {
                 const processId = input.id.split("_")[1];
@@ -150,7 +151,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .catch(() => displayMessage("error", "Błąd podczas komunikacji z serwerem."));
 
             toggleEditMode(false);
-            editButton.textContent = "Edytuj";
+            editButton.innerHTML = "<i class='bx bx-edit'></i> Edytuj";
         }
         isEditing = !isEditing;
     });
@@ -401,6 +402,34 @@ function fetchUserProfile() {
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
 
 // Funkcja do pobierania avatara
+//function fetchUserAvatar() {
+//    fetch('/api/user/avatar')
+//        .then(response => {
+//            if (!response.ok) {
+//                throw new Error(`Błąd: ${response.status}`);
+//            }
+//            return response.text();
+//        })
+//        .then(base64Image => {
+//            if (base64Image) {
+//                const userAvatar = document.getElementById('user-avatar');
+//                const profileImage = document.getElementById('profile-image');
+//
+//                if (userAvatar) {
+//                    userAvatar.src = `data:image/jpeg;base64,${base64Image}`;
+//                }
+//
+//                if (profileImage) {
+//                    profileImage.src = `data:image/jpeg;base64,${base64Image}`;
+//                }
+//            } else {
+//                console.log('Brak avatara do wyświetlenia.');
+//            }
+//        })
+//        .catch(error => {
+//            console.error('Wystąpił błąd podczas pobierania avatara:', error);
+//        });
+//}
 function fetchUserAvatar() {
     fetch('/api/user/avatar')
         .then(response => {
@@ -410,22 +439,28 @@ function fetchUserAvatar() {
             return response.text();
         })
         .then(base64Image => {
-            if (base64Image) {
-                const userAvatar = document.getElementById('user-avatar');
-                const profileImage = document.getElementById('profile-image');
+            const userAvatar = document.getElementById('user-avatar');
+            const profileImage = document.getElementById('profile-image');
 
-                if (userAvatar) {
-                    userAvatar.src = `data:image/jpeg;base64,${base64Image}`;
-                }
+            // Jeśli brak avatara, wstaw placeholder
+            const placeholder = '/img/avatar_placeholder.png'; // ścieżka do domyślnego avatara
 
-                if (profileImage) {
-                    profileImage.src = `data:image/jpeg;base64,${base64Image}`;
-                }
+            if (base64Image && base64Image.length > 50) { // sprawdzamy długość bo pusty string też przechodzi
+                const src = `data:image/jpeg;base64,${base64Image}`;
+                if (userAvatar) userAvatar.src = src;
+                if (profileImage) profileImage.src = src;
             } else {
-                console.log('Brak avatara do wyświetlenia.');
+                if (userAvatar) userAvatar.src = placeholder;
+                if (profileImage) profileImage.src = placeholder;
             }
         })
         .catch(error => {
+            // W razie błędu też pokaż placeholder
+            const userAvatar = document.getElementById('user-avatar');
+            const profileImage = document.getElementById('profile-image');
+            const placeholder = '/img/avatar_placeholder.png';
+            if (userAvatar) userAvatar.src = placeholder;
+            if (profileImage) profileImage.src = placeholder;
             console.error('Wystąpił błąd podczas pobierania avatara:', error);
         });
 }
@@ -572,7 +607,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const messageIds = Array.from(selectedMessages).map(checkbox => checkbox.dataset.messageId);
 
             if (messageIds.length === 0) {
-                alert("Nie zaznaczono żadnych wiadomości!");
+//                alert("Nie zaznaczono żadnych wiadomości!");
+                displayMyMessage("error", "❌ Nie zaznaczono żadnych wiadomości!");
                 return;
             }
 
@@ -631,12 +667,6 @@ document.addEventListener("DOMContentLoaded", function () {
         newMessageModal.style.display = "none";
     });
 
-    // Zamknięcie modala po kliknięciu poza nim
-    window.addEventListener("click", function (event) {
-        if (event.target === newMessageModal) {
-            newMessageModal.style.display = "none";
-        }
-    });
 
     // Obsługa formularza wysyłania wiadomości
     newMessageForm.addEventListener("submit", function (event) {
@@ -796,7 +826,9 @@ document.addEventListener("DOMContentLoaded", function () {
                .map(id => Number(id)) // Konwersja na liczbę
 
            if (messageIds.length === 0) {
-               alert("Nie wybrano żadnych wiadomości do usunięcia.");
+//               alert("Nie wybrano żadnych wiadomości do usunięcia.");
+               displayMyMessage("error", "❌ Nie wybrano żadnych wiadomości do usunięcia.");
+
                return;
            }
 
@@ -1059,11 +1091,11 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    window.addEventListener("click", function (event) {
-        if (event.target === modal) {
-            modal.style.display = "none";
-        }
-    });
+//    window.addEventListener("click", function (event) {
+//        if (event.target === modal) {
+//            modal.style.display = "none";
+//        }
+//    });
 
     // 📌 Obsługa checkboxa „Zaznacz wszystkie”
     if (selectAllCheckbox) {
@@ -1099,7 +1131,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const teamForm = document.getElementById("teamForm");
 
     if (!teamForm) {
-//        console.warn("Błąd: Element #teamForm nie istnieje!");
+        // console.warn("Błąd: Element #teamForm nie istnieje!");
         return; // Przerywamy działanie skryptu
     }
 
@@ -1109,7 +1141,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const teamName = document.getElementById("teamName")?.value;
 
         if (!teamName) {
-            console.error("Błąd: Pole 'teamName' jest puste!");
+            displayMessage('error', "Pole 'Nazwa zespołu' nie może być puste!");
             return;
         }
 
@@ -1121,19 +1153,25 @@ document.addEventListener("DOMContentLoaded", function () {
             body: JSON.stringify({ teamName: teamName }) // Wysyłamy dane jako JSON
         })
         .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    console.error("Serwer zwrócił błąd:", err);
-                    throw new Error("Błąd podczas dodawania zespołu: " + (err.message || "Nieznany błąd"));
-                });
+            return response.json().then(data => {
+                // Zwracamy zarówno odpowiedź, jak i status HTTP
+                return { ok: response.ok, data };
+            });
+        })
+        .then(result => {
+            if (!result.ok) {
+                // Wyświetl wiadomość o błędzie zwróconą z backendu (np. {"error": "Nazwa zespołu jest wymagana!"})
+                displayMessage('error', result.data.error || "Nieznany błąd podczas dodawania zespołu.");
+                return;
             }
-            return response.json();
-        })
-        .then(data => {
-            displayMessage('success', 'Zespół został dodany!');
+            displayMessage('success', result.data.success || "Zespół został dodany!");
             document.getElementById("teamName").value = ""; // Wyczyść pole po dodaniu
+            refreshAllSetupSelects();
         })
-        .catch(error => console.error("Błąd:", error));
+        .catch(error => {
+            displayMessage('error', "Wystąpił błąd połączenia z serwerem.");
+            console.error("Błąd:", error);
+        });
     });
 });
 
@@ -1163,7 +1201,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     sectionTeamSelect.value = selectedTeam;
                 }
             })
-            .catch(error => console.error("Błąd ładowania zespołów:", error));
+            .catch(error => {
+                displayMessage('error', "Błąd ładowania zespołów!");
+                console.error("Błąd ładowania zespołów:", error);
+            });
     }
 
     if(sectionForm) {
@@ -1175,7 +1216,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const teamId = sectionTeamSelect.value;
 
             if (!sectionName || !teamId) {
-                alert("Wypełnij wszystkie pola!");
+                displayMessage('error', "Wypełnij wszystkie pola!");
                 return;
             }
 
@@ -1185,21 +1226,31 @@ document.addEventListener("DOMContentLoaded", function () {
                 body: JSON.stringify({ sectionName: sectionName, teamId: teamId })
             })
             .then(response => {
-                if (!response.ok) {
-                    throw new Error("Błąd podczas dodawania sekcji.");
+                return response.json().then(data => {
+                    return { ok: response.ok, data };
+                });
+            })
+            .then(result => {
+                if (!result.ok) {
+                    displayMessage('error', result.data.error || "Błąd podczas dodawania sekcji.");
+                    return;
                 }
-                return response.json();
-            })
-            .then(() => {
-                displayMessage('success', 'Sekcja została dodana!');
+                displayMessage('success', result.data.success || 'Sekcja została dodana!');
                 sectionForm.reset();
+                refreshAllSetupSelects();
             })
-            .catch(error => console.error("Błąd:", error));
+            .catch(error => {
+                displayMessage('error', "Wystąpił błąd połączenia z serwerem.");
+                console.error("Błąd:", error);
+            });
         });
-    // 🔹 Otwórz modal i załaduj zespoły
-    document.getElementById("sectionModal").addEventListener("click", loadTeams);
+
+        // 🔹 Otwórz modal i załaduj zespoły
+        document.getElementById("sectionModal").addEventListener("click", loadTeams);
     }
 });
+
+
 document.addEventListener("DOMContentLoaded", function () {
     const startDateInput = document.getElementById("startDate");
     const endDateInput = document.getElementById("endDate");
@@ -1317,6 +1368,7 @@ document.addEventListener("change", function (event) {
         .catch(error => console.error("❌ Błąd aktualizacji statusu:", error));
     }
 });
+
 ////////////////////////////////// ZAPISYWANIE WOLUMENU PO KLIKNIĘCIU NA PLUS + ///////////////////////////////////////
 document.addEventListener("DOMContentLoaded", function () {
   const userIdElement = document.getElementById('userId');
@@ -1477,6 +1529,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const sectionCustomSelect = document.getElementById("sectionCustomSelect");
   const customSelect = document.getElementById("customSelect");
   const tableBody = document.querySelector("#employeeTable tbody");
+  let positions = [];
+
+  fetch("api/position")
+    .then(res => res.json())
+    .then(data => {
+        positions = data;
+        console.log("Positions from backend:", positions);
+     });
 
   // 🔹 Renderowanie tabeli użytkowników
   function renderUserTable(users) {
@@ -1489,8 +1549,14 @@ document.addEventListener("DOMContentLoaded", function () {
               <td>${user.lastName}</td>
               <td>${user.efficiency != null ? user.efficiency + "%" : "Brak danych"}</td>
               <td>${user.nonOperational != null ? user.nonOperational + " godz." : "Brak danych"}</td>
-              <td>${user.positionName || "Brak"}</td>
-              <td>
+                <td>
+                    <select class="user-position" data-user-id="${user.id}">
+                      ${positions.map(pos =>
+                        `<option value="${pos.id}" ${user.positionId === pos.id ? "selected" : ""}>${pos.positionName}</option>`
+                      ).join("")}
+                    </select>
+                  </td>
+                 <td>
                 <select class="attendance-status" data-user-id="${user.id}">
                   <option value="present" ${user.attendanceStatus === "present" ? "selected" : ""}>Obecny</option>
                   <option value="leave" ${user.attendanceStatus === "leave" ? "selected" : ""}>Nieobecny</option>
@@ -1500,6 +1566,38 @@ document.addEventListener("DOMContentLoaded", function () {
       tableBody.appendChild(row);
     });
   }
+
+document.addEventListener("change", function (event) {
+    if (event.target.classList.contains("user-position")) {
+        let userId = event.target.getAttribute("data-user-id");
+        let positionId = event.target.value;
+
+        let requestData = new URLSearchParams();
+        requestData.append("userId", userId);
+        requestData.append("positionId", positionId);
+
+        fetch("/api/position/update-position", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: requestData
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log("✅ Stanowisko zaktualizowane:", data);
+            displayMessage("success", "Stanowisko zapisane!");
+
+            // Teraz, po udanym zapisie, pobierz świeżych userów!
+            fetch("/api/user/all-users") // lub Twój endpoint
+              .then(res => res.json())
+              .then(users => {
+                renderUserTable(users);  // <-- tu już jest w tym scope
+              });
+        })
+        .catch(error => console.error("❌ Błąd aktualizacji stanowiska:", error));
+    }
+});
 
       // 🔹 Obsługa zmiany filtrów
     function handleFilterChange() {
@@ -1532,7 +1630,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 // 🔹 Przycisk "Wyczyść"
-document.querySelector(".btnContainer .mainBtn").addEventListener("click", () => {
+document.querySelector(".btnContainer .btn-back").addEventListener("click", () => {
   window.filters.resetAllFilters(
     sectionDropdown,
     checkboxContainer,
@@ -1807,93 +1905,6 @@ document.getElementById("exportBacklogBtn")?.addEventListener("click", (e) => {
     window.location.href = `/backlog/export?${params.toString()}`;
 });
 
-
-document.addEventListener('DOMContentLoaded', function () {
-    const allRadios = document.querySelectorAll('input[type="radio"][data-process-id]');
-    const userId = document.getElementById('userId')?.value;
-
-    allRadios.forEach(radio => {
-        radio.addEventListener('change', function () {
-            const processId = this.dataset.processId;
-            const level = this.value;
-
-            fetch('/matrix/saveSingle', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    userId: userId,
-                    processId: processId,
-                    level: level
-                })
-            })
-            .then(response => {
-                if (response.ok) {
-                    displayMyMessage('success', 'Zapisano zmiany!');
-                } else {
-                    displayMyMessage('error', 'Błąd podczas zapisu.');
-                }
-            })
-            .catch(error => {
-                console.error(error);
-                displayMyMessage('error', 'Błąd sieci.');
-            });
-        });
-    });
-});
-
-
-
-document.addEventListener('DOMContentLoaded', function () {
-    const userLevelsInput = document.getElementById('userLevelsData');
-
-    if (userLevelsInput) {
-        const userLevelsData = userLevelsInput.value;
-
-        if (userLevelsData) {
-            const userLevels = JSON.parse(userLevelsData);
-
-            userLevels.forEach(levelEntry => {
-                const processId = levelEntry.processId;
-                const level = levelEntry.level;
-
-                const selector = `input[name="level_${processId}"][value="${level}"]`;
-                const radioButton = document.querySelector(selector);
-
-                if (radioButton) {
-                    radioButton.checked = true;
-                    const td = radioButton.parentElement;
-                    td.classList.add(`level-${level}`);
-                }
-            });
-        }
-    }
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-    const radios = document.querySelectorAll('input[type="radio"][data-process-id]');
-
-    radios.forEach(radio => {
-        radio.addEventListener('change', function () {
-            const processId = this.dataset.processId;
-            const level = this.value;
-
-            // Usuń stare klasy z wszystkich TD w tym wierszu
-            const row = this.closest('tr');
-            for (let i = 1; i <= 5; i++) {
-                const cell = row.children[i];
-                cell.classList.remove('level-0', 'level-1', 'level-2', 'level-3', 'level-4');
-            }
-
-            // Dodaj nową klasę do aktywnej komórki
-            const activeCell = this.parentElement;
-            activeCell.classList.add(`level-${level}`);
-        });
-    });
-});
-
-
 //////////////////////////////////////// PAGINACJA, FILTROWANIE I WYŚWIETLANIE STRON ////////////////////////////////////
 // 🔁 Zmienne globalne
 const pageSize = 100;
@@ -1932,7 +1943,6 @@ function renderTablePage() {
     tableBody.appendChild(tr);
   });
 
-  // ⬅️ Te linie MUSZĄ być tutaj
   const from = filteredData.length === 0 ? 0 : start + 1;
   const to   = Math.min(end, filteredData.length);
   recordCountInfo.textContent      = `Wyświetlono ${from}–${to} z ${filteredData.length} rekordów`;
@@ -1986,9 +1996,17 @@ function setupDropdown(selectId, labelId, arrowId, dropdownId) {
   label.dataset.default = label.textContent;
 
   select.addEventListener("click", e => {
+    const isOpen = dropdown.classList.contains("show");
     dropdown.classList.toggle("show");
     arrow.classList.toggle("rotate");
     e.stopPropagation();
+        // --- Dodaj inkrementację z-index po otwarciu ---
+        if (!isOpen) {
+          dropdownZ++;
+          dropdown.style.zIndex = dropdownZ;
+                console.log('Aktualny z-index:', dropdownZ); // << tu widzisz, czy się zmienia
+
+        }
   });
 
   document.addEventListener("click", e => {
@@ -2049,6 +2067,7 @@ function loadUniqueFiltersFromTable() {
   document.getElementById("overtimeLabel").textContent = "Rodzaj czasu pracy";
   document.getElementById("overtimeLabel").dataset.default = "Rodzaj czasu pracy";
 }
+
 
 // 📋 Pomocnicza: wyrenderuj checkboxy w danym kontenerze
 function renderFilterCheckboxes(containerSelector, values) {
@@ -2425,63 +2444,6 @@ function askConfirmation(message) {
 }
 ///////////////////////////////////////// tabela z nadgodzinami //////////////////////////////////////////////
 
-//(async function() {
-//
-//  // jeśli nie ma tabeli, wychodzimy
-//  const table = document.querySelector("#overtime-table");
-//  if (!table) return;
-//
-//  // 1) Pobierz surowe dane, w których jest już userId
-//  const raw = await fetch("/api/overtime/get-all-overtime")
-//                    .then(r => r.json());
-//
-//  // 2) Pivot po userId
-//  const byUser = raw.reduce((acc, {userId, firstName, lastName, volumeType, totalOvertime}) => {
-//    if (!acc[userId]) {
-//      acc[userId] = {
-//        userId,
-//        firstName,
-//        lastName,
-//        paid: 0,
-//        off: 0,
-//        deducted: 0
-//      };
-//    }
-//    switch (volumeType) {
-//      case "Nadgodziny płatne":    acc[userId].paid     = totalOvertime; break;
-//      case "Nadgodziny do odbioru": acc[userId].off      = totalOvertime; break;
-//      case "Odebrane częściowo":    acc[userId].deducted = totalOvertime; break;
-//    }
-//    return acc;
-//  }, {});
-//  // 3) Zamień mapę na tablicę – będzie tyle wierszy, ilu masz unikalnych userId
-//  const tableData = Object.values(byUser);
-//
-//  // 4) Renderuj główną tabelę
-//  const tbody = document.querySelector("#overtime-table tbody");
-//  tbody.innerHTML = "";
-//  tableData.forEach(row => {
-//    const tr = document.createElement("tr");
-//    tr.innerHTML = `
-//      <td>
-//        <input type="checkbox" class="select-overtime-row"
-//               data-user-id="${row.userId}" />
-//      </td>
-//        <td>
-//          <a href="/userOvertimeDetails/overtime/${row.userId}" title="Szczegóły">
-//            <i class="bx bxs-user-detail"></i>
-//          </a>
-//        </td>
-//      <td>${row.firstName}</td>
-//      <td>${row.lastName}</td>
-//      <td>${row.paid}</td>
-//      <td>${row.off}</td>
-//      <td>${row.deducted}</td>
-//    `;
-//    tbody.appendChild(tr);
-//  });
-//})();
-
 const userTableBody = document.querySelector("#overtime-user-table tbody");
 
 async function loadOvertimeDetails(userId) {
@@ -2506,7 +2468,7 @@ async function loadOvertimeDetails(userId) {
         <td>${d.processName}</td>
         <td>${d.quantity}</td>
         <td>${d.date}</td>
-        <td>${d.username}</td>
+        <td>${d.userFullName}</td>
         <td>${d.volumeType}</td>
         <td>${d.overtimeMinutes}</td>
       `;
@@ -2545,7 +2507,7 @@ function renderOvertimeTablePage() {
       <td>${item.processName}</td>
       <td>${item.quantity}</td>
       <td>${item.date}</td>
-      <td>${item.username}</td>
+      <td>${item.userFullName}</td>
       <td>${item.volumeType}</td>
       <td>${item.overtimeMinutes}</td>
     `;
@@ -2786,9 +2748,8 @@ document.addEventListener("DOMContentLoaded", () => {
         firstName: row.firstName,
         lastName: row.lastName,
         sectionId: row.sectionId,
-        paid: row.paid,
-        off: row.off,
-        deducted: row.deducted
+        paid: row.overtimePaid,
+        saldo: (row.overtimeOff || 0) - (row.deducted || 0), // saldo = do odbioru minus odebrane
       }));
 
       renderOvertimeForAllUsersTable(allData);
@@ -2888,7 +2849,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log(rows);
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><input type="checkbox" class="select-overtime-row"
+        <td><input type="checkbox" class="checkbox-button row"
                    data-user-id="${row.userId}"></td>
         <td>
           <a href="/userOvertimeDetails/overtime/${row.userId}" title="Szczegóły">
@@ -2898,11 +2859,11 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${row.firstName}</td>
         <td>${row.lastName}</td>
         <td>${row.paid}</td>
-        <td>${row.off}</td>
-        <td>${row.deducted}</td>
+        <td>${row.saldo}</td>
       `;
       tbody.appendChild(tr);
     });
+    setupSelectAllCheckbox();
   }
 
     document.getElementById("clearOvertimeBtn").addEventListener("click", () => {
@@ -2928,7 +2889,6 @@ document.getElementById("exportOvertimeSummaryXlsxBtn").addEventListener("click"
       lastName: cells[3].textContent.trim(),
       overtimePaid: parseInt(cells[4].textContent.trim(), 10) || 0,
       overtimeOff: parseInt(cells[5].textContent.trim(), 10) || 0,
-      deductPartial: parseInt(cells[6].textContent.trim(), 10) || 0
     };
   });
 
@@ -2992,24 +2952,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 document.addEventListener("DOMContentLoaded", function () {
-    // Obsługa przycisku archiwizacji
     const payoutBtn = document.getElementById("payoutOvertimeBtn");
     if (!payoutBtn) return;
 
     payoutBtn.addEventListener("click", function () {
-        // Zbierz zaznaczone userId z checkboxów
-        const selected = Array.from(document.querySelectorAll(".select-overtime-row:checked"))
-            .map(cb => Number(cb.getAttribute("data-user-id")));
+        // Pobierz wszystkie zaznaczone checkboxy
+        const selectedCheckboxes = Array.from(document.querySelectorAll(".checkbox-button:checked"));
 
+        // Filtruj tylko te, gdzie kolumna 5 > 0
+        const validCheckboxes = selectedCheckboxes.filter(cb => {
+            const tr = cb.closest("tr");
+            const paidTd = tr.querySelectorAll("td")[4]; // kolumna 5 = index 4
+            return paidTd && Number(paidTd.textContent.trim()) > 0;
+        });
+
+        // Mapuj na userId te poprawne
+        const selected = validCheckboxes.map(cb => Number(cb.getAttribute("data-user-id")));
+
+        // Jeśli nikt nie spełnia warunku
         if (selected.length === 0) {
-            alert("Zaznacz przynajmniej jednego użytkownika!");
+            displayMyMessage("error", "Nie można wyzerować nadgodzin płatnych o wartości 0! Zaznacz użytkowników, którzy mają nadgodziny płatne większe od 0.");
             return;
         }
 
-        // (Opcjonalnie) Pytanie o notatkę
-        const note = prompt("Podaj notatkę do archiwizacji (opcjonalnie):");
+        // Jeżeli część została odfiltrowana, pokaż ostrzeżenie
+        if (selected.length < selectedCheckboxes.length) {
+            displayMyMessage("warning", "Pominięto użytkowników z nadgodzinami płatnymi równymi 0.");
+        }
 
-        // Wywołanie endpointu /archive-paid
+        // (Opcjonalnie) Pytanie o notatkę
+        showNoteModal().then(note => {
+        // Wywołanie endpointu
         fetch("/api/overtime/archive-paid" + (note ? `?note=${encodeURIComponent(note)}` : ""), {
             method: "POST",
             headers: {
@@ -3017,17 +2990,855 @@ document.addEventListener("DOMContentLoaded", function () {
             },
             body: JSON.stringify(selected)
         })
-            .then(response => {
-                if (!response.ok) throw new Error("Błąd archiwizacji!");
-                return response.text();
-            })
-            .then(msg => {
-                alert(msg);
-                // Odśwież tabelę (np. ponownie pobierz dane z backendu)
+        .then(response => {
+            if (!response.ok) throw new Error("Błąd archiwizacji!");
+            return response.text();
+        })
+        .then(msg => {
+            displayMyMessage("success", msg);
+            setTimeout(() => {
                 location.reload();
-            })
-            .catch(err => {
-                alert("Błąd archiwizacji: " + err.message);
-            });
+            }, 3000);
+        })
+        .catch(err => {
+            displayMyMessage("error", "Błąd archiwizacji: " + err.message);
+        });
+    });
     });
 });
+
+function showNoteModal() {
+    return new Promise(resolve => {
+        const modal = document.getElementById("noteModal");
+        const overlay = document.getElementById("noteModalOverlay");
+        const input = document.getElementById("noteModalInput");
+        const okBtn = document.getElementById("noteModalOkBtn");
+
+        input.value = ""; // wyczyść stare
+
+        modal.style.display = "block";
+        overlay.style.display = "block";
+        input.focus();
+
+        function cleanup() {
+            modal.style.display = "none";
+            overlay.style.display = "none";
+            okBtn.removeEventListener("click", onOk);
+        }
+
+        function onOk() {
+            cleanup();
+            resolve(input.value.trim());
+        }
+
+        okBtn.addEventListener("click", onOk);
+
+        input.addEventListener("keydown", function(e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                onOk();
+            }
+        });
+    });
+}
+
+function setupSelectAllCheckbox() {
+    const selectAll = document.querySelector('.checkbox-button.all');
+    const checkboxes = document.querySelectorAll('.checkbox-button.row');
+
+    if (selectAll) {
+        selectAll.onchange = () => {
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        };
+
+        // resetuj stan "select all" jeśli pojedynczy checkbox zmieniony
+        checkboxes.forEach(cb => {
+            cb.onchange = () => {
+                if (!cb.checked) selectAll.checked = false;
+                else if ([...checkboxes].every(c => c.checked)) selectAll.checked = true;
+            };
+        });
+    }
+}
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  // OVERTIME ARCHIVE – tabela
+  if (window.location.pathname.includes("/overtimeArchive")) {
+    fetch('/api/overtime/archive')
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        const tbody = document.querySelector("#overtime-archive-table tbody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        (data || []).forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.firstName ?? ""}</td>
+            <td>${row.lastName ?? ""}</td>
+            <td>${row.payoutMinutes ?? ""}</td>
+            <td>${row.handledByFullName  ?? ""}</td>
+            <td>${row.payoutDate ?? ""}</td>
+            <td class="overtime-note">${row.note ?? ''}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }).catch(console.error);
+  }
+});
+
+const USER_COLORS = [
+  "#1976d2", "#6359c4", "#59bac4", "#5985c4", "#ffb300", "#00897b", "#4fce65", "#9959c4", "#c459ba", "#c45985"
+];
+let calendar;
+
+function hashToColorIndex(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % USER_COLORS.length;
+}
+
+  // FULLCALENDAR – na /calendar
+  if (window.location.pathname === '/calendar') {
+    // KALENDARZ
+    const calendarEl = document.getElementById("calendar");
+    if (calendarEl) {
+        calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'dayGridMonth',
+          locale: 'pl',
+          buttonText: {
+            today: 'Dziś',
+            month: 'Miesiąc',
+            week: 'Tydzień',
+            day: 'Dzień',
+            list: 'Lista'
+          },
+          firstDay: 1,
+          dayHeaderFormat: { weekday: 'long' },
+          height: 'auto',
+          events: async function (fetchInfo, successCallback, failureCallback) {
+            try {
+              const res = await fetch('/api/attendance/leaves');
+              let data = await res.json();
+              data = data.map(ev => {
+                const userKey = ev.title.split('-')[0].trim();
+                const color = USER_COLORS[hashToColorIndex(userKey)];
+                return { ...ev, color: color, textColor: "#fff" };
+              });
+              successCallback(data);
+            } catch (err) {
+              failureCallback(err);
+            }
+          },
+          eventContent: function (arg) {
+            return {
+              html: `
+               <span class="event-left">
+                    <i class='bx bxs-plane-alt'></i> <b>${arg.event.title}</b>
+               </span>
+                <i class="bx bx-x event-delete-x"
+                  data-start="${arg.event.startStr}"
+                  data-end="${arg.event.endStr || ''}"
+                  data-user-id="${arg.event.extendedProps.userId}"></i>
+              `
+            };
+          },
+          // --- TU DODAJ OBSŁUGĘ KLIKNIĘCIA ---
+          eventClick: function(info) {
+            if (info.jsEvent.target.classList.contains('event-delete-x')) {
+              return;
+            }
+            openEditLeaveModal(
+              info.event.startStr,
+              info.event.endStr ? dayjs(info.event.endStr).subtract(1, 'day').format('YYYY-MM-DD') : info.event.startStr,
+              async function(newStart, newEnd) {
+                const payload = {
+                  oldStartDate: info.event.startStr,
+                  oldEndDate: info.event.endStr ? dayjs(info.event.endStr).subtract(1, 'day').format('YYYY-MM-DD') : info.event.startStr,
+                  newStartDate: newStart,
+                  newEndDate: newEnd
+                };
+                const res = await fetch('/api/attendance/updateLeave', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                  calendar.refetchEvents();
+                  displayMessage('success', 'Zaktualizowano urlop!');
+                } else {
+                  const err = await res.text();
+                  displayMessage('error', err);
+                }
+              }
+            );
+          },
+            eventDidMount: function(info) {
+              info.el.setAttribute('data-tippy-content', 'edytuj');
+              tippy(info.el, {
+                  animation: 'fade',
+                  duration: [600, 300],
+                  delay: [100, 0],
+                  theme: 'light',
+                  arrow: true,
+                  placement: 'top',
+              });
+            }
+        });
+        calendar.render();
+
+
+        // Delegacja kliknięcia na X (usuń)
+        document.getElementById('calendar').addEventListener('click', function(e) {
+          if (e.target.classList.contains('event-delete-x')) {
+            const start = e.target.getAttribute('data-start');
+            const end = e.target.getAttribute('data-end');
+            const userId = Number(e.target.getAttribute('data-user-id'));
+            showDeleteModal(start, end, userId);
+          }
+        });
+
+
+      // FORMULARZ "Dodaj urlop"
+      const applyLeaveBtn = document.getElementById('applyLeave');
+      if (applyLeaveBtn) {
+        applyLeaveBtn.addEventListener('click', async function () {
+          const start = document.getElementById('startLeaveDate')?.value;
+          const end = document.getElementById('endLeaveDate')?.value;
+          if (!start || !end) {
+            displayMessage("error", "Wybierz obie daty!");
+            return;
+          }
+          if (start > end) {
+            displayMessage("error", "Data 'Od' nie może być późniejsza niż 'Do'");
+            return;
+          }
+          const res = await fetch('/api/attendance/addLeave', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ startDate: start, endDate: end })
+          });
+          if (res.ok) {
+            displayMessage("success", "Dodano urlop!");
+            setTimeout(() => location.reload(), 1500);
+            calendar.refetchEvents();
+          } else {
+            const err = await res.text();
+            displayMessage("error", err);
+          }
+        });
+      }
+
+      // Rozwijane panele
+      document.querySelectorAll('.selector-header').forEach(header => {
+        header.addEventListener('click', function () {
+          this.closest('.selector')?.classList.toggle('expanded');
+        });
+      });
+    }
+}
+
+function openEditLeaveModal(oldStart, oldEnd, onSave) {
+  const modal = document.getElementById('editLeaveModal');
+  document.getElementById('editStartDate').value = oldStart;
+  document.getElementById('editEndDate').value = oldEnd;
+  modal.style.display = "flex";
+
+  // Obsługa anulowania
+  document.getElementById('cancelEditLeave').onclick = () => {
+    modal.style.display = "none";
+  };
+
+  // Obsługa zapisu
+  const form = document.getElementById('editLeaveForm');
+  form.onsubmit = function(e) {
+    e.preventDefault();
+    const newStart = document.getElementById('editStartDate').value;
+    const newEnd = document.getElementById('editEndDate').value;
+    if (onSave) onSave(newStart, newEnd);
+    modal.style.display = "none";
+  };
+}
+
+function showDeleteModal(start, end, userId) {
+  const modal = document.getElementById('deleteLeaveModal');
+
+  document.getElementById('deleteLeaveText').textContent =
+    `Czy na pewno chcesz usunąć urlop w dniach od ${start} do ${dayjs(end).subtract(1, 'day').format('YYYY-MM-DD')}?`;
+  modal.style.display = "flex";
+
+  // Tak = usuń
+  document.getElementById('deleteLeaveYes').onclick = async function() {
+    modal.style.display = "none";
+    // Wywołaj backend
+    const res = await fetch('/api/attendance/deleteLeave', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        startDate: start,
+        endDate: dayjs(end).subtract(1, 'day').format('YYYY-MM-DD'),
+        userId: userId
+      })
+    });
+    if (res.ok) {
+      displayMessage('success', 'Usunięto urlop!');
+      calendar.refetchEvents();
+    } else {
+      displayMessage('error', "Brak uprawnień do usunięcia urlopu!");
+    }
+  };
+  // Nie = zamknij modal
+  document.getElementById('deleteLeaveNo').onclick = function() {
+    modal.style.display = "none";
+  };
+}
+
+function toggleProcessStatus(processId, isActive) {
+    fetch(`/api/processes/${processId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(isActive)
+    }).then(response => {
+        if (response.ok) {
+            console.log("Status zaktualizowany");
+        } else {
+            alert("Błąd przy zmianie statusu procesu");
+        }
+    });
+}
+
+// Modal open/close logic
+const softSkillsModal = document.getElementById('skillModal');
+const openModalBtn = document.getElementById('openModalBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const skillForm = document.getElementById('skillForm');
+
+// Otwieranie modala
+if (openModalBtn && softSkillsModal) {
+    openModalBtn.onclick = function(e) {
+        e.preventDefault();
+        softSkillsModal.classList.add('active');
+    };
+}
+
+// Zamknięcie przez Anuluj
+if (cancelBtn && softSkillsModal) {
+    cancelBtn.onclick = (e) => {
+        e.preventDefault();
+        softSkillsModal.classList.remove('active');
+    };
+}
+
+// Submit formularza
+if (skillForm && softSkillsModal) {
+    skillForm.onsubmit = async function(e) {
+        e.preventDefault();
+        const skillTypeInput = document.getElementById('skillType');
+        const skillNameInput = document.getElementById('skillName');
+        if (!skillTypeInput || !skillNameInput) return;
+
+        const skillType = skillTypeInput.value.trim();
+        const skillName = skillNameInput.value.trim();
+
+        if (!skillType || !skillName) {
+            displayMessage("error", "Wypełnij oba pola!");
+            return;
+        }
+
+        try {
+            const res = await fetch('/saveNewSoftSkill', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ skillType, skillName })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                displayMessage("error", data.error || "Błąd podczas zapisu umiejętności.");
+                return;
+            }
+
+            softSkillsModal.classList.remove('active');
+            this.reset();
+            displayMessage("success", data.success || "Pomyślnie dodano umiejętność!");
+            setTimeout(() => location.reload(), 2000);
+        } catch (err) {
+            displayMessage("error", "Wystąpił błąd połączenia z serwerem.");
+            console.error(err);
+        }
+    };
+}
+
+
+const addNewProcessModalBtn = document.getElementById('addNewProcessModalBtn');
+const closeProcessModalBtn = document.getElementById('closeProcessModalBtn');
+const processModal = document.getElementById('processModal');
+
+// Otwieranie modala
+if (addNewProcessModalBtn && processModal) {
+    addNewProcessModalBtn.onclick = function(e) {
+        e.preventDefault();
+        processModal.classList.add('active');
+    };
+}
+
+// Zamknięcie przez Anuluj
+if (closeProcessModalBtn && processModal) {
+    closeProcessModalBtn.onclick = (e) => {
+        e.preventDefault();
+        processModal.classList.remove('active');
+    };
+}
+
+
+// all matrix  //
+
+document.addEventListener('DOMContentLoaded', function () {
+    const userId = document.getElementById('userId')?.value;
+
+    // Ustawienie radio i kolorowanie przy starcie
+    document.querySelectorAll('input[type="hidden"][data-matrix-json]').forEach(input => {
+        const matrixType = input.dataset.matrixType;
+        const levelsData = input.value;
+        if (levelsData) {
+            const levels = JSON.parse(levelsData);
+            levels.forEach(entry => {
+                const id = entry[`${matrixType}Id`];
+                const level = entry.level;
+                const selector = `input[name="level_${id}"][data-matrix-type="${matrixType}"][data-id="${id}"][value="${level}"]`;
+                const radioButton = document.querySelector(selector);
+                if (radioButton) {
+                    radioButton.checked = true;
+                    // Usuwanie starych klas z wszystkich komórek z radio w tym wierszu
+                    const row = radioButton.closest('tr');
+                    if (row) {
+                        row.querySelectorAll('td').forEach(td => {
+                            td.classList.remove('level-0', 'level-1', 'level-2', 'level-3', 'level-4');
+                        });
+                    }
+                    radioButton.parentElement.classList.add(`level-${level}`);
+                }
+            });
+        }
+    });
+
+    // Obsługa zmiany poziomu
+    document.querySelectorAll('input[type="radio"][data-matrix-type][data-id]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            const matrixType = this.dataset.matrixType;
+            const id = this.dataset.id;
+            const level = this.value;
+
+            // Usuń stare klasy z wszystkich TD z radio w tym wierszu
+            const row = this.closest('tr');
+            if (row) {
+                row.querySelectorAll('td').forEach(td => {
+                    td.classList.remove('level-0', 'level-1', 'level-2', 'level-3', 'level-4');
+                });
+            }
+            // Dodaj nową klasę do klikniętej komórki (z radiem)
+            this.parentElement.classList.add(`level-${level}`);
+
+            // Endpoint zależny od typu macierzy
+            let endpoint = '/matrix/saveSingle';
+            if (matrixType === 'application') endpoint = '/app-matrix/saveSingle';
+            if (matrixType === 'skill') endpoint = '/soft-skills/saveSingle';
+
+            const body = { userId, level };
+            body[`${matrixType}Id`] = id;
+
+            // AJAX zapis
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(response => {
+                if (response.ok) {
+                    displayMyMessage('success', 'Zapisano zmiany!');
+                } else {
+                    displayMyMessage('error', 'Błąd podczas zapisu.');
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                displayMyMessage('error', 'Błąd sieci.');
+            });
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('positionForm');
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const positionName = document.getElementById('positionName').value;
+
+            fetch('/api/position/addNewPosition', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ positionName })
+            })
+            .then(response => response.json().then(data => ({
+                status: response.status,
+                body: data
+            })))
+            .then(({ status, body }) => {
+                if (status === 200) {
+                    displayMessage("success", body.message || "Pomyślnie dodano nowe stanowisko!");
+                    form.reset();
+                    refreshAllSetupSelects();
+                } else {
+                    // Obsługa błędu walidacji z backendu (np. duplikat, brak nazwy)
+                    displayMessage("error", body.error || "Błąd walidacji!");
+                }
+            })
+            .catch(error => {
+                displayMessage("error", "Błąd podczas zapisu.");
+            });
+        });
+    }
+
+});
+
+let teamSectionMap = {};
+let teamSelect, sectionSelect, positionSelect;
+
+// Formularz do dokończenia rejestracji po utworzeniu usera przez endpoint /register
+document.addEventListener("DOMContentLoaded", function () {
+    const path = window.location.pathname;
+
+    if (!["/index", "/adminPanel"].some(p => path.includes(p))) return;
+
+    teamSelect = document.getElementById("team");
+    sectionSelect = document.getElementById("section");
+    positionSelect = document.getElementById("position");
+    const setupForm = document.getElementById("setupForm");
+    const modal = document.getElementById("firstLoginModal");
+
+    if (!teamSelect || !sectionSelect || !positionSelect) return;
+
+    fetch("/api/user/setup-data")
+        .then(res => res.json())
+        .then(data => {
+            // Zespoły
+            data.teams.forEach(team => {
+                const option = new Option(team.teamName, team.id);
+                teamSelect.appendChild(option);
+                teamSectionMap[team.id] = team.sections; // przypisanie sekcji
+            });
+
+            // Stanowiska
+            data.positions.forEach(pos => {
+                const option = new Option(pos.positionName, pos.id);
+                positionSelect.appendChild(option);
+            });
+        })
+        .catch(err => console.error("❌ Błąd ładowania danych setupu:", err));
+
+    teamSelect.addEventListener("change", function () {
+        refreshAllSetupSelects(this.value);
+    });
+
+
+    // 🔁 Sprawdzenie, czy pokazać modal (pierwsze logowanie)
+    fetch("/api/user/whoami")
+        .then(res => res.json())
+        .then(user => {
+            // Sprawdź czy hasło zostało zmienione i czy pola są puste
+            if (user.passwordChanged && !user.isCreateByAdmin &&
+                (!user.team || !user.section || !user.position)) {
+                modal?.classList.remove("hidden");
+            }
+        })
+        .catch(err => console.error("❌ Błąd pobierania danych użytkownika:", err));
+
+      // 🔁 Obsługa formularza zapisu danych – tylko jeśli istnieje
+      if (setupForm) {
+        setupForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const formData = new FormData(setupForm);
+
+          fetch("/api/user/complete-setup", {
+            method: "POST",
+            body: formData
+          })
+            .then(res => {
+              if (res.ok) {
+                displayMessage('success', 'Dane zostały zaktualizowane!');
+                modal?.classList.add("hidden");
+                setTimeout(() => location.reload(), 3000);
+              } else {
+                displayMessage('error', 'Błąd zapisu danych.');
+              }
+            })
+            .catch(err => {
+              console.error("❌ Błąd wysyłki danych:", err);
+              displayMessage('error', 'Wystąpił błąd połączenia.');
+            });
+        });
+      }
+});
+function refreshAllSetupSelects(selectedTeamId = null, selectedSectionId = null, selectedPositionId = null) {
+    fetch("/api/user/setup-data")
+        .then(res => res.json())
+        .then(data => {
+            // Wyczyść mapę!
+            Object.keys(teamSectionMap).forEach(k => delete teamSectionMap[k]);
+
+            // Teams
+            teamSelect.innerHTML = "<option value=''>Wybierz zespół</option>";
+            data.teams.forEach(team => {
+                const option = new Option(team.teamName, team.id);
+                teamSelect.appendChild(option);
+                teamSectionMap[team.id] = team.sections;
+            });
+            if (selectedTeamId) teamSelect.value = selectedTeamId;
+
+            // Sections
+            sectionSelect.innerHTML = "<option value=''>Wybierz sekcję</option>";
+            if (selectedTeamId && teamSectionMap[selectedTeamId]) {
+                teamSectionMap[selectedTeamId].forEach(section => {
+                    const option = new Option(section.sectionName, section.id);
+                    sectionSelect.appendChild(option);
+                });
+                if (selectedSectionId) sectionSelect.value = selectedSectionId;
+            }
+
+            // Positions
+            positionSelect.innerHTML = "<option value=''>Wybierz stanowisko</option>";
+            data.positions.forEach(pos => {
+                const option = new Option(pos.positionName, pos.id);
+                positionSelect.appendChild(option);
+            });
+            if (selectedPositionId) positionSelect.value = selectedPositionId;
+        })
+        .catch(err => console.error("❌ Błąd ładowania danych setupu:", err));
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const tooltipToggle = document.getElementById("tooltipToggle");
+    const passwordTooltip = document.getElementById("passwordTooltip");
+    const arrowIcon = document.getElementById("arrowIcon");
+    const flexContainer = document.querySelector('.left');
+    const flexFirstLoginContainer = document.querySelector('.login.active');
+
+    if (tooltipToggle && passwordTooltip && arrowIcon && flexContainer) {
+        tooltipToggle.addEventListener("click", () => {
+            passwordTooltip.classList.toggle("active");
+            arrowIcon.classList.toggle("open");
+            flexContainer.classList.toggle("tooltip-open");
+        });
+    } else if (tooltipToggle && passwordTooltip && arrowIcon && flexFirstLoginContainer) {
+        tooltipToggle.addEventListener("click", () => {
+            passwordTooltip.classList.toggle("active");
+            arrowIcon.classList.toggle("open");
+            flexFirstLoginContainer.classList.toggle("tooltip-open");
+        });
+    }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const passwordInput = document.getElementById('settings-new-password');
+    if (!passwordInput) return;
+
+    // Wzorce do sprawdzania
+    const rules = [
+        {
+            selector: '[data-rule="length"]',
+            validate: val => val.length >= 8
+        },
+        {
+            selector: '[data-rule="uppercase"]',
+            validate: val => /[A-Z]/.test(val)
+        },
+        {
+            selector: '[data-rule="lowercase"]',
+            validate: val => /[a-z]/.test(val)
+        },
+        {
+            selector: '[data-rule="digit"]',
+            validate: val => /\d/.test(val)
+        },
+        {
+            selector: '[data-rule="special"]',
+            validate: val => /[@_$!%*?&]/.test(val)
+        }
+    ];
+
+    passwordInput.addEventListener('input', function () {
+        const value = passwordInput.value;
+
+        rules.forEach(rule => {
+            const span = document.querySelector(rule.selector);
+            if (!span) return;
+            const icon = span.querySelector('.rule-icon');
+            if (!icon) return;
+
+            if (rule.validate(value)) {
+                icon.classList.remove('bx-x');
+                icon.classList.add('bx-check');
+                icon.style.color = '#22c55e'; // zielony
+            } else {
+                icon.classList.remove('bx-check');
+                icon.classList.add('bx-x');
+                icon.style.color = '#e73c3c'; // czerwony
+            }
+        });
+    });
+});
+
+
+// Modal open/close logic
+const appModal = document.getElementById('appModal');
+const openModalAppBtn = document.getElementById('openModalAppBtn');
+const cancelAppBtn = document.getElementById('cancelAppBtn');
+const appForm = document.getElementById('appForm');
+
+// Otwieranie modala
+if (openModalAppBtn && appModal) {
+    openModalAppBtn.onclick = function(e) {
+        e.preventDefault();
+        appModal.classList.add('active');
+    };
+}
+
+// Zamknięcie przez Anuluj
+if (cancelAppBtn && appModal) {
+    cancelAppBtn.onclick = (e) => {
+        e.preventDefault();
+        appModal.classList.remove('active');
+    };
+}
+
+// Submit formularza
+if (appForm && appModal) {
+    appForm.onsubmit = async function(e) {
+        e.preventDefault();
+        const appNameInput = document.getElementById('appName');
+        if (!appNameInput) return;
+
+        const appName = appNameInput.value.trim();
+
+        if (!appName) {
+            displayMessage("error", "Pole 'Nazwa aplikacji' nie może być puste!");
+            return;
+        }
+
+        try {
+            const res = await fetch('/saveNewAppName', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ appName })
+            });
+
+            // Odczytujemy odpowiedź jako JSON, nawet w przypadku błędu
+            const data = await res.json();
+
+            if (!res.ok) {
+                displayMessage("error", data.error || "Błąd podczas zapisu aplikacji.");
+                return;
+            }
+
+            appModal.classList.remove('active');
+            this.reset();
+            displayMessage("success", data.success || "Pomyślnie dodano aplikację!");
+            setTimeout(() => location.reload(), 2000);
+        } catch (err) {
+            displayMessage("error", "Wystąpił błąd połączenia z serwerem.");
+            console.error(err);
+        }
+    };
+}
+
+const showProcessesBtn = document.getElementById('showProcessesBtn');
+const processesModal = document.getElementById('processesModal');
+const processesTableBody = document.getElementById('processesTableBody');
+const closeProcessesModal = document.getElementById('closeProcessesModal');
+
+if (showProcessesBtn && processesModal && processesTableBody) {
+    showProcessesBtn.addEventListener('click', async function () {
+        // Czyść poprzednią zawartość tabeli
+        processesTableBody.innerHTML = '';
+
+        // Pobierz dane z backendu
+        try {
+            const response = await fetch('/api/backlog/processes');
+            const processes = await response.json();
+
+            // Wypełnij tabelę nowymi danymi
+            processes.forEach(proc => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${proc.processName}</td>
+                    <td>${proc.taskCount}</td>
+                    <td>${proc.hours.toFixed(1)} h</td>
+                `;
+                processesTableBody.appendChild(row);
+            });
+
+            // Otwórz modal
+            processesModal.classList.remove('hidden');
+        } catch (error) {
+            displayMessage('error', 'Błąd podczas pobierania procesów backlogu!');
+        }
+    });
+}
+
+if (closeProcessesModal && processesModal) {
+    closeProcessesModal.addEventListener('click', function () {
+        processesModal.classList.add('hidden');
+    });
+}
+
+const toggleFiltersBtn = document.getElementById('toggleFiltersBtn');
+const filtersPanel = document.getElementById('filtersPanel');
+
+let isFiltersVisible = false; // domyślnie filtry ukryte
+
+function showFilters() {
+    if (filtersPanel && !filtersPanel.classList.contains('show')) {
+        filtersPanel.classList.add('show');
+    }
+    if (toggleFiltersBtn && !toggleFiltersBtn.classList.contains('small')) {
+        toggleFiltersBtn.classList.add('small');
+    }
+    if (toggleFiltersBtn) {
+        toggleFiltersBtn.innerHTML = `<i class='bx bx-search-alt-2'></i>`;
+    }
+    isFiltersVisible = true;
+}
+function hideFilters() {
+    if (filtersPanel && filtersPanel.classList.contains('show')) {
+        filtersPanel.classList.remove('show');
+    }
+    if (toggleFiltersBtn && toggleFiltersBtn.classList.contains('small')) {
+        toggleFiltersBtn.classList.remove('small');
+    }
+    if (toggleFiltersBtn) {
+        toggleFiltersBtn.innerHTML = `<i class='bx bx-filter-alt'></i> <span>Filtry</span>`;
+    }
+    isFiltersVisible = false;
+}
+
+// Domyślnie schowaj filtry (opcjonalnie)
+hideFilters();
+
+if (toggleFiltersBtn) {
+    toggleFiltersBtn.addEventListener('click', function () {
+        if (isFiltersVisible) {
+            hideFilters();
+        } else {
+            showFilters();
+        }
+    });
+}

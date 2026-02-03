@@ -74,6 +74,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -104,6 +111,9 @@
 
 <div class="main-content">
     <div class="loader"></div>
+
+    <div class="popup"></div>
+
     <div class="error-container" id="err-container">
         <p th:if="${error}" class="error">
                 <span class="error-content" th:text="${error}">
@@ -121,8 +131,9 @@
 
     <form id="reportForm" th:action="@{/executionReport}" method="get" class="filter-form">
         <div class="filter-container-execution-report">
-            <div class="left-side">
-                <button class="mainBtn return" type="button" th:onclick="|window.location.href='@{/efficiency}'|">Powrót</button>
+            <div class="left-side overtime">
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/efficiency}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/overtimeArchive}'|"><i class='bx bx-archive' ></i>Archiwum nadgodzin</button>
             </div>
             <div class="center-side">
                 <div class="multiselect-container">
@@ -144,8 +155,8 @@
         </div>
 
         <div class="xlsx-btn">
-            <button type="button" id="clearOvertimeBtn" class="filter-button">Wyczyść</button>
-            <button type="button" id="exportOvertimeSummaryXlsxBtn" class="filter-button">XLSX</button>
+            <button type="button" id="clearOvertimeBtn" class="btn-back"><i class='bx bx-eraser' ></i>Wyczyść</button>
+            <button type="button" id="exportOvertimeSummaryXlsxBtn" class="btn-back"><i class='bx bxs-file-export'></i>XLSX</button>
         </div>
     </form>
 
@@ -153,13 +164,15 @@
         <table class="overtime-table" id="overtime-table">
             <thead>
                 <tr>
-                    <th>Zaznacz</th>
+                    <th class="selectAllCheck">
+                        <span class="selectAllLabel">Zaznacz wszystko</span>
+                        <input type="checkbox" class="checkbox-button all">
+                    </th>
                     <th>Szczegóły</th>
                     <th>Imię</th>
                     <th>Nazwisko</th>
-                    <th>Nadgodziny płatne</th>
-                    <th>Nadgodziny do odbioru</th>
-                    <th>Odebrane</th>
+                    <th title="Stan płatnych nadgodzin">Nadgodziny płatne(min)</th>
+                    <th title="Stan nadgodzin do odbioru">Nadgodziny do odbioru(min)</th>
                 </tr>
             </thead>
                 <tbody>
@@ -168,8 +181,18 @@
         </table>
     </div>
     <div class="bottom-button-container">
-        <div class="mainBtn" id="payoutOvertimeBtn">Archiwizuj płatne nadgodziny</div>
+        <div class="btn-back" id="payoutOvertimeBtn"><i class='bx bx-archive-in'></i>Archiwizuj płatne nadgodziny</div>
     </div>
+
+    <div id="noteModal">
+        <h3 id="noteModalHeader" >Podaj notatkę do archiwizacji (opcjonalnie):</h3>
+        <textarea id="noteModalInput"></textarea>
+        <div class="modalsBtn note">
+            <button class="btn-back" id="noteModalOkBtn">OK</button>
+        </div>
+    </div>
+    <div id="noteModalOverlay" style="display:none; position:fixed; left:0;top:0;width:100vw;height:100vh;background:#0005;z-index:1000;"></div>
+
 
     <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
 

@@ -11,10 +11,10 @@ import com.example.register.register.service.OvertimeBalanceService;
 import com.example.register.register.service.SavedDataService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,32 +26,21 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/saved-data")
 public class SavedDataController {
 
-    @Autowired
-    private SavedDataService savedDataService;
-
-    @Autowired
-    private ProcessRepository processRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private SavedDataRepository savedDataRepository;
-
-    @Autowired
-    private EfficiencyService efficiencyService;
-
-    @Autowired
-    private OvertimeBalanceService overtimeBalanceService;
-
-    @Autowired
-    private OvertimeBalanceRepository overtimeBalanceRepository;
+    private final SavedDataService savedDataService;
+    private final ProcessRepository processRepository;
+    private final UserRepository userRepository;
+    private final SavedDataRepository savedDataRepository;
+    private final EfficiencyService efficiencyService;
+    private final OvertimeBalanceService overtimeBalanceService;
+    private final OvertimeBalanceRepository overtimeBalanceRepository;
 
     @PostMapping("/save")
     @Transactional
@@ -122,8 +111,12 @@ public class SavedDataController {
                             data.getVolumeType() == VolumeType.DEDUCT_FULL_DAY
             ) {
                 if(data.getOvertimeMinutes() != null && data.getOvertimeMinutes() > 0) {
-                    overtimeBalanceService.addOrUpdateBalance(
-                            data.getUser(), data.getVolumeType(), data.getOvertimeMinutes()
+                    overtimeBalanceService.addOvertimeEvent(
+                            data.getUser(),
+                            data.getVolumeType(),
+                            data.getOvertimeMinutes(),
+                            data.getTodaysDate()
+
                     );
                 }
             }
@@ -150,8 +143,11 @@ public class SavedDataController {
                         data.getVolumeType() == VolumeType.DEDUCT_FULL_DAY
         ) {
             if (data.getOvertimeMinutes() != null && data.getOvertimeMinutes() > 0) {
-                overtimeBalanceService.addOrUpdateBalance(
-                        data.getUser(), data.getVolumeType(), data.getOvertimeMinutes()
+                overtimeBalanceService.addOvertimeEvent(
+                        data.getUser(),
+                        data.getVolumeType(),
+                        data.getOvertimeMinutes(),
+                        data.getTodaysDate()
                 );
             }
         }
@@ -181,9 +177,6 @@ public class SavedDataController {
         sd.setOvertimeMinutes(req.getOvertimeMinutes() == null ? 0 : req.getOvertimeMinutes());
         return sd;
     }
-
-
-
 
     @GetMapping("/get-report")
     public List<SavedDataDto> getSummaryData(
@@ -233,22 +226,20 @@ public class SavedDataController {
                             .mapToInt(SavedData::getOvertimeMinutes)
                             .sum();
 
+                    SavedData any = list.getFirst();
+                    String fullName = any.getUser().getFirstName() + " " + any.getUser().getLastName();
 
                     return new SavedDataDto(
                             key.processName(),
                             totalQuantity,
                             key.todaysDate(),
-                            key.username(),
+                            fullName,
                             key.volumeType(),
                             totalOvertime
                     );
                 })
                 .toList();
     }
-
-
-
-
 
     @GetMapping("/get-report/export")
     public void exportToXlsx(
@@ -306,62 +297,32 @@ public class SavedDataController {
         workbook.close();
     }
 
-
-
     @GetMapping("/summary/{userId}")
     public List<MixedChartDTO> getMixedChartData(@PathVariable Long userId) {
         return savedDataService.getMixedChartForUser(userId);
     }
 
-//    @GetMapping("/overtime/{userId}")
-//    public OvertimeSummaryDTO getOvertimeSummary(
-//            @PathVariable Long userId
-//    ) {
-//
-//        int paid = savedDataRepository
-//                .sumOvertimeByUserAndDateAndType(userId, VolumeType.OVERTIME_PAID);
-//
-//        int offRaw = savedDataRepository
-//                .sumOvertimeByUserAndDateAndType(userId, VolumeType.OVERTIME_OFF);
-//
-//        int deductedPartial = savedDataRepository
-//                .sumOvertimeByUserAndDateAndType(userId, VolumeType.DEDUCT_PARTIAL);
-//
-//        int deductedFullDay = savedDataRepository
-//                .sumOvertimeByUserAndDateAndType(userId, VolumeType.DEDUCT_FULL_DAY);
-//
-//        // odejmujemy oba rodzaje odbiorów od offRaw
-//        int off = offRaw - deductedPartial - deductedFullDay;
-//
-//        return new OvertimeSummaryDTO(paid, off);
-//    }
-
     @GetMapping("/overtime/{userId}")
     public OvertimeSummaryDTO getOvertimeSummary(@PathVariable Long userId) {
-        int paid = overtimeBalanceRepository
-                .findByUserIdAndVolumeType(userId, VolumeType.OVERTIME_PAID)
-                .map(OvertimeBalance::getOvertimeMinutes)
-                .orElse(0);
+        int paid = Optional.ofNullable(overtimeBalanceRepository
+                .sumOvertimeByUserAndType(userId, VolumeType.OVERTIME_PAID)).orElse(0);
 
-        int offRaw = overtimeBalanceRepository
-                .findByUserIdAndVolumeType(userId, VolumeType.OVERTIME_OFF)
-                .map(OvertimeBalance::getOvertimeMinutes)
-                .orElse(0);
+        int offRaw = Optional.ofNullable(overtimeBalanceRepository
+                .sumOvertimeByUserAndType(userId, VolumeType.OVERTIME_OFF)).orElse(0);
 
-        int deductedPartial = overtimeBalanceRepository
-                .findByUserIdAndVolumeType(userId, VolumeType.DEDUCT_PARTIAL)
-                .map(OvertimeBalance::getOvertimeMinutes)
-                .orElse(0);
+        int deductedPartial = Optional.ofNullable(overtimeBalanceRepository
+                .sumOvertimeByUserAndType(userId, VolumeType.DEDUCT_PARTIAL)).orElse(0);
 
-        int deductedFullDay = overtimeBalanceRepository
-                .findByUserIdAndVolumeType(userId, VolumeType.DEDUCT_FULL_DAY)
-                .map(OvertimeBalance::getOvertimeMinutes)
-                .orElse(0);
+        int deductedFullDay = Optional.ofNullable(overtimeBalanceRepository
+                .sumOvertimeByUserAndType(userId, VolumeType.DEDUCT_FULL_DAY)).orElse(0);
 
-        int off = offRaw + deductedPartial + deductedFullDay;
+        int off = offRaw - deductedPartial - deductedFullDay;
 
         return new OvertimeSummaryDTO(paid, off);
     }
+
+
+
 
     @PostMapping("/deduct-full-day")
     public ResponseEntity<Void> deductFullDay(@RequestBody DeductFullDayDTO dto) {

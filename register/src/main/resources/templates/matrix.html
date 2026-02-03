@@ -22,6 +22,7 @@
     <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
     <link rel="stylesheet" th:href="@{/css/button.css}">
     <link rel="stylesheet" th:href="@{/css/userDetails.css}">
+    <link rel="stylesheet" th:href="@{/css/efficiency.css}">
 
     <script th:src="@{/js/script.js}" defer></script>
     <script th:src="@{/js/json.js}" defer></script>
@@ -79,6 +80,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -123,19 +131,25 @@
 
     <div class="main-container">
         <div class="filter-container">
-            <div class="modalsBtn">
-                <button class="mainBtn return" type="button" onclick="handleBack()">Powrót</button>
-                <button class="mainBtn" type="button" >Aplikacje</button>
-                <button class="mainBtn" type="button">Kompetencje miekkie</button>
+            <div class="modalsBtnContainer">
+                <div class="left-side">
+                    <button class="btn-back" type="button" onclick="handleBack()"><i class='bx bx-arrow-back'></i>Powrót</button>
+                </div>
+                <div class="right-side">
+                    <div class="stat-cards">
+                        <div class="stat-card" id="currentlyBrowsingUser"
+                             th:text="${browsedUser.firstName + ' ' + browsedUser.lastName}"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <section class="card">
             <h2 class="chartsTitle">Matryca Kompetencji</h2>
 
-            <input type="hidden" id="userLevelsData" th:value="${userLevelsJson}">
+            <input type="hidden" id="userLevelsData" data-matrix-type="process" data-matrix-json th:value="${userLevelsJson}">
 
-            <form id="competencyMatrixForm" th:action="@{/matrix/save}" method="post">
+            <form id="competencyMatrixForm">
                 <table class="competencyMatrix">
                     <thead>
                     <tr>
@@ -150,14 +164,24 @@
                     <tbody>
                     <tr th:each="process : ${processes}">
                         <td th:text="${process.processName}">Nazwa procesu</td>
-
-                        <td><input type="radio" th:name="'level_' + ${process.id}" value="0" th:data-process-id="${process.id}"></td>
-                        <td><input type="radio" th:name="'level_' + ${process.id}" value="1" th:data-process-id="${process.id}"></td>
-                        <td><input type="radio" th:name="'level_' + ${process.id}" value="2" th:data-process-id="${process.id}"></td>
-                        <td><input type="radio" th:name="'level_' + ${process.id}" value="3" th:data-process-id="${process.id}"></td>
-                        <td><input type="radio" th:name="'level_' + ${process.id}" value="4" th:data-process-id="${process.id}"></td>
+                        <td>
+                            <input type="radio" th:name="'level_' + ${process.id}" th:value="0" th:attr="data-matrix-type='process',data-id=${process.id}" />
+                        </td>
+                        <td>
+                            <input type="radio" th:name="'level_' + ${process.id}" th:value="1" th:attr="data-matrix-type='process',data-id=${process.id}" />
+                        </td>
+                        <td>
+                            <input type="radio" th:name="'level_' + ${process.id}" th:value="2" th:attr="data-matrix-type='process',data-id=${process.id}" />
+                        </td>
+                        <td>
+                            <input type="radio" th:name="'level_' + ${process.id}" th:value="3" th:attr="data-matrix-type='process',data-id=${process.id}" />
+                        </td>
+                        <td>
+                            <input type="radio" th:name="'level_' + ${process.id}" th:value="4" th:attr="data-matrix-type='process',data-id=${process.id}" />
+                        </td>
                     </tr>
                     </tbody>
+
                 </table>
             </form>
         </section>

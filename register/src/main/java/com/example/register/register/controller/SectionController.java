@@ -45,11 +45,29 @@ public class SectionController {
 
     @PostMapping("/saveNewSection")
     public ResponseEntity<?> createSection(@RequestBody Map<String, Object> payload) {
-        Long teamId = Long.parseLong(payload.get("teamId").toString());
-        String sectionName = payload.get("sectionName").toString();
+        Object teamIdObj = payload.get("teamId");
+        Object sectionNameObj = payload.get("sectionName");
+
+        if(teamIdObj == null || sectionNameObj == null ) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Wszystkie pola są wymagane!"));
+        }
+        long teamId;
+        try {
+            teamId = Long.parseLong(teamIdObj.toString());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Nieprawidłowy ID zespołu."));
+        }
+        String sectionName = sectionNameObj.toString().trim();
+        if(sectionName.isEmpty()) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Nazwa sekcji jest wymagana!"));
+        }
 
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("Nie znaleziono zespołu o ID: " + teamId));
+
+        if(sectionRepository.existsBySectionNameIgnoreCaseAndTeam(sectionName.trim(), team)) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Sekcja już istnieje!"));
+        }
 
         Section newSection = new Section();
         newSection.setSectionName(sectionName);
@@ -95,13 +113,12 @@ public class SectionController {
         // 🟡 Pobieramy obecności według statusów
         List<Attendance> todaysLeaves = attendanceRepository.findByAttendanceDateAndStatus(today, "leave");
         List<Attendance> todaysNotLogged = attendanceRepository.findByAttendanceDateAndStatus(today, "notloggedin");
-        List<Attendance> todaysOffice = attendanceRepository.findByAttendanceDateAndStatus(today, "office");
-        List<Attendance> todaysHomeoffice = attendanceRepository.findByAttendanceDateAndWorkMode(today, "homeoffice");
+        List<Attendance> todaysPresent = attendanceRepository.findByAttendanceDateAndStatus(today, "present");
 
         Set<Long> onLeaveIds = todaysLeaves.stream().map(a -> a.getUser().getId()).collect(Collectors.toSet());
         Set<Long> notLoggedIds = todaysNotLogged.stream().map(a -> a.getUser().getId()).collect(Collectors.toSet());
-        Set<Long> officeIds = todaysOffice.stream().map(a -> a.getUser().getId()).collect(Collectors.toSet());
-        Set<Long> homeofficeIds = todaysHomeoffice.stream().map(a -> a.getUser().getId()).collect(Collectors.toSet());
+        Set<Long> officeIds = todaysPresent.stream().filter(a -> "office".equalsIgnoreCase(a.getWorkMode())).map(a -> a.getUser().getId()).collect(Collectors.toSet());
+        Set<Long> homeofficeIds = todaysPresent.stream().filter(a -> "homeoffice".equalsIgnoreCase(a.getWorkMode())).map(a -> a.getUser().getId()).collect(Collectors.toSet());
 
         User currentUser = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Nie znaleziono użytkownika"));

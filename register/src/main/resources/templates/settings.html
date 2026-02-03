@@ -14,20 +14,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
-        <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
-        <link rel="stylesheet" th:href="@{/css/style.css}">
-        <link rel="stylesheet" th:href="@{/css/settings.css}">
-        <link rel="stylesheet" th:href="@{/css/button.css}">
+    <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
+    <link rel="stylesheet" th:href="@{/css/settings.css}">
+    <link rel="stylesheet" th:href="@{/css/button.css}">
 
     <script th:src="@{/js/json.js}" defer></script>
-        <script th:src="@{/js/script.js}" defer></script>
-
-<!--        <link rel="stylesheet" href="../static/css/sidebarCSS.css">-->
-<!--        <link rel="stylesheet" href="../static/css/style.css">-->
-<!--        <link rel="stylesheet" href="../static/css/settings.css">-->
-<!--        <script src="../static/js/json.js" defer></script>-->
-<!--        <script src="../static/js/script.js" defer></script>-->
-
+    <script th:src="@{/js/script.js}" defer></script>
 
 </head>
 
@@ -79,6 +71,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -126,38 +125,73 @@
     <div class="content-wrapper">
         <!-- Sekcja lewa -->
         <section class="left">
-            <h2>Zmiana hasła</h2>
-            <form method="POST" th:action="@{/api/user/changePasswordInSettings}" id="changePasswordForm">
-                <div class="inputs">
-                    <div class="input-box">
-                        <label for="settings-current-password">Aktualne hasło</label>
-                        <input type="password" id="settings-current-password" name="settingsCurrentPassword" required>
-                        <i class="fa-solid fa-eye-slash" id="show-password"></i>
-                    </div>
-                    <div class="input-box">
-                        <label for="settings-new-password">Nowe hasło</label>
-                        <input type="password" id="settings-new-password" name="settingsNewPassword" required>
-                        <i class="fa-solid fa-eye-slash" id="show-new-password"></i>
-                    </div>
-                    <div class="input-box">
-                        <label for="settings-confirm-password">Potwierdź nowe hasło</label>
-                        <input type="password" id="settings-confirm-password" name="settingsConfirmPassword" required>
-                        <i class="fa-solid fa-eye-slash" id="show-confirm-password"></i>
-                    </div>
+            <div class="form-section">
+                <div class="title-header" id="tooltipToggle">
+                    <h2>Zmiana hasła</h2><i class='bx bx-chevron-down' id="arrowIcon"></i>
                 </div>
-                <div class="btnContainer">
-                    <button type="submit" class="mainBtn">Zmień hasło</button>
+                <form method="POST" th:action="@{/api/user/changePasswordInSettings}" id="changePasswordForm">
+                    <div class="inputs">
+                        <div class="input-box">
+                            <label for="settings-current-password">Obecne hasło</label>
+                            <input type="password" id="settings-current-password" name="settingsCurrentPassword" required>
+                            <i class="fa-solid fa-eye-slash" id="show-password"></i>
+                        </div>
+                        <div class="input-box">
+                            <label for="settings-new-password">Nowe hasło</label>
+                            <input type="password" id="settings-new-password" name="settingsNewPassword" required>
+                            <i class="fa-solid fa-eye-slash" id="show-new-password"></i>
+                        </div>
+                        <div class="input-box">
+                            <label for="settings-confirm-password">Potwierdź nowe hasło</label>
+                            <input type="password" id="settings-confirm-password" name="settingsConfirmPassword" required>
+                            <i class="fa-solid fa-eye-slash" id="show-confirm-password"></i>
+                        </div>
+                    </div>
+                    <div class="btnContainer">
+                        <button type="submit" class="btn-save"><i class='bx bx-save'></i> Zmień hasło</button>
+                    </div>
+                </form>
+            </div>
+            <div class="password-tooltip" id="passwordTooltip">
+                <h2>Hasło - wymagania</h2>
+                <div class="password-container">
+                  <span data-rule="length">
+                    <i class='bx bxs-right-arrow-alt'></i>
+                    Conajmniej 8 znaków
+                    <i class='bx bx-x rule-icon'></i>
+                  </span>
+                    <span data-rule="uppercase">
+                    <i class='bx bxs-right-arrow-alt'></i>
+                    Przynajmniej 1 wielką literę
+                    <i class='bx bx-x rule-icon'></i>
+                  </span>
+                    <span data-rule="lowercase">
+                    <i class='bx bxs-right-arrow-alt'></i>
+                    Przynajmniej 1 małą literę
+                    <i class='bx bx-x rule-icon'></i>
+                  </span>
+                    <span data-rule="digit">
+                    <i class='bx bxs-right-arrow-alt'></i>
+                    Przynajmniej 1 cyfrę
+                    <i class='bx bx-x rule-icon'></i>
+                  </span>
+                    <span data-rule="special">
+                    <i class='bx bxs-right-arrow-alt'></i>
+                    Przynajmniej 1 znak specjalny. <br> Dozwolone znaki: @ _ ! % * ? & $
+                    <i class='bx bx-x rule-icon'></i>
+                  </span>
                 </div>
-            </form>
+            </div>
+
         </section>
 
         <!-- Sekcja prawa -->
         <section class="right">
             <h2>Dodatkowe opcje</h2>
             <div class="button-group">
-                <a th:href="@{/profile}" class="mainBtn">Profil</a>
-                <a th:href="@{/notifications}" class="mainBtn">Powiadomienia</a>
-                <a th:href="@{/logout}" class="mainBtn">Wyloguj się</a>
+                <a th:href="@{/profile}" class="btn-back processes"><i class='bx bx-user'></i>Profil</a>
+                <a th:href="@{/notifications}" class="btn-back processes"><i class='bx bx-message' ></i>Powiadomienia</a>
+                <a th:href="@{/logout}" class="btn-back processes"><i class='bx bx-log-out' ></i>Wyloguj się</a>
             </div>
         </section>
     </div>

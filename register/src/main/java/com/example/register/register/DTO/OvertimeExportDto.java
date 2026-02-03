@@ -4,7 +4,6 @@ public record OvertimeExportDto(
         String firstName,
         String lastName,
         long overtimePaid,
-        long overtimeOff,
-        long deductPartial
+        long overtimeOff
 ) {}
 

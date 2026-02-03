@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -306,5 +307,21 @@ public String showProcessTimes(Model model, Principal principal) {
         model.addAttribute("userId", userId);
         return "UserOvertimeDetails";
     }
+
+    @GetMapping("/overtimeArchive")
+    public String showOvertimeArchive() {
+        return "overtimeArchive";
+    }
+
+    @GetMapping("/calendar")
+    public String showCalendar() {
+        return "calendar";
+    }
+
+    @GetMapping("/analize")
+    public String showAnalize() {
+        return "analize";
+    }
+
 
 }

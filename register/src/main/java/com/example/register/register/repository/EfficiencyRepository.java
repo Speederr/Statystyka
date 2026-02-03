@@ -28,4 +28,6 @@ public interface EfficiencyRepository extends JpaRepository<Efficiency, Long> {
 
     Optional<Efficiency> findByUser_IdAndTodaysDate(Long userId, LocalDate todaysDate);
 
+    @Query("SELECT AVG(e.efficiency) FROM Efficiency e WHERE e.user.team.id = :teamId AND e.todaysDate >= :fromDate")
+    Double findTeamAverageEfficiency(@Param("teamId") Long teamId, @Param("fromDate") LocalDate fromDate);
 }

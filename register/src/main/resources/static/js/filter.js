@@ -44,6 +44,37 @@ function renderProcessCheckboxes(container, processList) {
   renderCheckboxes(container, processList, "process-checkbox", p => p.processName);
 }
 
+//function setupDropdownToggle({ trigger, dropdown, arrow }) {
+//  if (!trigger || !dropdown || !arrow) return;
+//
+//  // 1) Toggle dropdown + strzałka
+//  trigger.addEventListener("click", function (e) {
+//    const isOpen = dropdown.classList.contains("show");
+//    dropdown.classList.toggle("show", !isOpen);
+//    arrow.classList.toggle("rotate", !isOpen);
+//    e.stopPropagation();
+//  });
+//
+//  // 2) Kliknięcie gdziekolwiek poza dropdownem zamyka go
+//  document.addEventListener("click", function (e) {
+//    if (!dropdown.contains(e.target) && !trigger.contains(e.target)) {
+//      dropdown.classList.remove("show");
+//      arrow.classList.remove("rotate");
+//    }
+//  });
+//
+//  // 3) Zatrzymaj propagację dla checkboxów i labeli wewnątrz dropdownu
+//  dropdown.addEventListener("click", function(e) {
+//    // jeśli kliknięto na checkbox *lub* na labelkę zawierającą checkbox
+//    const label = e.target.closest("label");
+//    if (
+//      e.target.matches('input[type="checkbox"]') ||
+//      (label && label.querySelector('input[type="checkbox"]'))
+//    ) {
+//      e.stopPropagation();
+//    }
+//  });
+//}
 function setupDropdownToggle({ trigger, dropdown, arrow }) {
   if (!trigger || !dropdown || !arrow) return;
 
@@ -53,6 +84,14 @@ function setupDropdownToggle({ trigger, dropdown, arrow }) {
     dropdown.classList.toggle("show", !isOpen);
     arrow.classList.toggle("rotate", !isOpen);
     e.stopPropagation();
+
+    // --- Dodaj inkrementację z-index po otwarciu ---
+    if (!isOpen) {
+      dropdownZ++;
+      dropdown.style.zIndex = dropdownZ;
+            console.log('Aktualny z-index:', dropdownZ); // << tu widzisz, czy się zmienia
+
+    }
   });
 
   // 2) Kliknięcie gdziekolwiek poza dropdownem zamyka go

@@ -45,26 +45,30 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/availability").permitAll()
 
                         // 🔒 REST API dla wiadomości - dostępne dla zalogowanych użytkowników
-                        .requestMatchers(HttpMethod.GET, "/api/messages/received").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/messages/sent").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/messages/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/matrix/**").authenticated()
+                        .requestMatchers(HttpMethod.GET,  "/api/messages/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/matrix", "/app-matrix", "/soft-skills").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/matrix/save", "/matrix/saveSingle", "/app-matrix/saveSingle", "/soft-skills/saveSingle").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/matrix/**", "/app-matrix/**", "/soft-skills/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+
                         .requestMatchers(HttpMethod.GET, "/api/user/all-users", "/api/sections", "/api/user/summary/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
-                        .requestMatchers(HttpMethod.GET, "/api/user/by-section/**", "/matrix/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/user/by-section/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/efficiency/average/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/efficiency/section/non-operational/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/attendance/workmode/summary").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/saved-data/get-report/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/saved-data/summary/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
-                        .requestMatchers(HttpMethod.GET, "/backlog/export").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/backlog/export", "/api/backlog/processes").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/chart/stacked-summary").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
-                        .requestMatchers(HttpMethod.GET, "/api/overtime/get-all-overtime", "/api/overtime/${userId}/details").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/overtime/get-all-overtime", "/api/overtime/get-data", "/api/overtime/*/details", "/api/overtime/archive","/api/forecast/**")
+                            .hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
 
                         .requestMatchers(HttpMethod.POST, "/api/messages/send","/api/saved-data/save-single", "/api/saved-data/deduct-full-day").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/attendance/addLeave").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/message/{messageId}").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/message/bulk-delete").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/messages/mark-as-read").authenticated() // Wymaga zalogowania
                         .requestMatchers(HttpMethod.PUT, "/api/messages/mark-as-read/{messageId}").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/processes/{processId}/status").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
 
                         // 🔒 Endpointy wymagające autoryzacji
                         .requestMatchers(HttpMethod.POST, "/api/processes/favorites/**").authenticated()
@@ -72,19 +76,21 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/saved-data/save").authenticated()
                         .requestMatchers(HttpMethod.POST,  "/api/user/addUser", "/api/user/deleteUsers", "/api/teams", "/api/teams/saveNewTeam",
                                 "/api/sections/saveNewSection").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/processes/saveNewProcess").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.POST, "/api/processes/saveNewProcess", "/saveNewAppName").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.POST, "/api/overtime/exportAll", "/api/overtime/exportOvertimeForDate").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.POST, "/api/user/avatar").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/user/changePasswordInSettings").authenticated()
-                        .requestMatchers(HttpMethod.POST,"/api/attendance/update", "/api/overtime/archive-paid").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.POST,"/api/attendance/update", "/api/overtime/archive-paid", "/api/position/update-position").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.POST,"/saveNewSoftSkill").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/user/avatar", "/api/position/{positionId}").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/user/whoami", "/api/user/setup-data").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/user/complete-setup").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/matrix/save", "/matrix/saveSingle").authenticated()
+                        .requestMatchers(HttpMethod.POST,  "/api/attendance/deleteLeave").authenticated()
 
-                        .requestMatchers(HttpMethod.PUT, "/api/processes/update/**", "/export/processes").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/processes/update/**", "/export/processes", "/api/attendance/updateLeave")
+                            .hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers("/adminPanel").hasRole("ADMIN")
-                        .requestMatchers("/averageTime").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers("/averageTime", "/api/position/addNewPosition").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers("/efficiency").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers("/index", "/changePassword", "/settings", "/api/notifications/count").authenticated()
                         .anyRequest().authenticated()
@@ -148,7 +154,20 @@ public class SecurityConfig {
                                 "/api/saved-data/deduct-full-day",
                                 "/api/overtime/exportAll",
                                 "/api/overtime/exportOvertimeForDate",
-                                "/api/overtime/archive-paid"
+                                "/api/overtime/archive-paid",
+                                "/api/overtime/archive",
+                                "/api/attendance/addLeave",
+                                "/api/attendance/updateLeave",
+                                "/api/attendance/deleteLeave",
+                                "/api/processes/{processId}/status",
+                                "/api/forecast/**",
+                                "/app-matrix/saveSingle",
+                                "/saveNewSoftSkill",
+                                "/soft-skills/saveSingle",
+                                "/api/position/addNewPosition",
+                                "/saveNewAppName",
+                                "/api/position/update-position",
+                                "/api/backlog/processes"
 
                         )
                 );

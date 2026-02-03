@@ -18,6 +18,7 @@
     <link rel="stylesheet" th:href="@{/css/index.css}">
     <link rel="stylesheet" th:href="@{/css/averageTime.css}">
     <link rel="stylesheet" th:href="@{/css/button.css}">
+    <link rel="stylesheet" th:href="@{/css/modal.css}">
 
     <script th:src="@{/js/script.js}" defer></script>
     <script th:src="@{/js/json.js}" defer></script>
@@ -72,6 +73,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -116,7 +124,7 @@
     </header>
     <div class="filter-container">
         <div class="modalsBtn">
-            <button class="mainBtn return" type="button" th:onclick="|window.location.href='@{/efficiency}'|">Powrót</button>
+            <button class="btn-back" type="button" th:onclick="|window.location.href='@{/efficiency}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
         </div>
     </div>
 
@@ -137,6 +145,7 @@
                     <th>Średni czas (minuty)</th>
                     <th>Średni czas (sekundy)</th>
                     <th>Czy proces nieoperacyjny?</th>
+                    <th>Status użycia</th>
                 </tr>
                 </thead>
                 <tbody id="processTable">
@@ -156,6 +165,15 @@
                         <input type="checkbox" class="checkbox-button time-checkbox" th:id="'checkbox_' + ${process.id}" th:value="${process.id}" th:checked="${process.nonOperational}" disabled>
                     </td>
 
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox"
+                                   th:checked="${process.active}"
+                                   th:onchange="|toggleProcessStatus(${process.id}, this.checked)|">
+                            <span class="slider round"></span>
+                        </label>
+                    </td>
+
                 </tr>
                 </tbody>
             </table>
@@ -163,11 +181,12 @@
 
 
         <div class="editBtn">
-        <button class="mainBtn" id="editButton" type="submit">Edytuj</button>
-        <button class="mainBtn" id="addNewProcessModal" type="submit">Dodaj</button>
-        <button class="mainBtn" id="exportToXLSX" type="submit">XLSX</button>
+        <button class="btn-save" id="editButton" type="submit"><i class='bx bx-edit'></i>Edytuj</button>
+        <button class="btn-save" id="addNewProcessModalBtn" type="submit"><i class='bx bxs-plus-square'></i>Dodaj</button>
+        <button class="btn-save" id="exportToXLSX" type="submit"><i class='bx bxs-file-export'></i>XLSX</button>
     </div>
 </div>
+
 <!-- Modal -->
 <div id="processModal" class="modal">
     <div class="modal-content">
@@ -189,13 +208,10 @@
                         th:text="${team.teamName}">
                 </option>
             </select>
-
-
-
             <label for="averageTime">Czas</label>
             <input type="text" name="averageTime" id="averageTime" required>
             <div class="btnContainer">
-                <button type="submit" class="mainBtn">Dodaj</button>
+                <button type="submit" class="btn-save"><i class='bx bxs-plus-square'></i>Dodaj</button>
             </div>
         </form>
     </div>

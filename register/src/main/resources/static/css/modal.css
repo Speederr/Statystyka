@@ -1,0 +1,810 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  font-family: "Poppins", sans-serif;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 0px;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Overlay (jeśli chcesz przyciemnić tło pod modalem) */
+#processModal,
+#appModal,
+#skillModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  /* Domyślnie ukryty */
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+#processModal.active,
+#appModal.active,
+#skillModal.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Modal box */
+#appModal .modal-content,
+#skillModal .modal-content {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.13);
+  padding: 28px 26px 18px 26px;
+  min-width: 320px;
+  max-width: 35vw;
+  font-family: 'Inter', Arial, sans-serif;
+  animation: modalIn 0.22s cubic-bezier(.17,.67,.49,1.44);
+}
+
+@keyframes modalIn {
+  from { transform: translateY(-24px) scale(0.97); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+#processModal h3,
+#appModal h3,
+#skillModal h3 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 18px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #232c3d;
+}
+#processModal label,
+#appModal label,
+#skillModal label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: #1b2330;
+}
+#processModal input[type="text"],
+#appModal input[type="text"],
+#skillModal input[type="text"] {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.4px solid #d3d9e3;
+  border-radius: 7px;
+  margin-bottom: 16px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+  background: #f7f9fa;
+}
+#appModal input[type="text"]:focus,
+#skillModal input[type="text"]:focus {
+  border-color: #4784f8;
+  background: #fff;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* LOGIN */
+
+#login-window {
+    width: 400px;
+    height: 450px;
+    color: black;
+    border-radius: 20px;
+    box-shadow: 0px 0px 20px rgba(0,0,0,0.3);
+    background-size: cover;
+    background-position: center;
+}
+
+#form-process-container,
+#register-form,
+#new-user-form,
+#restore-password-form,
+#login-form {
+    box-sizing: border-box;
+    padding: 40px;
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+    background-color: #fff;
+    flex-direction: column;
+    display: flex;
+    gap: 5px;
+}
+
+.login.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+.loginTitle {
+    text-align: center;
+    font-weight: normal;
+    font-size: 24px;
+    text-shadow: 0px 0px 2px rgba(0,0,0,0.5);
+    color: black;
+    margin: 0 0 10px 0;
+}
+.roleLabel,
+.inputsRow .field label,
+.inputs label {
+    color: black;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-shadow: 0px 0px 2px rgba(0,0,0,0.3);
+    padding-left: 10px;
+    font-weight: 500;
+}
+
+
+.field input[type="text"],
+.field input[type="email"],
+.input-box input[type="text"],
+.input-box input[type="password"] {
+  width: 295px;
+  height: 15px;
+  padding: 10px 10px 10px 12px;
+  border: 1.4px solid #d3d9e3;
+  border-radius: 7px;
+  font-size: 1rem;
+  background: #f7f9fa;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.input-box {
+    width: 315px;
+    height: 50px;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.field input[type="text"]:focus,
+.field input[type="email"]:focus,
+.input-box input[type="text"]:focus,
+.input-box input[type="password"]:focus {
+  border-color: #4784f8;
+  background: #fff;
+}
+
+.input-box i.fa-eye-slash,
+.input-box i.fa-eye {
+  position: absolute;
+  right: 12px;
+  top: 40%;
+  transform: translateY(-50%);
+  color: #b7bcc8;
+  cursor: pointer;
+  font-size: 1.1em;
+  transition: color 0.15s;
+}
+.input-box i:hover {
+  color: #4784f8;
+}
+
+.btnContainer {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 10px 0;
+}
+
+.loginFormBtn {
+  padding: 8px 32px;
+  border: none;
+  border-radius: 7px;
+  background: #2564ef;
+  width: 315px;
+  color: #fff;
+  font-size: 1.03rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.14s;
+  box-shadow: 0 1px 4px rgba(50,70,120,0.06);
+}
+.loginFormBtn:hover {
+  background: #1746b3;
+}
+
+label, .restore-password, .btnContainer {
+  font-size: 0.98rem;
+  color: #515d74;
+}
+
+.bottomLink {
+    text-align: right;
+}
+.restore-password {
+  margin-top: 25px;
+  text-align: right;
+}
+.bottomLink a,
+.restore-password a {
+  color: #4784f8;
+  text-decoration: none;
+  font-size: 0.8em;
+}
+.bottomLink a:hover
+.restore-password a:hover {
+  text-decoration: underline;
+}
+#register-form > inputsRow > field > label,
+#new-user-form > label,
+#restore-password-form > label,
+#login-form > label {
+  display: block;
+  margin-top: 10px;
+  text-align: left;
+  font-size: 0.8em;
+  color: black;
+}
+
+#register-form > inputsRow > field > label a,
+#new-user-form > label a,
+#restore-password-form > label a,
+#login-form > label a {
+  color: #2564ef;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+#register-form > inputsRow > field > label a:hover,
+#new-user-form > label a:hover,
+#restore-password-form > label a:hover,
+#login-form > label a:hover {
+  text-decoration: underline;
+}
+
+/* RESTORE PASSWORD FORM */
+
+#restore-password-window {
+    width: 400px;
+    color: black;
+    background-color: #fff;
+    border-radius: 20px;
+    box-shadow: 0px 0px 20px rgba(0,0,0,0.3);
+    display: block;
+}
+
+#restorePasswordId {
+    margin-right: 15px;
+    text-align: right;
+}
+
+
+/* FIRST LOGIN FORM */
+#new-user-form {
+    width: 400px;
+    height: 550px;
+    color: black;
+    background-color: #fff;
+    border-radius: 20px;
+    box-shadow: 0px 0px 20px rgba(0,0,0,0.3);
+    display: block;
+}
+/* REGISTER FORM */
+
+#register-window {
+    width: 400px;
+    height: 675px;
+    color: black;
+    background-color: #fff;
+    border-radius: 20px;
+    box-shadow: 0px 0px 20px rgba(0,0,0,0.3);
+
+}
+
+.inputsRow {
+    display: flex;
+    flex-direction: column;
+}
+
+.inputsRow .field {
+    gap: 10px;
+}
+
+#register-window .radio-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+#register-window .radio-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#register-window .radio-item input {
+    width: 20px;
+    height: 20px;
+}
+
+#register-window .radio-item label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.radio-item{
+    padding: 0px 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.radio-item input {
+    width: 20px;
+    height: 20px;
+}
+.radio-item label {
+
+    font-size: 10px;
+}
+
+
+/* SETUP FORM */
+#processesModal,
+#firstLoginModal {
+    display: block;
+    position: fixed;
+    z-index: 10;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+
+}
+#processesModal .modal-content,
+#firstLoginModal .modal-content {
+  margin: 100px auto;
+  min-width: 350px;
+  max-width: 500px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 6px 32px rgba(40,48,75,0.18);
+  padding: 36px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: relative;
+  animation: fadeInModal .24s;
+}
+#processesModal .modal-content {
+    max-width: 700px;
+    max-height: 750px;
+}
+@keyframes fadeInModal {
+  from { opacity: 0; transform: translateY(24px);}
+  to   { opacity: 1; transform: translateY(0);}
+}
+/* FORMULARZ */
+form, #setupForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border-radius: 10px;
+  padding: 0;
+  color: #202344;
+}
+.title h4, .modal-content h3, .modal-content h4 {
+  font-size: 1.22rem;
+  margin-bottom: 14px;
+  color: #000000;
+  text-align: center;
+}
+
+/* POLA SELECT */
+#team, #section, #position, select {
+  width: 100%;
+  height: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #d3d9e3;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #f6f8fa;
+  color: #000000;
+  margin-bottom: 4px;
+  transition: border-color .17s;
+  outline: none;
+  box-sizing: border-box;
+}
+
+#team:focus, #section:focus, #position:focus, input:focus, select:focus {
+  border-color: #4784f8;
+  background: #fff;
+}
+
+label {
+  font-size: 1rem;
+  margin-bottom: 2px;
+
+}
+/* PRZYCISK Z PLUSEM */
+.open-modal-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 9px;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  color: #4465cc;
+  font-size: 21px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background .18s, color .18s;
+  outline: none;
+}
+.open-modal-btn:hover, .open-modal-btn:focus {
+  background: #fff;
+  color: #0047ff
+}
+.open-modal-btn i {
+  font-size: 22px;
+  pointer-events: none;
+}
+
+.field-with-plus {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 7px;
+}
+.select-plus {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+/* PRZYCISK ZAMKNIJ (X) */
+.close-modal-btn, .close {
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  font-size: 26px;
+  color: #868fa6;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0 6px;
+  border-radius: 8px;
+  transition: color .16s, background .13s;
+}
+.close-modal-btn:hover, .close:hover {
+  color: #e14b58;
+  background: #f3e6ea;
+}
+
+/* CONFIRM FORM */
+
+input[disabled] {
+  background-color: #f0f0f0;  /* ciut ciemniejszy niż domyślny */
+  color: #555;                /* wyraźniejszy tekst */
+  border: 1px solid #ccc;     /* bardziej kontrastowa obwódka */
+}
+/* MODAL CONFIRMATION OVERLAY */
+#confirmModal {
+  position: fixed;
+  z-index: 100;
+  left: 0; top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(30,40,70,0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* HIDDEN STATE */
+#confirmModal.hidden {
+  display: none;
+}
+.modal.hidden {
+  display: none !important;
+}
+/* MODAL CONTENT */
+.confirm-modal-content {
+  background: #fff;
+  border-radius: 16px;
+  width: 500px;
+  max-width: 96vw;
+  padding: 32px 28px 22px 28px;
+  box-shadow: 0 8px 32px rgba(50,70,120,0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeInModal 0.15s;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; transform: scale(0.97);}
+  to   { opacity: 1; transform: scale(1);}
+}
+
+.confirm-header h5 {
+  font-size: 1.4rem;
+  color: #2545a1;
+  margin: 0 0 8px 0;
+  text-align: center;
+  letter-spacing: 0.01em;
+  font-weight: 700;
+}
+
+.confirm-header p {
+  color: #344056;
+  font-size: 1.07rem;
+  margin-bottom: 24px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.confirm-button {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+
+/* TEAM FORM */
+#positionModal,
+#sectionModal,
+#teamModal {
+  position: fixed;
+  z-index: 100;
+  left: 0; top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(30,40,70,0.36);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* MODAL CONTENT OKNA */
+#positionModal .modal-content,
+#sectionModal .modal-content,
+#teamModal .modal-content {
+  position: relative;
+  background: #fff;
+  border-radius: 15px;
+  width: 500px;
+  max-width: 98vw;
+  padding: 30px 26px 22px 26px;
+  box-shadow: 0 8px 40px rgba(60,80,150,0.16);
+  display: flex;
+  flex-direction: column;
+  animation: fadeInModal 0.17s;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; transform: scale(0.98);}
+  to   { opacity: 1; transform: scale(1);}
+}
+
+/* Nagłówek i zamykanie */
+.modal-content .title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.modal-content .title h4 {
+  font-size: 1.25rem;
+  color: #000
+  font-weight: 400;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+.close,
+.close[data-close-modal] {
+  font-size: 1.7rem;
+  color: #7485a7;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.13s;
+  padding: 0 4px;
+  line-height: 1;
+  border-radius: 4px;
+}
+.close:hover,
+.close[data-close-modal]:hover,
+.close[data-close-modal]:focus {
+  color: #2545a1;
+  background: #f0f3fc;
+}
+
+/* Form input i label */
+.formInput {
+  width: 100%;
+  font-size: 1.09rem;
+  padding: 11px 13px;
+  border: 1.5px solid #b6c6e3;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  background: #f7f9fa;
+  color: #293055;
+  outline: none;
+  transition: border-color 0.2s, background 0.15s;
+}
+
+.formInput:focus, input[type="text"]:focus {
+  border-color: #3968f6;
+  background: #fff;
+}
+
+/* Label */
+.modal-content label {
+  font-size: 1rem;
+  color: #3b4368;
+  margin-bottom: 4px;
+  font-weight: 500;
+  display: block;
+}
+
+/* Kontener na przycisk */
+.btnContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+#userModal {
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(30, 40, 70, 0.36);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.user-modal-content {
+    position: relative;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0px 0px 20px rgba(0,0,0,0.18);
+    padding: 28px 36px 28px 36px;
+    min-width: 350px;
+    max-width: 850px;
+    width: 100%;
+    max-height: 95vh;
+    overflow-y: auto;
+}
+#form-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  width: 100%;
+  background: none;
+  border-radius: 10px;
+  padding: 0;
+  color: #202344;
+}
+
+/* Tytuł na całą szerokość */
+#form-container #title {
+  grid-column: 1 / -1;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Pełna szerokość dla grup radiobuttonów i przycisku */
+#form-container .radio-group,
+#form-container .btnContainer {
+  grid-column: 1 / -1;
+}
+
+#form-container label {
+  margin-bottom: 2px;
+  font-size: 0.95em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+#form-container input[type="text"],
+#form-container select {
+  width: 100%;
+  padding: 9px 10px 9px 12px;
+  border: 1.4px solid #d3d9e3;
+  border-radius: 7px;
+  font-size: 1em;
+  background: #f7f9fa;
+  transition: border-color 0.2s;
+  outline: none;
+  margin-bottom: 0;
+}
+
+/* Opcjonalnie, aby label i input były w jednej kolumnie */
+#form-container label {
+  grid-column: span 1;
+}
+
+#form-container input[type="text"],
+#form-container select {
+  grid-column: span 1;
+}
+
+/* Zmniejsz odstęp przy radiobuttonach */
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Przycisk na całą szerokość */
+#form-container .btnContainer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Każda para label+input w pionie */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* Pełna szerokość dla wybranych pól (radio/przycisk) */
+.form-field[style*="grid-column: 1 / -1;"] {
+  grid-column: 1 / -1;
+}
+
+#form-container .radio-group {
+    display: flex;
+    flex-wrap: nowrap;
+    margin-top: 2px;
+    flex-direction: row;
+}
+select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1.5px solid #d3d9e3;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #f6f8fa;
+  color: #2c376b;
+  transition: border-color .17s;
+  outline: none;
+  box-sizing: border-box;
+}

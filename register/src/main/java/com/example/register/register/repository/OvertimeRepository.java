@@ -41,7 +41,7 @@ public interface OvertimeRepository extends JpaRepository<SavedData, Long> {
         sd.process.processName,
         sd.quantity,
         sd.todaysDate,
-        sd.user.username,
+        CONCAT(sd.user.firstName, ' ', sd.user.lastName),
         sd.volumeType,
         sd.overtimeMinutes
     )

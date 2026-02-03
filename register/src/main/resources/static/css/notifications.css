@@ -230,6 +230,8 @@
     max-height: 400px; /* Maksymalna wysokość */
     resize: vertical;  /* Pozwala tylko na pionową zmianę rozmiaru */
     overflow-y: auto;  /* Dodaje przewijanie, jeśli zawartość przekroczy 700px */
+    white-space: pre-line;
+
 }
 .header {
     display: flex;
@@ -389,9 +391,11 @@
     overflow-y: auto; /* Dodaje scrollowanie, jeśli treść jest długa */
     border-radius: 5px;
     border: 1px solid #ddd;
-    text-align: left;
+ /*   text-align: left; */
     font-size: 16px;
     line-height: 1.5;
+    white-space: pre-line;
+
 }
 
 

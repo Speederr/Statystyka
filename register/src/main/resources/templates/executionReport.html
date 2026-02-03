@@ -23,6 +23,7 @@
 
     <script th:src="@{/js/json.js}" defer></script>
     <script th:src="@{/js/script.js}" defer></script>
+    <script th:src="@{/js/filter.js}" defer></script>
 
 </head>
 
@@ -73,6 +74,13 @@
                 </a>
                 <span class="tooltip">Powiadomienia</span>
             </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -121,52 +129,65 @@
     <form id="reportForm" th:action="@{/executionReport}" method="get" class="filter-form">
         <div class="filter-container-execution-report">
             <div class="left-side">
-                <button class="mainBtn return" type="button" th:onclick="|window.location.href='@{/efficiency}'|">Powrót</button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/efficiency}'|">
+                    <i class='bx bx-arrow-back'></i>Powrót
+                </button>
             </div>
+            <div class="center-side">
+                <button type="button" id="toggleFiltersBtn" class="btn-back">
+                    <i class='bx bx-filter-alt'></i> Filtry
+                </button>
+                    <div id="filtersPanel" class="filters-panel">
+                        <div class="filter-row-execution">
+                            <div class="date-container">
+                                <label class="date-label" for="startDate">Od:</label>
+                                <input class="date-input" type="date" id="startDate" name="startDate" th:value="${startDate}">
+                            </div>
+                            <div class="date-container">
+                                <label class="date-label" for="endDate">Do:</label>
+                                <input class="date-input" type="date" id="endDate" name="endDate" th:value="${endDate}">
+                            </div>
+                            <button type="submit" id="applyFilters" class="btn-back">
+                                <i class='bx bx-search-alt-2'></i>Filtruj
+                            </button>
+                        </div>
+                        <div class="filter-row-execution">
 
-                <div class="center-side">
-                    <div class="filter-row-execution">
-                        <div class="date-container">
-                            <label class="date-label" for="startDate">Od:</label>
-                            <input class="date-input" type="date" id="startDate" name="startDate" th:value="${startDate}">
-                        </div>
-                        <div class="date-container">
-                            <label class="date-label" for="endDate">Do:</label>
-                            <input class="date-input" type="date" id="endDate" name="endDate" th:value="${endDate}">
-                        </div>
-                        <button type="submit" id="applyFilters" class="filter-button">Filtruj</button>
-                    </div>
-                    <div class="filter-row-execution">
-                        <div class="multiselect-container">
-                            <div class="select-box" id="userSelect">
-                                <span id="userLabel">Pracownik</span>
-                                <i class='bx bx-chevron-down' id="userArrow"></i>
-                                <div class="checkbox-dropdown" id="userDropdown"></div>
+                            <div class="multiselect-container">
+                                <div class="select-box" id="processSelect">
+                                    <span id="processLabel">Proces</span>
+                                    <i class='bx bx-chevron-down' id="processArrow"></i>
+                                    <div class="section-checkbox-dropdown" id="processDropdown"></div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="multiselect-container">
-                            <div class="select-box" id="processSelect">
-                                <span id="processLabel">Proces</span>
-                                <i class='bx bx-chevron-down' id="processArrow"></i>
-                                <div class="section-checkbox-dropdown" id="processDropdown"></div>
+                            <div class="multiselect-container">
+                                <div class="select-box" id="userSelect">
+                                    <span id="userLabel">Pracownik</span>
+                                    <i class='bx bx-chevron-down' id="userArrow"></i>
+                                    <div class="checkbox-dropdown" id="userDropdown"></div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="multiselect-container overtime">
-                            <div class="select-box" id="overtimeSelect">
-                                <span id="overtimeLabel">Rodzaj czasu pracy</span>
-                                <i class='bx bx-chevron-down' id="overtimeArrow"></i>
-                                <div class="overtime-checkbox-dropdown" id="overtimeDropdown"></div>
+                            <div class="multiselect-container overtime">
+                                <div class="select-box" id="overtimeSelect">
+                                    <span id="overtimeLabel">Rodzaj czasu pracy</span>
+                                    <i class='bx bx-chevron-down' id="overtimeArrow"></i>
+                                    <div class="overtime-checkbox-dropdown" id="overtimeDropdown"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                </div>
+            </div>
         </div>
-            <div class="xlsx-btn">
-                <button type="button" id="clearBtn" class="filter-button">Wyczyść</button>
-                <button type="button" id="exportXlsxBtn" class="filter-button">XLSX</button>
-            </div>
+        <div class="xlsx-btn">
+            <button type="button" id="clearBtn" class="btn-back">
+                <i class='bx bx-eraser'></i>Wyczyść
+            </button>
+            <button type="button" id="exportXlsxBtn" class="btn-back">
+                <i class='bx bxs-file-export'></i>XLSX
+            </button>
+        </div>
     </form>
+
 
     <div class="table-container">
         <table class="summary-table" id="report-table">
