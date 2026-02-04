@@ -148,30 +148,22 @@ public class ProcessController {
         return ResponseEntity.ok(processes);
     }
 
-@PostMapping("/saveNewProcess")
-@ResponseBody
-public ResponseEntity<String> saveNewProcess(@RequestParam("teamId") Long teamId, @ModelAttribute BusinessProcess process) {
-    Team team = teamRepository.findById(teamId)
-            .orElseThrow(() -> new RuntimeException("Nie znaleziono zespołu: " + teamId));
-    process.setTeam(team);
-    process.setActive(true);
-    processRepository.save(process);
-    return ResponseEntity.ok("Proces został dodany");
-}
+    @PostMapping("/saveNewProcess")
+    @ResponseBody
+    public ResponseEntity<String> saveNewProcess(@RequestParam("teamId") Long teamId,
+                                                 @ModelAttribute BusinessProcess process,
+                                                 Principal principal) {
+        String username = (principal != null) ? principal.getName() : "anonymous";
+        processService.saveNewProcess(teamId, process, username);
+        return ResponseEntity.ok("Proces został dodany");
+    }
 
     @PutMapping("/update")
-    public ResponseEntity<String> updateProcess(@RequestBody BusinessProcess updatedProcess) {
-        Optional<BusinessProcess> existingProcess = processRepository.findById(updatedProcess.getId());
-
-        if (existingProcess.isPresent()) {
-            BusinessProcess process = existingProcess.get();
-            process.setAverageTime(updatedProcess.getAverageTime());
-            process.setNonOperational(updatedProcess.isNonOperational());
-            processRepository.save(process);
-            return ResponseEntity.ok().body("{\"message\": \"Process updated successfully\"}");
-        } else {
-            return ResponseEntity.badRequest().body("{\"error\": \"Process not found\"}");
-        }
+    public ResponseEntity<String> updateProcess(@RequestBody BusinessProcess updatedProcess,
+                                                Principal principal) {
+        String username = (principal != null) ? principal.getName() : "anonymous";
+        processService.updateProcess(updatedProcess, username);
+        return ResponseEntity.ok("{\"message\": \"Process updated successfully\"}");
     }
 
     @GetMapping("/new")

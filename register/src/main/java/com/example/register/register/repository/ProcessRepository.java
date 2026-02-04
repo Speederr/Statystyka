@@ -23,9 +23,4 @@ public interface ProcessRepository extends JpaRepository<BusinessProcess, Long> 
     """)
     List<BusinessProcess> findFavoritesByUserId(@Param("userId") Long userId);
 
-
-
-    List<BusinessProcess> findByTeamId(Long teamId);
-
-
 }

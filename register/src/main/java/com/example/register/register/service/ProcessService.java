@@ -1,14 +1,10 @@
 package com.example.register.register.service;
 
-import com.example.register.register.model.BusinessProcess;
-import com.example.register.register.model.User;
-import com.example.register.register.model.UserFavorites;
-import com.example.register.register.model.UserProcessLevel;
-import com.example.register.register.repository.ProcessRepository;
-import com.example.register.register.repository.UserFavoritesRepository;
-import com.example.register.register.repository.UserProcessLevelRepository;
-import com.example.register.register.repository.UserRepository;
+import com.example.register.register.model.*;
+import com.example.register.register.repository.*;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +16,10 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class ProcessService {
+
+    @PersistenceContext
+    private EntityManager em;
+
     @Autowired
     private ProcessRepository processRepository;
 
@@ -31,6 +31,9 @@ public class ProcessService {
 
     @Autowired
     private UserProcessLevelRepository userProcessLevelRepository;
+
+    @Autowired
+    private TeamRepository teamRepository;
 
     public List<BusinessProcess> getAllProcesses() {
         return processRepository.findAll()
@@ -115,6 +118,41 @@ public class ProcessService {
         processRepository.save(process);
     }
 
+
+    private void setAppUser(String username) {
+        // true = lokalnie dla transakcji
+        em.createNativeQuery("select set_config('app.user', :u, true)")
+                .setParameter("u", username)
+                .getSingleResult();
+    }
+
+    @Transactional
+    public void saveNewProcess(Long teamId, BusinessProcess process, String username) {
+        setAppUser(username);
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono zespołu: " + teamId));
+
+        process.setTeam(team);
+        process.setActive(true);
+
+        processRepository.save(process);
+
+    }
+
+    @Transactional
+    public void updateProcess(BusinessProcess updatedProcess, String username) {
+        setAppUser(username);
+
+        BusinessProcess process = processRepository.findById(updatedProcess.getId())
+                .orElseThrow(() -> new RuntimeException("Process not found"));
+
+        process.setAverageTime(updatedProcess.getAverageTime());
+        process.setNonOperational(updatedProcess.isNonOperational());
+
+        processRepository.save(process);
+
+    }
 
 
 }

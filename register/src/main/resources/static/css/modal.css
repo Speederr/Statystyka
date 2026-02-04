@@ -302,7 +302,8 @@ label, .restore-password, .btnContainer {
 
 
 /* FIRST LOGIN FORM */
-#new-user-form {
+#new-user-form,
+#reset-password-form {
     width: 400px;
     height: 550px;
     color: black;
@@ -311,8 +312,22 @@ label, .restore-password, .btnContainer {
     box-shadow: 0px 0px 20px rgba(0,0,0,0.3);
     display: block;
 }
-/* REGISTER FORM */
+#reset-password-form {
+    height: 400px;
+    padding: 40px;
+    box-sizing: border-box;
+}
+#reset-password-window {
+    width: 100%;
+    height: auto;
+    padding: 0;
+    box-sizing: border-box;
+    background: transparent;
+    box-shadow: none;
+    display: flex;
+}
 
+/* REGISTER FORM */
 #register-window {
     width: 400px;
     height: 675px;

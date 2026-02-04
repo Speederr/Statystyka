@@ -167,17 +167,6 @@
     cursor: pointer;
 }
 
-.password-tooltip {
-    display: flex;
-    width: 400px;
-    height: 200px;
-    position: relative;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-content: flex-start;
-    row-gap: 15px;
-}
-
 .password-container {
     display: flex;
     flex-direction: column;
@@ -228,7 +217,7 @@
   max-width: 520px; /* domyślna szerokość (tylko formularz) */
   margin: 0 auto;
   position: relative;
-  max-height: 470px;
+
 }
 .login.active {
   display: flex;
@@ -239,7 +228,7 @@
   transition: max-width 0.32s cubic-bezier(.5,1.6,.5,1);
   margin: 0 auto;
   position: relative;
-  max-height: 470px;
+
 }
 first-login-window.tooltip-open,
 .left.tooltip-open {
@@ -268,22 +257,50 @@ first-login-window.tooltip-open,
   background: #fff;
   border-radius: 15px;
   box-shadow: 0 4px 24px 0 rgba(35, 38, 59, 0.07);
-  height: 100%;
   position: relative;
   margin-top: 17px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  row-gap: 15px;
 
 }
 
 /* Tooltip aktywny */
 .password-tooltip.active {
   width: 500px;
-  height: 403px;
   opacity: 1;
   padding: 22px 20px 16px 22px;
-  margin-left: 0;
   pointer-events: auto;
   overflow: visible;
   margin-left: 30px;
+}
+
+/* Dedicated layout for reset-password view (separate from first-login tooltip). */
+#reset-password-window {
+  justify-content: center;
+  align-items: flex-start;
+  gap: 28px;
+  flex-wrap: nowrap;
+}
+
+#reset-password-window .form-section-reset-password {
+  width: 400px;
+  min-width: 400px;
+}
+
+#reset-password-window .reset-password-tooltip {
+  margin-top: 0;
+  margin-left: 0;
+  width: 0;
+  max-width: 500px;
+  flex: 0 0 auto;
+}
+
+#reset-password-window .reset-password-tooltip.active {
+  width: 500px;
+  margin-left: 0;
 }
 
 /* Ukryj tooltip na mobile lub zmniejsz na wąskim ekranie */

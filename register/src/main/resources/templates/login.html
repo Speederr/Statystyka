@@ -26,6 +26,7 @@
         <span>
             <strong>Sukces!</strong>
             <span th:if="${param.success[0] == 'logout'}"> Pomyślnie wylogowano ze statystyki. <a th:href="@{/login}">Zaloguj się ponownie.</a></span>
+            <span th:if="${param.success[0] == 'passwordReset'}"> Haslo zostalo zresetowane. Zaloguj sie nowym haslem.</span>
         </span>
         <i class='bx bx-x-circle' onclick="this.parentElement.style.display='none'"></i>
     </div>

@@ -6,9 +6,11 @@ import com.example.register.register.DTO.UserTableDto;
 import com.example.register.register.model.*;
 import com.example.register.register.repository.*;
 import com.example.register.register.service.EmailService;
+import com.example.register.register.service.PasswordResetService;
 import com.example.register.register.service.UserService;
 import com.example.register.register.service.UserSummaryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,9 +46,10 @@ public class UserController {
     private final SavedDataRepository savedDataRepository;
     private final TeamRepository teamRepository;
     private final SectionRepository sectionRepository;
+    private final PasswordResetService passwordResetService;
 
 
-    public UserController(UserService userService, UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, PositionRepository positionRepository, AttendanceRepository attendanceRepository, EfficiencyRepository efficiencyRepository, SavedDataRepository savedDataRepository, TeamRepository teamRepository, SectionRepository sectionRepository) {
+    public UserController(UserService userService, UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, PositionRepository positionRepository, AttendanceRepository attendanceRepository, EfficiencyRepository efficiencyRepository, SavedDataRepository savedDataRepository, TeamRepository teamRepository, SectionRepository sectionRepository, PasswordResetService passwordResetService) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -57,10 +60,14 @@ public class UserController {
         this.savedDataRepository = savedDataRepository;
         this.teamRepository = teamRepository;
         this.sectionRepository = sectionRepository;
+        this.passwordResetService = passwordResetService;
     }
 
     @Autowired
     private UserSummaryService userSummaryService;
+
+    @Value("${app.base-url:http://localhost:8080}")
+    private String appBaseUrl;
 
     @PostMapping("/addUser")
     public ResponseEntity<Void> createUser(
@@ -228,28 +235,48 @@ public class UserController {
                 .location(URI.create("/index"))
                 .build();
     }
-
     @PostMapping("/restorePassword")
     @Transactional
     public ResponseEntity<Void> restorePassword(@RequestParam("email") String email) {
-
-        log.info("\uD83D\uDD39 Otrzymano żądanie zmiany hasła dla użytkownika: {}", email);
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("❌ Użytkownik nie istnieje."));
-
-        String temporaryPassword = userService.generateTemporaryPassword();
-
-        userService.updateUserPassword(user.getUsername(), temporaryPassword);
-        log.info("✅ Hasło użytkownika zostało zaktualizowane!");
-
-        emailService.sendTemporaryPasswordEmail(user.getEmail(), temporaryPassword);
-        log.info("📧 Wysłano e-mail z nowym hasłem!");
+        passwordResetService.createResetTokenForEmail(email).ifPresent(token -> {
+            String resetLink = appBaseUrl + "/reset-password?token=" + token;
+            emailService.sendPasswordResetLinkEmail(email, resetLink);
+        });
 
         return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create("/restorePassword?success=emailSent"))
+                .location(URI.create("/restorePassword?success=requestAccepted"))
                 .build();
+    }
 
+    @PostMapping("/reset-password")
+    @Transactional
+    public ResponseEntity<Void> resetPasswordWithToken(
+            @RequestParam("token") String token,
+            @RequestParam("newPassword") String newPassword,
+            @RequestParam("confirmPassword") String confirmPassword
+    ) {
+        if (!newPassword.equals(confirmPassword)) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create("/reset-password?token=" + token + "&error=mismatch"))
+                    .build();
+        }
+
+        if (!userService.isPasswordComplexEnough(newPassword)) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create("/reset-password?token=" + token + "&error=weakPassword"))
+                    .build();
+        }
+
+        boolean resetSuccessful = passwordResetService.resetPasswordWithToken(token, newPassword);
+        if (!resetSuccessful) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create("/reset-password?error=invalidToken"))
+                    .build();
+        }
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create("/login?success=passwordReset"))
+                .build();
     }
 
     @GetMapping("/profile")

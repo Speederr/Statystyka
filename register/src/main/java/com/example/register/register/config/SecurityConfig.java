@@ -40,8 +40,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // 🔓 Publiczne endpointy
-                        .requestMatchers("/register", "/login", "/firstLogin", "/restorePassword",
-                                "/api/user/restorePassword","/error", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/register", "/login", "/firstLogin", "/restorePassword", "/reset-password",
+                                "/api/user/restorePassword", "/api/user/reset-password", "/error", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/availability").permitAll()
 
                         // 🔒 REST API dla wiadomości - dostępne dla zalogowanych użytkowników
@@ -120,6 +120,7 @@ public class SecurityConfig {
                                 "/logout",
                                 "/api/items/save",
                                 "/api/user/restorePassword",
+                                "/api/user/reset-password",
                                 "/api/processes/favorites/**",
                                 "/api/processes/update/**",
                                 "/api/processes/saveNewProcess",

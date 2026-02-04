@@ -123,6 +123,12 @@ public class PageController {
         return "restorePassword";
     }
 
+    @GetMapping("/reset-password")
+    public String showResetPasswordPage(@RequestParam(required = false) String token, Model model) {
+        model.addAttribute("token", token);
+        return "resetPassword";
+    }
+
     @GetMapping("/settings")
     public String showSettingsPage() {
         return "settings";
