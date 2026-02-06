@@ -69,7 +69,8 @@ public class SavedDataController {
                 data.setProcess(proc);
             }
 
-            data.setTodaysDate(today);
+            LocalDate effectiveDate = (data.getTodaysDate() != null) ? data.getTodaysDate() : today;
+            data.setTodaysDate(effectiveDate);
 
             if (data.getVolumeType() == null) {
                 data.setVolumeType(VolumeType.BASIC);
@@ -157,7 +158,7 @@ public class SavedDataController {
         savedDataService.saveData(List.of(data));
 
         // 4) Automatyczne przeliczenie efektywności (upsert w tabeli Efficiency)
-        efficiencyService.calculateAndSaveEfficiency(req.getUserId());
+        efficiencyService.calculateAndSaveEfficiency(req.getUserId(), req.getTodaysDate());
 
         return ResponseEntity.ok("✅ Wolumen zapisany i efektywność zaktualizowana!");
     }
@@ -172,7 +173,7 @@ public class SavedDataController {
         sd.setUser(user);
         sd.setProcess(proc);
         sd.setQuantity(req.getQuantity());
-        sd.setTodaysDate(LocalDate.now());
+        sd.setTodaysDate(req.getTodaysDate() != null ? req.getTodaysDate() : LocalDate.now());
         sd.setVolumeType(req.getVolumeType());
         sd.setOvertimeMinutes(req.getOvertimeMinutes() == null ? 0 : req.getOvertimeMinutes());
         return sd;
@@ -186,17 +187,37 @@ public class SavedDataController {
     ) {
         String username = principal.getName();
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony"));
+                .orElseThrow(() -> new UsernameNotFoundException("U?ytkownik nie znaleziony"));
         Long teamId = user.getTeam().getId();
 
+        List<SavedData> teamData = savedDataRepository.findByUser_Team_Id(teamId);
+        return buildSummaryData(teamData, startDate, endDate);
+    }
+
+    @GetMapping("/get-report/my")
+    public List<SavedDataDto> getMySummaryData(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Principal principal
+    ) {
+        String username = principal.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony"));
+
+        List<SavedData> userData = savedDataRepository.findByUser_Id(user.getId());
+        return buildSummaryData(userData, startDate, endDate);
+    }
+
+    private List<SavedDataDto> buildSummaryData(
+            List<SavedData> sourceData,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
         LocalDate today             = LocalDate.now();
         LocalDate effectiveEndDate  = (endDate != null) ? endDate : today;
         LocalDate effectiveStartDate= (startDate != null) ? startDate : effectiveEndDate.minusDays(6);
 
-        List<SavedData> teamData = savedDataRepository.findByUser_Team_Id(teamId);
-
-        // 1) filtr procesów oraz dat
-        Map<SummaryKey, List<SavedData>> grouped = teamData.stream()
+        Map<SummaryKey, List<SavedData>> grouped = sourceData.stream()
                 .filter(d -> d.getProcess() != null)
                 .filter(d -> {
                     LocalDate dt = d.getTodaysDate();
@@ -211,7 +232,6 @@ public class SavedDataController {
                         )
                 ));
 
-        // 2) zamiana na DTO licząc obie sumy
         return grouped.entrySet().stream()
                 .sorted(Comparator.comparing(e -> e.getKey().todaysDate()))
                 .map(e -> {
@@ -282,6 +302,58 @@ public class SavedDataController {
         header.createCell(5).setCellValue("Czas(min)");
 
         // ✅ Dane
+        int rowNum = 1;
+        for (SavedDataDto data : filteredData) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(data.processName());
+            row.createCell(1).setCellValue(data.quantity());
+            row.createCell(2).setCellValue(data.todaysDate().toString());
+            row.createCell(3).setCellValue(data.username());
+            row.createCell(4).setCellValue(data.volumeType());
+            row.createCell(5).setCellValue(data.overtimeMinutes());
+        }
+
+        workbook.write(response.getOutputStream());
+        workbook.close();
+    }
+
+    @GetMapping("/get-report/my/export")
+    public void exportMyToXlsx(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) List<String> processes,
+            @RequestParam(required = false) List<String> users,
+            Principal principal,
+            HttpServletResponse response
+    ) throws IOException {
+        List<SavedDataDto> filteredData = getMySummaryData(startDate, endDate, principal);
+
+        if (processes != null && !processes.isEmpty()) {
+            filteredData = filteredData.stream()
+                    .filter(dto -> processes.contains(dto.todaysDate().toString()))
+                    .toList();
+        }
+
+        if (users != null && !users.isEmpty()) {
+            filteredData = filteredData.stream()
+                    .filter(dto -> users.contains(dto.username()))
+                    .toList();
+        }
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=raport.xlsx");
+
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        XSSFSheet sheet = workbook.createSheet("Raport");
+
+        Row header = sheet.createRow(0);
+        header.createCell(0).setCellValue("Proces");
+        header.createCell(1).setCellValue("Ilość");
+        header.createCell(2).setCellValue("Data dodania");
+        header.createCell(3).setCellValue("Pracownik");
+        header.createCell(4).setCellValue("Rodzaj czasu pracy");
+        header.createCell(5).setCellValue("Czas(min)");
+
         int rowNum = 1;
         for (SavedDataDto data : filteredData) {
             Row row = sheet.createRow(rowNum++);

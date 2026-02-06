@@ -305,6 +305,25 @@
     color: #555;
     font-weight: bold;
 }
+.header-date {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.header-date-label {
+    font-size: 18px;
+    font-weight: 600;
+    color: #666;
+}
+.header-date-input {
+    padding: 4px 8px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    background: #fff;
+}
+.header-date-input:hover {
+    cursor: pointer;
+}
 /* ============================================= HEADER END ======================================================= */
 .chart-header {
     display: flex;

@@ -1,3 +1,7 @@
+function isElevatedRoleOnExecutionReport() {
+  return !!document.getElementById("isElevatedRole");
+}
+
 let dropdownZ = 1000; // lub inny, jeśli masz coś na stronie z z-index 9999+
 
 // ✅ Funkcja do czyszczenia wszystkich pól input po zapisie
@@ -198,6 +202,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+function getSelectedSaveDate() {
+  const input = document.getElementById("selectedDate");
+  if (input && input.value) {
+    return input.value;
+  }
+  const today = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+}
+
 async function calculateAndSave() {
   const userId = document.getElementById('userId').value.trim();
   if (!userId) {
@@ -228,7 +242,7 @@ async function calculateAndSave() {
   const inputs = document.querySelectorAll('input[data-process-id]');
   const processVolumes = {};   // do obliczenia efektywności
   const dataList = [];         // do zapisu wolumenów
-  const today = new Date().toISOString().split("T")[0];
+  const selectedDate = getSelectedSaveDate();
 
   inputs.forEach(input => {
     const processId = Number(input.getAttribute('data-process-id'));
@@ -242,7 +256,7 @@ async function calculateAndSave() {
         user_id:       +userId,
         process_id:    processId,
         quantity:      +quantity,
-        todaysDate:    today,
+        todaysDate:    selectedDate,
         volumeType:    selectedVolumeType,
         overtimeMinutes // do zapisu, backend musi to odebrać
       });
@@ -278,7 +292,7 @@ async function calculateAndSave() {
       }
 
     const efficiencyResponse = await fetch(
-      `/api/efficiency/calculate/${userId}`,
+      `/api/efficiency/calculate/${userId}?date=${encodeURIComponent(selectedDate)}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1393,6 +1407,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       const volumeType       = getSelectedVolumeType();
+      const selectedDate     = getSelectedSaveDate();
       // Pobranie czasu nadgodzin, jeśli to nie BASIC
      let overtimeMinutes = 0;
       if (volumeType !== 'BASIC') {
@@ -1411,7 +1426,8 @@ document.addEventListener("DOMContentLoaded", function () {
         processId,
         quantity,
         volumeType,
-        overtimeMinutes
+        overtimeMinutes,
+        todaysDate: selectedDate
       };
 
       try {
@@ -1887,7 +1903,10 @@ if (exportBtn) {
     if (selectedOvertime.length > 0) params.append("overtime", selectedOvertime.join(","));
 
     // 🔽 Pobranie pliku z serwera
-    window.location.href = `/api/saved-data/get-report/export?${params.toString()}`;
+    const baseUrl = isElevatedRoleOnExecutionReport()
+      ? "/api/saved-data/get-report/export"
+      : "/api/saved-data/get-report/my/export";
+    window.location.href = `${baseUrl}?${params.toString()}`;
   });
 }
 
@@ -1957,7 +1976,11 @@ function fetchData(startDate = null, endDate = null) {
   if (startDate) query.append("startDate", startDate);
   if (endDate)   query.append("endDate", endDate);
 
-  fetch(`/api/saved-data/get-report?${query.toString()}`)
+  const baseUrl = isElevatedRoleOnExecutionReport()
+    ? "/api/saved-data/get-report"
+    : "/api/saved-data/get-report/my";
+
+  fetch(`${baseUrl}?${query.toString()}`)
     .then(res => res.json())
     .then(data => {
       allData      = data;

@@ -37,7 +37,10 @@ public class SavedDataService {
         }
 
         User user = dataList.getFirst().getUser();
-        LocalDate todaysDate = LocalDate.now();
+        LocalDate todaysDate = dataList.getFirst().getTodaysDate();
+        if (todaysDate == null) {
+            todaysDate = LocalDate.now();
+        }
 
         // 🔹 1️⃣ Zapisanie danych do `saved_data`
         savedDataRepository.saveAll(dataList);

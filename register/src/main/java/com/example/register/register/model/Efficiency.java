@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 
@@ -28,8 +27,6 @@ public class Efficiency {
     @Column(name = "efficiency", nullable = false)
     private Double efficiency;
 
-    @CreationTimestamp
-    @Temporal(TemporalType.DATE)
     @Column(name = "todays_date", updatable = false)
     private LocalDate todaysDate;
 

@@ -46,7 +46,7 @@ public class SecurityConfig {
 
                         // 🔒 REST API dla wiadomości - dostępne dla zalogowanych użytkowników
                         .requestMatchers(HttpMethod.GET,  "/api/messages/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/matrix", "/app-matrix", "/soft-skills").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/matrix", "/app-matrix", "/soft-skills", "/myExecutionReport").authenticated()
                         .requestMatchers(HttpMethod.POST, "/matrix/save", "/matrix/saveSingle", "/app-matrix/saveSingle", "/soft-skills/saveSingle").authenticated()
                         .requestMatchers(HttpMethod.GET, "/matrix/**", "/app-matrix/**", "/soft-skills/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
 
@@ -55,6 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/efficiency/average/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/efficiency/section/non-operational/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/attendance/workmode/summary").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/saved-data/get-report/my/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/saved-data/get-report/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/api/saved-data/summary/**").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.GET, "/backlog/export", "/api/backlog/processes").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")

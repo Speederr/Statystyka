@@ -33,8 +33,11 @@ public class EfficiencyController {
 
 
     @PostMapping("/calculate/{userId}")
-    public ResponseEntity<String> calculateEfficiency(@PathVariable Long userId) {
-        efficiencyService.calculateAndSaveEfficiency(userId);
+    public ResponseEntity<String> calculateEfficiency(
+            @PathVariable Long userId,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        efficiencyService.calculateAndSaveEfficiency(userId, date);
         return ResponseEntity.ok("Efficiency calculated for user " + userId);
     }
 

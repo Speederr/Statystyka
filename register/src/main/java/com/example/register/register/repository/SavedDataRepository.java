@@ -43,6 +43,7 @@ public interface SavedDataRepository  extends JpaRepository<SavedData, Long> {
     Double sumNonOperationalHoursByUserId(@Param("userId") Long userId);
 
     List<SavedData> findByUser_Team_Id(Long teamId);
+    List<SavedData> findByUser_Id(Long userId);
 
     @Query("""
       SELECT COALESCE(SUM(s.overtimeMinutes), 0)

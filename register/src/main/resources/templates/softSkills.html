@@ -88,6 +88,14 @@
                 </a>
                 <span class="tooltip">Urlopy</span>
             </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER', 'USER')">
+                <a th:href="@{/executionReport}">
+                    <i class='bx bx-archive' ></i>
+                    <span class="nav-item">Wykonanie</span>
+                </a>
+                <span class="tooltip">Wykonanie</span>
+            </li>
+
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>

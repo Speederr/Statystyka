@@ -256,6 +256,17 @@ document.addEventListener("DOMContentLoaded", function () {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         currentDateElement.textContent = today.toLocaleDateString('pl-PL', options);
     }
+
+    const dateInput = document.getElementById("selectedDate");
+    if (dateInput) {
+        const today = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        const todayIso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+        if (!dateInput.value) {
+            dateInput.value = todayIso;
+        }
+        dateInput.max = todayIso;
+    }
 });
 
 
@@ -299,6 +310,15 @@ function handleBack() {
 
     // Domyślnie wracaj na index
     window.location.href = "/index";
+}
+
+function navigateExecutionBack() {
+    const elevated = document.getElementById("isElevatedRole");
+    if (elevated) {
+        window.location.href = "/efficiency";
+    } else {
+        window.location.href = "/index";
+    }
 }
 
 document.addEventListener("DOMContentLoaded", function () {

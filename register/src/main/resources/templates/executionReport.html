@@ -81,6 +81,13 @@
                 </a>
                 <span class="tooltip">Urlopy</span>
             </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER', 'USER')">
+                <a th:href="@{/executionReport}">
+                    <i class='bx bx-archive' ></i>
+                    <span class="nav-item">Wykonanie</span>
+                </a>
+                <span class="tooltip">Wykonanie</span>
+            </li>
             <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
                 <a th:href="@{/efficiency}">
                     <i class="bx bx-stats"></i>
@@ -129,7 +136,7 @@
     <form id="reportForm" th:action="@{/executionReport}" method="get" class="filter-form">
         <div class="filter-container-execution-report">
             <div class="left-side">
-                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/efficiency}'|">
+                <button class="btn-back" type="button" onclick="navigateExecutionBack()">
                     <i class='bx bx-arrow-back'></i>Powrót
                 </button>
             </div>
@@ -218,7 +225,8 @@
     </div>
 
 
-    <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
+        <input type="hidden" id="isElevatedRole" value="1" sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
+<input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
 
 </div>
 

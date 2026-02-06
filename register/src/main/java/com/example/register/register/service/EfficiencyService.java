@@ -25,8 +25,8 @@ public class EfficiencyService {
     }
 
 @Transactional
-public void calculateAndSaveEfficiency(Long userId) {
-    LocalDate today = LocalDate.now();
+public void calculateAndSaveEfficiency(Long userId, LocalDate date) {
+    LocalDate today = (date != null) ? date : LocalDate.now();
 
     // 1) Wszystkie wpisy today
     List<SavedData> allEntries = savedDataRepository
@@ -109,6 +109,10 @@ public void calculateAndSaveEfficiency(Long userId) {
             });
     eff.setEfficiency(efficiencyPercent);
     efficiencyRepository.save(eff);
+}
+
+public void calculateAndSaveEfficiency(Long userId) {
+    calculateAndSaveEfficiency(userId, null);
 }
 
 }
