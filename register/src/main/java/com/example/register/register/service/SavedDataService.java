@@ -33,7 +33,7 @@ public class SavedDataService {
 
     public void saveData(List<SavedData> dataList) {
         if (dataList.isEmpty()) {
-            throw new RuntimeException("❌ Lista danych jest pusta!");
+            throw new RuntimeException("Lista danych jest pusta!");
         }
 
         User user = dataList.getFirst().getUser();
@@ -42,42 +42,38 @@ public class SavedDataService {
             todaysDate = LocalDate.now();
         }
 
-        // 🔹 1️⃣ Zapisanie danych do `saved_data`
+        // Zapisanie danych do `saved_data`
         savedDataRepository.saveAll(dataList);
 
-        // 🔹 2️⃣ Pobranie wpisów efektywności (powinien być JEDEN)
+        // Pobranie wpisów efektywności (powinien być JEDEN)
         List<Efficiency> efficiencies = efficiencyRepository.findAllByUserAndTodaysDate(user, todaysDate);
 
         Efficiency efficiency;
         if (efficiencies.isEmpty()) {
-            // 🔹 Jeśli brak wpisu, tworzymy nowy
+            // Jeśli brak wpisu, tworzymy nowy
             efficiency = new Efficiency();
             efficiency.setUser(user);
             efficiency.setTodaysDate(todaysDate);
             efficiency.setEfficiency(0.0);
         } else if (efficiencies.size() == 1) {
-            // 🔹 Jeśli jest JEDEN wpis, aktualizujemy go
+            // Jeśli jest JEDEN wpis, aktualizujemy go
             efficiency = efficiencies.getFirst();
         } else {
-            // 🔹 Jeśli są duplikaty, usuwamy wszystkie poza pierwszym
+            // Jeśli są duplikaty, usuwamy wszystkie poza pierwszym
             log.info("Usuwanie duplikatów efektywności dla użytkownika {}", user.getId());
             for (int i = 1; i < efficiencies.size(); i++) {
                 efficiencyRepository.delete(efficiencies.get(i));
             }
             efficiency = efficiencies.getFirst();
         }
-
-        // 🔹 3️⃣ Pobranie wszystkich zapisanych ilości dla użytkownika i daty
+        // Pobranie wszystkich zapisanych ilości dla użytkownika i daty
         Long totalQuantity = savedDataRepository.sumQuantityByUserAndDate(user, todaysDate);
         if (totalQuantity == null) totalQuantity = 0L; // Zapobiega `NullPointerException`
-
-        // 🔹 4️⃣ Obliczenie nowej efektywności
+        // Obliczenie nowej efektywności
         double newEfficiency = calculateEfficiency(user, todaysDate, totalQuantity);
-
-        // 🔹 5️⃣ Aktualizacja efektywności
+        // Aktualizacja efektywności
         efficiency.setEfficiency(newEfficiency);
-
-        // 🔹 6️⃣ Zapisanie nowej wartości do bazy danych (UPDATE zamiast INSERT)
+        // Zapisanie nowej wartości do bazy danych (UPDATE zamiast INSERT)
         efficiencyRepository.save(efficiency);
     }
 
@@ -90,29 +86,29 @@ public class SavedDataService {
         return 0.0;
     }
 
-    // 🔹 Pobranie listy procesów wraz z ich czasami operacyjnymi
+    //  Pobranie listy procesów wraz z ich czasami operacyjnymi
     Map<Long, Double> processTimes = processRepository.findAll().stream()
             .collect(Collectors.toMap(BusinessProcess::getId, BusinessProcess::getAverageTime));
 
-    // 🔹 Pobranie wszystkich zapisanych danych użytkownika
+    //  Pobranie wszystkich zapisanych danych użytkownika
     List<SavedData> savedDataList = savedDataRepository.findByUserAndTodaysDate(user, todaysDate);
 
-    // 🔹 Obliczenie całkowitego czasu operacyjnego
+    //  Obliczenie całkowitego czasu operacyjnego
         double totalOperationalTime = savedDataList.stream()
             .filter(sd -> sd.getProcess() != null && !sd.getProcess().isNonOperational())
             .mapToDouble(sd -> sd.getQuantity() * processTimes.getOrDefault(sd.getProcess().getId(), 0.0))
             .sum();
 
-    // 🔹 Obliczenie całkowitego czasu nieoperacyjnego
+    // Obliczenie całkowitego czasu nieoperacyjnego
         double totalNonOperationalTime = savedDataList.stream()
             .filter(sd -> sd.getProcess() != null && sd.getProcess().isNonOperational())
             .mapToDouble(sd -> sd.getQuantity() * processTimes.getOrDefault(sd.getProcess().getId(), 0.0))
             .sum();
 
-    // 🔹 Czas operacyjny uwzględniający nieoperacyjne zadania (max 1 min, żeby uniknąć dzielenia przez 0)
+    // Czas operacyjny uwzględniający nieoperacyjne zadania (max 1 min, żeby uniknąć dzielenia przez 0)
     double operationalTime = Math.max(435 - totalNonOperationalTime, 1);
 
-    // 🔹 Wyliczenie efektywności
+    // Wyliczenie efektywności
     double efficiency = (totalOperationalTime / operationalTime) * 100;
     return Math.round(efficiency * 100.0) / 100.0; // Zaokrąglenie do 2 miejsc po przecinku
     }
@@ -143,15 +139,6 @@ public class SavedDataService {
 
     @Transactional
     public void deductFullDay(Long userId, LocalDate date) {
-        /**
-         * Zabezpieczenie na wartość zerową - gdy pracownik ma 0 nadgodzin do odbioru to nie może odebrać całego dnia.
-         */
-//             int offRaw = savedDataRepository
-//                .sumOvertimeByUserAndDateAndType(userId, VolumeType.OVERTIME_OFF);
-//
-//        if (offRaw <= 0) {
-//            return;
-//        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId ));
@@ -166,25 +153,22 @@ public class SavedDataService {
         sd.setOvertimeMinutes(FULL_DAY);
         savedDataRepository.save(sd);
 
-        // 🟦 Dodaj wpis do overtime_balance:
+        //Dodaj wpis do overtime_balance:
         overtimeBalanceService.addOvertimeEvent(
                 user,
                 VolumeType.DEDUCT_FULL_DAY,
                 FULL_DAY,
                 date
         );
-
-        Attendance attendance = attendanceRepository.findByUserAndAttendanceDate(user, date).orElseGet(() -> {
+        Attendance attendance = attendanceRepository.findByUser_IdAndAttendanceDate(user.getId(), date).orElseGet(() -> {
             Attendance a = new Attendance();
             a.setUser(user);
             a.setAttendanceDate(date);
             a.setWorkMode(null);
             return a;
         });
-
         attendance.setStatus("leave");
         attendanceRepository.save(attendance);
-
     }
 
     

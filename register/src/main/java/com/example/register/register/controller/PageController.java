@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -108,7 +107,6 @@ public class PageController {
         model.addAttribute("teams", teams);
         model.addAttribute("loggedUser", loggedUser);
 
-
         return "adminPanel";
     }
 
@@ -184,7 +182,6 @@ public String showProcessTimes(Model model, Principal principal) {
         if(principal == null) {
             return "redirect:/login";
         }
-
         String username = principal.getName();
         Optional<User> optionalUser = userRepository.findByUsername(username);
 
@@ -197,7 +194,8 @@ public String showProcessTimes(Model model, Principal principal) {
         }
         Long teamId = user.getTeam().getId();
 
-        LocalDate start = (startDate != null && !startDate.isEmpty()) ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
+        LocalDate start = (startDate != null &&
+                !startDate.isEmpty()) ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
         LocalDate end = (endDate != null && !endDate.isEmpty()) ? LocalDate.parse(endDate) : LocalDate.now();
 
         List<Backlog> backlogData = backlogService.getBacklogBetweenDates(start, end)
@@ -205,14 +203,14 @@ public String showProcessTimes(Model model, Principal principal) {
                 .filter(b -> b.getProcess().getTeam().getId().equals(teamId))
                 .toList();
 
-        // 🔹 Najpierw sortujemy po nazwie procesu
+        // Najpierw sortujemy po nazwie procesu
         List<BusinessProcess> sortedProcesses = backlogData.stream()
                 .map(Backlog::getProcess)
                 .distinct()
                 .sorted(Comparator.comparing(BusinessProcess::getProcessName)) // Sortowanie alfabetyczne
                 .toList();
 
-        // 🔹 Tworzymy mapę posortowaną według nazw procesów
+        // Tworzymy mapę posortowaną według nazw procesów
         Map<BusinessProcess, Map<LocalDate, Integer>> groupedBacklog = new LinkedHashMap<>();
         for (BusinessProcess process : sortedProcesses) {
             Map<LocalDate, Integer> processBacklog = backlogData.stream()
@@ -328,8 +326,5 @@ public String showProcessTimes(Model model, Principal principal) {
     public String showAnalize() {
         return "analize";
     }
-
-//    @GetMapping("/myExecutionReport")
-//    public String showExecutionReport() { return "myExecutionReport"; }
 
 }

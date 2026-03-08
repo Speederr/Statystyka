@@ -401,7 +401,7 @@ public List<UserTableDto> getAllUsers(Principal principal) {
 }
 
     private String getAttendanceStatus(User user, LocalDate date) {
-        return attendanceRepository.findByUserAndAttendanceDate(user, date)
+        return attendanceRepository.findByUser_IdAndAttendanceDate(user.getId(), date)
                 .map(Attendance::getStatus) // 🟢 Pobiera bez zmian ("present" lub "leave")
                 .orElse("leave"); // Domyślnie "leave", jeśli brak wpisu
     }

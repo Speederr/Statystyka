@@ -40,7 +40,7 @@ public class AttendanceController {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Attendance attendance = attendanceRepository.findByUserAndAttendanceDate(user, LocalDate.now())
+        Attendance attendance = attendanceRepository.findByUser_IdAndAttendanceDate(user.getId(), LocalDate.now())
                 .orElseGet(() -> {
                     Attendance newAttendance = new Attendance();
                     newAttendance.setUser(user);
@@ -90,7 +90,7 @@ public ResponseEntity<Map<String, Object>> getWorkModeSummary(
     LocalDate today = LocalDate.now();
 
     for (User user : users) {
-        Optional<Attendance> attendanceOpt = attendanceRepository.findByUserAndAttendanceDate(user, today);
+        Optional<Attendance> attendanceOpt = attendanceRepository.findByUser_IdAndAttendanceDate(user.getId(), today);
         if (attendanceOpt.isPresent()) {
             String mode = attendanceOpt.get().getWorkMode();
             String fullName = user.getFirstName() + " " + user.getLastName();

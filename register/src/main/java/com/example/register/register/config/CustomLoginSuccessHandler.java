@@ -22,23 +22,21 @@ public class CustomLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private AttendanceService attendanceService;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
-            throws IOException {
+    public void onAuthenticationSuccess(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        Authentication authentication) throws IOException {
 
         String username = authentication.getName();
+        User user = userService.findByUsername(username);
+
+        if (user.isFirstLogin()) {
+            getRedirectStrategy().sendRedirect(request, response, "/firstLogin");
+            return;
+        }
 
         String clientIp = request.getRemoteAddr();
         attendanceService.recordAttendanceAfterLogin(username, clientIp);
 
-        User user = userService.findByUsername(username);
-        boolean isFirstLogin = user.isFirstLogin();
-
-        if (isFirstLogin) {
-            // najpierw zmiana hasła
-            getRedirectStrategy().sendRedirect(request, response, "/firstLogin");
-            return;
-        }
-        // sprawdzenie, czy user ma rolę MANAGER
         boolean isManager = authentication.getAuthorities().stream()
                 .anyMatch(ga -> ga.getAuthority().equals("ROLE_MANAGER"));
 
@@ -48,5 +46,4 @@ public class CustomLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             getRedirectStrategy().sendRedirect(request, response, "/index");
         }
     }
-
 }

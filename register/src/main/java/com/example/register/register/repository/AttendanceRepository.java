@@ -16,7 +16,8 @@ import java.util.Optional;
 public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
     List<Attendance> findByAttendanceDateAndStatusAndUser_Team_Id(LocalDate date, String status, Long teamId);
-    Optional<Attendance> findByUserAndAttendanceDate(User user, LocalDate date);
+    //Optional<Attendance> findByUserAndAttendanceDate(User user, LocalDate date);
+    Optional<Attendance> findByUser_IdAndAttendanceDate(Long userId, LocalDate date);
     List<Attendance> findByAttendanceDateAndStatus(LocalDate attendanceDate, String status);
     List<Attendance> findByStatusAndUser_Team_Id(String status, Long teamId);
 

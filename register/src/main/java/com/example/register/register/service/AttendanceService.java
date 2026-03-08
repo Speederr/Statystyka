@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -48,7 +49,7 @@ public class AttendanceService {
         List<User> allUsers = userRepository.findAll();
 
         for (User user : allUsers) {
-            boolean hasAttendance = attendanceRepository.findByUserAndAttendanceDate(user, date).isPresent();
+            boolean hasAttendance = attendanceRepository.findByUser_IdAndAttendanceDate(user.getId(), date).isPresent();
 
             if (!hasAttendance) {
                 Attendance attendance = new Attendance();
@@ -66,11 +67,11 @@ public class AttendanceService {
                 .orElseThrow(() -> new RuntimeException("Użytkownik nie znaleziony: " + username));
 
         LocalDate today = LocalDate.now();
-        Optional<Attendance> optional = attendanceRepository.findByUserAndAttendanceDate(user, today);
+        Optional<Attendance> optional = attendanceRepository.findByUser_IdAndAttendanceDate(user.getId(), today);
 
         System.out.println("clientIp: " + clientIp);
 
-        clientIp = clientIp.trim(); // 🧼 usuń białe znaki
+        clientIp = clientIp.trim();
 
         String workMode = (
                 clientIp.startsWith("192.168.") ||
@@ -79,20 +80,15 @@ public class AttendanceService {
                         clientIp.equals("::1")
         ) ? "homeoffice" : "office";
 
-
-
         if (optional.isPresent()) {
             Attendance attendance = optional.get();
 
-            // jeśli był oznaczony jako "notloggedin", zaktualizuj na "present"
             if ("notloggedin".equalsIgnoreCase(attendance.getStatus())) {
                 attendance.setStatus("present");
                 attendance.setWorkMode(workMode);
                 attendanceRepository.save(attendance);
             }
-
         } else {
-            // jeśli nie było wpisu, dodaj nowy
             Attendance attendance = new Attendance();
             attendance.setUser(user);
             attendance.setAttendanceDate(today);
@@ -150,9 +146,9 @@ public List<LeaveEventDTO> getAllLeaves(Principal principal) {
 
 
 
-    // 🔄 Codzienne przypisanie "notloggedin" dla użytkowników bez wpisu
-    @Scheduled(cron = "0 */3 * * * *") // co 3 minuty
+    @Scheduled(cron = "0 */5 * * * *")
     public void autoMarkNotLoggedUsers() {
+        System.out.println("Scheduler działa: " + LocalDateTime.now());
         markNotLoggedUsers(LocalDate.now());
     }
 }

@@ -23,10 +23,10 @@ public class EmailService {
         message.setTo(to);
         message.setSubject("Utworzono nowego pracownika.");
         message.setText("Witaj " + name + " " + last_name + ",\n\n"
-                + "Twoje konto do statystyki zostalo utworzone.\n"
+                + "Twoje konto do statystyki zostało utworzone.\n"
                 + "Login: " + username + "\n"
-                + "Haslo tymczasowe: " + password + "\n\n"
-                + "Prosze zmienic haslo po zalogowaniu.");
+                + "Hasło tymczasowe: " + password + "\n\n"
+                + "Proszę zmienić hasło po zalogowaniu.");
         message.setFrom(fromAddress);
 
         mailSender.send(message);

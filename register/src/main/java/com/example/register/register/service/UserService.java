@@ -52,7 +52,8 @@ public class UserService implements UserDetailsService {
         log.info("User found: {} with role: {}", user.getUsername(), user.getRole().getRoleName());
 
         // Tworzenie listy autoryzacji na podstawie roli użytkownika
-        List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName().toUpperCase()));
+        List<GrantedAuthority> authorities =
+                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName().toUpperCase()));
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getUsername())
@@ -95,20 +96,20 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void updateUserPassword(String username, String newPassword) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("❌ Użytkownik nie znaleziony"));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found."));
 
         String hashedPassword = passwordEncoder.encode(newPassword);
         user.setPassword(hashedPassword);
 
         // Jeśli to pierwsze logowanie
         if (user.isFirstLogin()) {
-            user.setFirstLogin(false); // Zmień na false
-            user.setPasswordChanged(true); // Oznacz że hasło zostało zmienione
+            user.setFirstLogin(false);
+            user.setPasswordChanged(true);
         }
 
         userRepository.save(user);
         entityManager.flush();
-        log.info("Hasło zmienione i zapisane w bazie dla użytkownika: {}", username);
+        log.info("Password changed and saved in the database for user: {}", username);
     }
 
     //funckja dla admina
@@ -129,7 +130,7 @@ public class UserService implements UserDetailsService {
         // Pobranie obiektu Section na podstawie sectionId
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono sekcji o ID: " + sectionId));
-
+        // Pobranie obiektu Position na podstawie positionId
         Position position = positionRepository.findById(positionId)
                 .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono stanowiska o ID: " + positionId));
 
@@ -152,7 +153,7 @@ public class UserService implements UserDetailsService {
         user.setCreateByAdmin(true);
         user.setPasswordChanged(false);
 
-        userRepository.save(user); // Zapisz użytkownika w bazie danych
+        userRepository.save(user);
 
         // Wysłanie e-maila do użytkownika
         emailService.sendUserCreationMail(
@@ -188,7 +189,6 @@ public class UserService implements UserDetailsService {
     }
 
     public String generateTemporaryPassword() {
-        // Możesz użyć bardziej złożonego algorytmu, jeśli to konieczne
         return UUID.randomUUID().toString().substring(0, 12); // Generuje losowe hasło o długości 12 znaków
     }
 

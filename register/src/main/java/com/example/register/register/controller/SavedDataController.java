@@ -55,20 +55,18 @@ public class SavedDataController {
             // —————————————— wstawianie Usera ——————————————
             if (data.getUser() == null) {
                 if (data.getUserId() == null) {
-                    throw new RuntimeException("❌ user_id is missing in request payload!");
+                    throw new RuntimeException("user_id is missing in request payload!");
                 }
                 User user = userRepository.findById(data.getUserId())
-                        .orElseThrow(() -> new RuntimeException("❌ User not found with ID: " + data.getUserId()));
+                        .orElseThrow(() -> new RuntimeException("User not found with ID: " + data.getUserId()));
                 data.setUser(user);
             }
-
             // —————————————— wstawianie Processu ——————————————
             if (data.getProcess() == null && data.getProcessId() != null) {
                 BusinessProcess proc = processRepository.findById(data.getProcessId())
-                        .orElseThrow(() -> new RuntimeException("❌ Process not found with ID: " + data.getProcessId()));
+                        .orElseThrow(() -> new RuntimeException("Process not found with ID: " + data.getProcessId()));
                 data.setProcess(proc);
             }
-
             LocalDate effectiveDate = (data.getTodaysDate() != null) ? data.getTodaysDate() : today;
             data.setTodaysDate(effectiveDate);
 
@@ -78,8 +76,6 @@ public class SavedDataController {
             if (data.getOvertimeMinutes() == null) {
                 data.setOvertimeMinutes(0);
             }
-
-            // ——— DEDUCT_PARTIAL: tylko pierwsze zachowuje minutes ———
             if (data.getVolumeType() == VolumeType.DEDUCT_PARTIAL) {
                 if (!deductPartialHandled) {
                     deductPartialHandled = true;
@@ -87,8 +83,6 @@ public class SavedDataController {
                     data.setOvertimeMinutes(0);
                 }
             }
-
-            // ——— OVERTIME_OFF: tylko pierwsze zachowuje minutes ———
             if (data.getVolumeType() == VolumeType.OVERTIME_OFF) {
                 if (!overtimeOffHandled) {
                     overtimeOffHandled = true;
@@ -96,7 +90,6 @@ public class SavedDataController {
                     data.setOvertimeMinutes(0);
                 }
             }
-            // ——— OVERTIME_PAID: tylko pierwsze zachowuje minutes ———
             if (data.getVolumeType() == VolumeType.OVERTIME_PAID) {
                 if(!overtimePaidHandled) {
                     overtimePaidHandled = true;
@@ -104,7 +97,6 @@ public class SavedDataController {
                     data.setOvertimeMinutes(0);
                 }
             }
-
             if (
                     data.getVolumeType() == VolumeType.OVERTIME_PAID ||
                             data.getVolumeType() == VolumeType.OVERTIME_OFF ||
@@ -117,20 +109,17 @@ public class SavedDataController {
                             data.getVolumeType(),
                             data.getOvertimeMinutes(),
                             data.getTodaysDate()
-
                     );
                 }
             }
-
         }
-
         // zapisujemy wszystkie rekordy
         savedDataService.saveData(dataList);
-        return "✅ Dane zostały zapisane!";
+        return "Dane zostały zapisane!";
     }
 
 
-    // 🔵 2️⃣ Zapis dla pojedynczego procesu (kliknięcie `+`)
+    //Zapis dla pojedynczego procesu (kliknięcie `+`)
     @PostMapping("/save-single")
     public ResponseEntity<String> saveSingleData(@RequestBody SingleSaveDTO req) {
         // 1) Tworzenie encji SavedData
@@ -152,15 +141,13 @@ public class SavedDataController {
                 );
             }
         }
-
-
         // 3) Zapis wolumenu (zawsze new)
         savedDataService.saveData(List.of(data));
 
         // 4) Automatyczne przeliczenie efektywności (upsert w tabeli Efficiency)
         efficiencyService.calculateAndSaveEfficiency(req.getUserId(), req.getTodaysDate());
 
-        return ResponseEntity.ok("✅ Wolumen zapisany i efektywność zaktualizowana!");
+        return ResponseEntity.ok("Wolumen zapisany i efektywność zaktualizowana!");
     }
 
     private SavedData toEntity(SingleSaveDTO req) {

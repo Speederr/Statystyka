@@ -15,7 +15,6 @@ import java.util.Optional;
 
 @Repository
 public interface BacklogRepository extends JpaRepository<Backlog, Long> {
-    Optional<Backlog> findByProcessAndDate(BusinessProcess process, LocalDate date);
     Optional<Backlog> findByProcessAndTeamAndDate(BusinessProcess process, Team team, LocalDate date);
 
     List<Backlog> findByDateBetween(LocalDate start, LocalDate end);
@@ -29,23 +28,11 @@ public interface BacklogRepository extends JpaRepository<Backlog, Long> {
             "(SELECT MAX(b2.date) FROM Backlog b2 WHERE b2.process.team.id = :teamId)")
     Double findLatestTeamBacklogHours(@Param("teamId") Long teamId);
 
-    @Query(value = """
-    SELECT p.process_name, b.task_count
-    FROM backlog b
-    JOIN processes p ON b.process_id = p.id
-    WHERE b.date = :date
-      AND b.task_count > 0
-      AND b.team_id = :teamId
-  """, nativeQuery = true)
-    List<Object[]> findSimpleProcessesBacklog(@Param("teamId") Long teamId, @Param("date") LocalDate date);
-
-
     @Query(
             value = "SELECT MAX(date) FROM backlog WHERE team_id = :teamId",
             nativeQuery = true
     )
     Optional<LocalDate> findLatestDateForTeam(@Param("teamId") Long teamId);
-
 
     @Query(
             value = """

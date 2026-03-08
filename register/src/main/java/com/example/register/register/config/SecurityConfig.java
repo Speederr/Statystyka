@@ -114,7 +114,7 @@ public class SecurityConfig {
                         .addLogoutHandler(cookies)
                 )
 
-                // 🛡️ Wyłączenie CSRF dla API
+                // Wyłączenie CSRF dla API
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(
                                 "/login",
