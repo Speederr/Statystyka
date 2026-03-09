@@ -14,6 +14,9 @@ public interface PositionRepository extends JpaRepository<Position, Long> {
     @NonNull
     Optional<Position> findById(@NonNull Long id);
 
+    Optional<Position> findByPositionName(String positionName);
+
+
     boolean existsByPositionNameIgnoreCase(String positionName);
 
 }

@@ -11,7 +11,6 @@ import com.example.register.register.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -19,7 +18,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import lombok.extern.slf4j.Slf4j;
 
-import java.net.URI;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.util.*;
@@ -51,29 +49,6 @@ public class PageController {
     public String showLoginForm() {
         return "login"; // Zwraca widok logowania (login.html)
     }
-
-    @GetMapping("/register")
-    public String showRegisterForm(Model model) {
-        model.addAttribute("users", new User());
-        return "register";
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<Void> createUser(
-            @RequestParam String firstName,
-            @RequestParam String lastName,
-            @RequestParam String username,
-            @RequestParam String email,
-            @RequestParam Long id_role) {
-
-        userService.createUser(firstName, lastName, username, email, id_role);
-
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create("/login"))
-                .build();
-    }
-
-
 
     @GetMapping("/processes")
     public String showProcesses(Model model, Principal principal) {
@@ -164,8 +139,6 @@ public String showProcessTimes(Model model, Principal principal) {
 
     return "averageTime";
 }
-
-
 
     @GetMapping("/notifications")
     public String getAllNotifications() {

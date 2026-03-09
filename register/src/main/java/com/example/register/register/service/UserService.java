@@ -160,33 +160,6 @@ public class UserService implements UserDetailsService {
                 email, firstName, lastName, username, temporaryPassword
         );
     }
-    //funkcja dla endpointu /register
-    public void createUser(String firstName, String lastName, String username, String email, Long id_role) {
-
-        // Generowanie tymczasowego hasła
-        String temporaryPassword = generateTemporaryPassword();
-
-        User user = new User();
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        user.setUsername(username);
-        user.setEmail(email);
-        user.setRole(roleRepository.findById(id_role).orElseThrow());
-
-        // Haszowanie hasła
-        String hashedPassword = passwordEncoder.encode(temporaryPassword);
-        user.setPassword(hashedPassword);
-        user.setFirstLogin(true);
-        user.setCreateByAdmin(false);
-        user.setPasswordChanged(false);
-
-
-        userRepository.save(user);
-
-        emailService.sendUserCreationMail(
-                email, firstName, lastName, username, temporaryPassword
-        );
-    }
 
     public String generateTemporaryPassword() {
         return UUID.randomUUID().toString().substring(0, 12); // Generuje losowe hasło o długości 12 znaków

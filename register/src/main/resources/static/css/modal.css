@@ -125,8 +125,8 @@ footer {
     background-position: center;
 }
 
+
 #form-process-container,
-#register-form,
 #new-user-form,
 #restore-password-form,
 #login-form {
@@ -257,7 +257,7 @@ label, .restore-password, .btnContainer {
 .restore-password a:hover {
   text-decoration: underline;
 }
-#register-form > inputsRow > field > label,
+
 #new-user-form > label,
 #restore-password-form > label,
 #login-form > label {
@@ -268,7 +268,6 @@ label, .restore-password, .btnContainer {
   color: black;
 }
 
-#register-form > inputsRow > field > label a,
 #new-user-form > label a,
 #restore-password-form > label a,
 #login-form > label a {
@@ -277,7 +276,6 @@ label, .restore-password, .btnContainer {
   font-weight: 500;
 }
 
-#register-form > inputsRow > field > label a:hover,
 #new-user-form > label a:hover,
 #restore-password-form > label a:hover,
 #login-form > label a:hover {
@@ -327,17 +325,6 @@ label, .restore-password, .btnContainer {
     display: flex;
 }
 
-/* REGISTER FORM */
-#register-window {
-    width: 400px;
-    height: 675px;
-    color: black;
-    background-color: #fff;
-    border-radius: 20px;
-    box-shadow: 0px 0px 20px rgba(0,0,0,0.3);
-
-}
-
 .inputsRow {
     display: flex;
     flex-direction: column;
@@ -347,28 +334,12 @@ label, .restore-password, .btnContainer {
     gap: 10px;
 }
 
-#register-window .radio-group {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 15px;
-}
-
-#register-window .radio-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-#register-window .radio-item input {
-    width: 20px;
-    height: 20px;
-}
-
 #register-window .radio-item label {
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.5px;
 }
+*/
 .radio-item{
     padding: 0px 20px;
     display: flex;

@@ -20,6 +20,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @EntityGraph(attributePaths = {"role"})
     Optional<User> findByUsername(String username);
 
+    boolean existsByUsername(String username);
+
     @Modifying
     @Transactional
     @Query(value = "UPDATE users SET id_role = ?2 WHERE id = ?1", nativeQuery = true)

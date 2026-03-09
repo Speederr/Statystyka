@@ -335,7 +335,7 @@
 .date-filter {
     display: flex;
     align-items: center;
-    margin: 0 auto; /* 🔥 to centruje */
+    margin: 0 auto; /* to centruje */
     gap: 10px;
 }
 

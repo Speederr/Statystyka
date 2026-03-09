@@ -40,7 +40,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // 🔓 Publiczne endpointy
-                        .requestMatchers("/register", "/login", "/firstLogin", "/restorePassword", "/reset-password",
+                        .requestMatchers( "/login", "/firstLogin", "/restorePassword", "/reset-password",
                                 "/api/user/restorePassword", "/api/user/reset-password", "/error", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/availability").permitAll()
 
