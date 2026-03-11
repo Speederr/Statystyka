@@ -232,61 +232,9 @@
     </div>
 
     <div class="confirmBtnDiv">
-        <a href="#" class="animated-button" id="saveAllBtn" title="Zapisz wolumen">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
+        <a href="#" class="saveVolumeBtn" id="saveAllBtn" title="Zapisz wolumen">
             Zapisz
         </a>
-    </div>
-
-    <div id="firstLoginModal" class="modal hidden">
-        <div class="modal-content">
-            <form id="setupForm">
-                <div class="title">
-                    <h4>Dokończ rejestrację</h4>
-                </div>
-
-                <div class="field-with-plus">
-                    <label for="team">Zespół:</label>
-                    <div class="select-plus">
-                        <select id="team" name="teamId" required>
-                            <option value="">Wybierz zespół</option>
-                        </select>
-                        <button type="button" class="open-modal-btn" data-open-modal="teamModal">
-                            <i class='bx bx-plus'></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="field-with-plus">
-                    <label for="section">Sekcja:</label>
-                    <div class="select-plus">
-                        <select id="section" name="sectionId" required>
-                            <option value="">Wybierz sekcję</option>
-                        </select>
-                        <button type="button" class="open-modal-btn" data-open-modal="sectionModal">
-                            <i class='bx bx-plus'></i>
-                        </button>
-
-                    </div>
-                </div>
-                <div class="field-with-plus">
-                    <label for="position">Stanowisko:</label>
-                    <div class="select-plus">
-                        <select id="position" name="positionId" required>
-                            <option value="">Wybierz stanowisko</option>
-                        </select>
-                        <button type="button" class="open-modal-btn" data-open-modal="positionModal">
-                            <i class='bx bx-plus'></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="btnContainer">
-                    <button type="submit" class="btn-save">Zapisz</button>
-                </div>
-            </form>
-        </div>
     </div>
 
     <div id="confirmModal" class="modal hidden">
@@ -302,72 +250,7 @@
             </div>
     </div>
 
-    <!--    Modal do dodania nowego zespołu -->
-    <div id="teamModal" class="modal hidden">
-        <div class="modal-content">
-            <form id="teamForm">
-                <div class="title">
-                    <h4>Nowy Zespół</h4>
-                    <span class="close" data-close-modal="teamModal">&times;</span>
-                </div>
-                <label for="teamName">Nazwa Zespołu</label>
-                <input class="formInput" type="text" id="teamName" required>
-
-                <div class="btnContainer">
-                    <button type="submit" class="btn-save">Dodaj</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!--    Modal do dodania nowej sekcji   -->
-    <div id="sectionModal" class="modal hidden">
-        <div class="modal-content">
-            <form id="sectionForm">
-                <div class="title">
-                    <h4>Nowa Sekcja</h4>
-                    <span class="close" data-close-modal="sectionModal">&times;</span>
-                </div>
-
-                <label for="sectionTeam">Zespół:</label>
-                <select id="sectionTeam" name="teamId">
-                    <option value="">Wybierz zespół</option>
-                </select>
-
-                <label for="sectionName">Nazwa Sekcji</label>
-                <input class="formInput" type="text" id="sectionName" required>
-
-                <div class="btnContainer">
-                    <button type="submit" class="btn-save">Dodaj</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!--    Modal do dodania nowego stanowiska -->
-    <div id="positionModal" class="modal hidden">
-        <div class="modal-content">
-            <form id="positionForm">
-                <div class="title">
-                    <h4>Dodaj stanowisko</h4>
-                    <span class="close" data-close-modal="positionModal">&times;</span>
-                </div>
-                <label for="positionName">Nazwa stanowiska</label>
-                <input class="formInput" type="text" id="positionName" required>
-
-                <div class="btnContainer">
-                    <button type="submit" class="btn-save">Dodaj</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-
-
 </div>
-
-
-
 
 
 <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">

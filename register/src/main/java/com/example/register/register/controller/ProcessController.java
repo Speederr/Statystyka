@@ -1,5 +1,6 @@
 package com.example.register.register.controller;
 
+import com.example.register.register.DTO.BusinessProcessDto;
 import com.example.register.register.model.BusinessProcess;
 import com.example.register.register.model.Team;
 import com.example.register.register.model.User;
@@ -57,21 +58,21 @@ public class ProcessController {
     }
 
     @GetMapping("/favorites/{userId}")
-    public ResponseEntity<List<BusinessProcess>> getFavoriteProcesses(@PathVariable Long userId) {
+    public ResponseEntity<List<BusinessProcessDto>> getFavoriteProcesses(@PathVariable Long userId) {
         log.info("Otrzymano zapytanie o ulubione procesy dla userId: {}", userId);
-        List<BusinessProcess> favorites = processService.getFavoriteProcesses(userId);
 
-        if (favorites == null || favorites.isEmpty()) {
-            return ResponseEntity.ok(Collections.emptyList());
-        }
+        List<BusinessProcessDto> favorites = processService.getFavoriteProcesses(userId).stream()
+                .map(process -> new BusinessProcessDto(process.getId(), process.getProcessName()))
+                .toList();
+
         return ResponseEntity.ok(favorites);
     }
 
     @PostMapping("/favorites/{userId}")
-    public ResponseEntity<Map<String, String>> saveFavoriteProcesses(@PathVariable Long userId, @RequestBody List<Long> processIds) {
+    public ResponseEntity<Map<String, String>> saveFavoriteProcesses(@PathVariable Long userId,
+                                                                     @RequestBody List<Long> processIds) {
         processService.saveFavoriteProcesses(userId, processIds);
 
-        // ✅ Zwracamy poprawny JSON zamiast stringa
         Map<String, String> response = new HashMap<>();
         response.put("message", "Ulubione procesy zapisane!");
 
@@ -128,11 +129,10 @@ public class ProcessController {
     }
 
     @GetMapping("/team/{userId}")
-    public ResponseEntity<List<BusinessProcess>> getProcessesForUserTeam(@PathVariable Long userId) {
+    public ResponseEntity<List<BusinessProcessDto>> getProcessesForUserTeam(@PathVariable Long userId) {
         log.info("Pobieranie procesów dla userId: {}", userId);
 
-        // Pobierz użytkownika
-        User user = userRepository.findById(userId).orElse(null);
+        User user = userRepository.findByIdWithTeam(userId).orElse(null);
         if (user == null || user.getTeam() == null) {
             log.info("Brak użytkownika lub brak przypisanego zespołu!");
             return ResponseEntity.badRequest().body(Collections.emptyList());
@@ -141,8 +141,10 @@ public class ProcessController {
         Long teamId = user.getTeam().getId();
         log.info("Użytkownik należy do teamId: {}", teamId);
 
-        // Pobierz procesy tylko dla tego zespołu
-        List<BusinessProcess> processes = processService.getProcessesByTeamId(teamId);
+        List<BusinessProcessDto> processes = processService.getProcessesByTeamId(teamId).stream()
+                .map(process -> new BusinessProcessDto(process.getId(), process.getProcessName()))
+                .toList();
+
         log.info("Znaleziono procesy: {}", processes.size());
 
         return ResponseEntity.ok(processes);

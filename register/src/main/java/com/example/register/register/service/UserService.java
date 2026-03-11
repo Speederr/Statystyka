@@ -1,10 +1,11 @@
 package com.example.register.register.service;
 
+import com.example.register.register.DTO.UserTableDto;
 import com.example.register.register.model.*;
 import com.example.register.register.repository.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,11 +15,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
+
+import java.time.LocalDate;
 import java.util.*;
 
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
@@ -29,18 +33,6 @@ public class UserService implements UserDetailsService {
     private final TeamRepository teamRepository;
     private final SectionRepository sectionRepository;
     private final PositionRepository positionRepository;
-
-    @Autowired
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, EmailService emailService, EntityManager entityManager, TeamRepository teamRepository, SectionRepository sectionRepository, PositionRepository positionRepository) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.emailService = emailService;
-        this.entityManager = entityManager;
-        this.teamRepository = teamRepository;
-        this.sectionRepository = sectionRepository;
-        this.positionRepository = positionRepository;
-    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -176,8 +168,8 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Nie znaleziono użytkownika: " + username));
     }
 
-    public List<User> findByTeam(Team team) {
-        return userRepository.findAllByTeam(team);
+    public List<User> findByTeamWithSections(Team team) {
+        return userRepository.findByTeamWithSections(team);
     }
 
 }

@@ -9,15 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserTableDto {
-
+public class PositionDto {
     private Long id;
-    private String firstName;
-    private String lastName;
-    private Double efficiency;
-    private Double nonOperational;
-    private Long positionId;
     private String positionName;
-    private String attendanceStatus;
-
 }

@@ -1,5 +1,6 @@
 package com.example.register.register.repository;
 
+import com.example.register.register.DTO.UserDto;
 import com.example.register.register.model.Team;
 import com.example.register.register.model.User;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -54,8 +55,78 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findAllEmployees();
 
     List<User> findBySection_Id(Long sectionId);
-    List<User> findByTeamId(Long teamId);
-    List<User> findAllByTeam(Team team);
     List<User> findByTeam_Id(Long teamId);
 
+    @Query("""
+    SELECT DISTINCT u
+    FROM User u
+    LEFT JOIN FETCH u.team t
+    LEFT JOIN FETCH t.sections
+    LEFT JOIN FETCH u.section
+    LEFT JOIN FETCH u.role
+    WHERE u.team = :team
+""")
+    List<User> findByTeamWithSections(@Param("team") Team team);
+
+    @Query("""
+    SELECT new com.example.register.register.DTO.UserDto(
+        u.firstName,
+        u.lastName,
+        u.username,
+        u.email,
+        t.teamName,
+        s.sectionName
+    )
+    FROM User u
+    LEFT JOIN u.team t
+    LEFT JOIN u.section s
+    WHERE u.username = :username
+""")
+    Optional<UserDto> findUserProfileDtoByUsername(@Param("username") String username);
+
+    @Query("""
+    SELECT u
+    FROM User u
+    LEFT JOIN FETCH u.team
+    WHERE u.id = :userId
+""")
+    Optional<User> findByIdWithTeam(@Param("userId") Long userId);
+
+    @Query("""
+    SELECT u
+    FROM User u
+    JOIN FETCH u.role
+    JOIN FETCH u.position
+    WHERE u.team.id = :teamId
+""")
+    List<User> findByTeamIdWithRoleAndPosition(@Param("teamId") Long teamId);
+
+    @Query("""
+    SELECT u
+    FROM User u
+    JOIN FETCH u.role
+    LEFT JOIN FETCH u.position
+    WHERE u.section.id = :sectionId
+""")
+    List<User> findBySectionIdWithRoleAndPosition(@Param("sectionId") Long sectionId);
+
+    @Query("""
+    SELECT u
+    FROM User u
+    JOIN FETCH u.role
+    LEFT JOIN FETCH u.position
+    WHERE u.id IN :ids
+""")
+    List<User> findAllByIdWithRoleAndPosition(@Param("ids") List<Long> ids);
+
+    @Query("""
+    SELECT u
+    FROM User u
+    JOIN FETCH u.role
+    LEFT JOIN FETCH u.position
+    WHERE u.id = :userId
+""")
+    Optional<User> findByIdWithRoleAndPosition(@Param("userId") Long userId);
 }
+
+

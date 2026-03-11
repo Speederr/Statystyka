@@ -2,9 +2,11 @@ package com.example.register.register.repository;
 
 import com.example.register.register.model.Team;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.lang.NonNull;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,4 +19,7 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     Optional<Team> findByTeamName(String teamName);
 
     boolean existsByTeamNameIgnoreCase(String teamName);
+
+    @Query("SELECT DISTINCT t FROM Team t LEFT JOIN FETCH t.sections")
+    List<Team> findAllWithSections();
 }

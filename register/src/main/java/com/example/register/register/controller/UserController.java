@@ -9,6 +9,7 @@ import com.example.register.register.service.EmailService;
 import com.example.register.register.service.PasswordResetService;
 import com.example.register.register.service.UserService;
 import com.example.register.register.service.UserSummaryService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
+@RequiredArgsConstructor
 @RequestMapping("/api/user")
 public class UserController {
 
@@ -44,24 +46,7 @@ public class UserController {
     private final AttendanceRepository attendanceRepository;
     private final EfficiencyRepository efficiencyRepository;
     private final SavedDataRepository savedDataRepository;
-    private final TeamRepository teamRepository;
-    private final SectionRepository sectionRepository;
     private final PasswordResetService passwordResetService;
-
-
-    public UserController(UserService userService, UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, PositionRepository positionRepository, AttendanceRepository attendanceRepository, EfficiencyRepository efficiencyRepository, SavedDataRepository savedDataRepository, TeamRepository teamRepository, SectionRepository sectionRepository, PasswordResetService passwordResetService) {
-        this.userService = userService;
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.emailService = emailService;
-        this.positionRepository = positionRepository;
-        this.attendanceRepository = attendanceRepository;
-        this.efficiencyRepository = efficiencyRepository;
-        this.savedDataRepository = savedDataRepository;
-        this.teamRepository = teamRepository;
-        this.sectionRepository = sectionRepository;
-        this.passwordResetService = passwordResetService;
-    }
 
     @Autowired
     private UserSummaryService userSummaryService;
@@ -282,28 +267,9 @@ public class UserController {
     @GetMapping("/profile")
     public ResponseEntity<UserDto> getUserProfile(Principal principal) {
         String username = principal.getName();
-        User user = userRepository.findByUsername(username)
+
+        UserDto userDto = userRepository.findUserProfileDtoByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony."));
-
-        // Pobierz nazwę sekcji
-        String sectionName = null;
-        if (user.getSection() != null) {
-            sectionName = user.getSection().getSectionName();
-        }
-
-        String teamName = null;
-        if (user.getTeam() != null) {
-            teamName = user.getTeam().getTeamName();
-        }
-
-        UserDto userDto = new UserDto(
-                user.getFirstName(),
-                user.getLastName(),
-                user.getUsername(),
-                user.getEmail(),
-                teamName,
-                sectionName
-        );
 
         return ResponseEntity.ok(userDto);
     }
@@ -368,37 +334,34 @@ public class UserController {
         return "users"; // Nazwa pliku HTML w folderze templates
     }
 
-@GetMapping("/all-users")
-public List<UserTableDto> getAllUsers(Principal principal) {
-    LocalDate today = LocalDate.now();
+    @GetMapping("/all-users")
+    public List<UserTableDto> getAllUsers(Principal principal) {
+        LocalDate today = LocalDate.now();
 
-    // 1. Pobierz zalogowanego użytkownika
-    User currentUser = userRepository.findByUsername(principal.getName())
-            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-    Long teamId = currentUser.getTeam().getId();
+        Long teamId = currentUser.getTeam().getId();
 
-    // 2. Pobierz tylko użytkowników z tego samego zespołu
-    return userRepository.findByTeamId(teamId).stream()
-            .filter(user -> {
-                String role = user.getRole().getRoleName().toLowerCase();
-                return !role.equals("admin") && !role.equals("manager");
-            })
-            .sorted(Comparator.comparing(User::getLastName)
-                    .thenComparing(User::getFirstName))
-            .map(user -> new UserTableDto(
-                    user.getId(),
-                    user.getFirstName(),
-                    user.getLastName(),
-                    getUserEfficiency(user, today),
-                    getNonOperationalTime(user, today),
-                    user.getPosition().getId(),
-                    positionRepository.findById(user.getPosition().getId())
-                            .map(Position::getPositionName).orElse("Brak"),
-                    getAttendanceStatus(user, today)
-            ))
-            .toList();
-}
+        return userRepository.findByTeamIdWithRoleAndPosition(teamId).stream()
+                .filter(user -> {
+                    String role = user.getRole().getRoleName().toLowerCase();
+                    return !role.equals("admin") && !role.equals("manager");
+                })
+                .sorted(Comparator.comparing(User::getLastName)
+                        .thenComparing(User::getFirstName))
+                .map(user -> new UserTableDto(
+                        user.getId(),
+                        user.getFirstName(),
+                        user.getLastName(),
+                        getUserEfficiency(user, today),
+                        getNonOperationalTime(user, today),
+                        user.getPosition().getId(),
+                        user.getPosition().getPositionName(),
+                        getAttendanceStatus(user, today)
+                ))
+                .toList();
+    }
 
     private String getAttendanceStatus(User user, LocalDate date) {
         return attendanceRepository.findByUser_IdAndAttendanceDate(user.getId(), date)
@@ -425,7 +388,8 @@ public List<UserTableDto> getAllUsers(Principal principal) {
 
     @GetMapping("/by-section/{sectionId}")
     public ResponseEntity<List<UserDto>> getEmployeesBySection(@PathVariable Long sectionId) {
-        List<User> users = userRepository.findBySection_Id(sectionId);
+        List<User> users = userRepository.findBySectionIdWithRoleAndPosition(sectionId);
+
         List<UserDto> result = users.stream()
                 .filter(user -> {
                     String role = user.getRole().getRoleName().toLowerCase();
@@ -433,12 +397,13 @@ public List<UserTableDto> getAllUsers(Principal principal) {
                 })
                 .map(user -> new UserDto(user.getId(), user.getFirstName(), user.getLastName()))
                 .toList();
+
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserTableDto> getUserById(@PathVariable Long userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdWithRoleAndPosition(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Użytkownik nie istnieje"));
 
         LocalDate today = LocalDate.now();
@@ -449,9 +414,8 @@ public List<UserTableDto> getAllUsers(Principal principal) {
                 user.getLastName(),
                 getUserEfficiency(user, today),
                 getNonOperationalTime(user, today),
-                user.getPosition().getId(),
-                positionRepository.findById(user.getPosition().getId())
-                        .map(Position::getPositionName).orElse("Brak"),
+                user.getPosition() != null ? user.getPosition().getId() : null,
+                user.getPosition() != null ? user.getPosition().getPositionName() : "Brak",
                 getAttendanceStatus(user, today)
         );
 
@@ -462,8 +426,7 @@ public List<UserTableDto> getAllUsers(Principal principal) {
     public List<UserTableDto> getUsersByIds(@RequestParam List<Long> ids) {
         LocalDate today = LocalDate.now();
 
-        // Pobieramy użytkowników na podstawie listy ID
-        return userRepository.findAllById(ids).stream()
+        return userRepository.findAllByIdWithRoleAndPosition(ids).stream()
                 .filter(user -> {
                     String role = user.getRole().getRoleName().toLowerCase();
                     return !role.equals("admin") && !role.equals("manager");
@@ -472,19 +435,19 @@ public List<UserTableDto> getAllUsers(Principal principal) {
                         user.getId(),
                         user.getFirstName(),
                         user.getLastName(),
-                        getUserEfficiency(user, today),  // Metoda do pobierania efektywności
-                        getNonOperationalTime(user, today),  // Metoda do pobierania czasu nieoperacyjnego
-                        user.getPosition().getId(),
-                        positionRepository.findById(user.getPosition().getId()).map(Position::getPositionName).orElse("Brak"),
-                        getAttendanceStatus(user, today)  // Metoda do pobierania statusu obecności
+                        getUserEfficiency(user, today),
+                        getNonOperationalTime(user, today),
+                        user.getPosition() != null ? user.getPosition().getId() : null,
+                        user.getPosition() != null ? user.getPosition().getPositionName() : "Brak",
+                        getAttendanceStatus(user, today)
                 ))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @GetMapping("/table/by-section/{sectionId}")
     public ResponseEntity<List<UserTableDto>> getEmployeesToTableBySection(@PathVariable Long sectionId) {
         LocalDate today = LocalDate.now();
-        List<User> users = userRepository.findBySection_Id(sectionId);
+        List<User> users = userRepository.findBySectionIdWithRoleAndPosition(sectionId);
 
         List<UserTableDto> result = users.stream()
                 .filter(user -> {
@@ -497,59 +460,13 @@ public List<UserTableDto> getAllUsers(Principal principal) {
                         user.getLastName(),
                         getUserEfficiency(user, today),
                         getNonOperationalTime(user, today),
-                        user.getPosition().getId(),
-                        positionRepository.findById(user.getPosition().getId()).map(Position::getPositionName).orElse("Brak"),
+                        user.getPosition() != null ? user.getPosition().getId() : null,
+                        user.getPosition() != null ? user.getPosition().getPositionName() : "Brak",
                         getAttendanceStatus(user, today)
                 ))
                 .toList();
 
         return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/setup-data")
-    public ResponseEntity<Map<String, Object>> getSetupData() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("teams", teamRepository.findAll());
-        response.put("sections", sectionRepository.findAll());
-        response.put("positions", positionRepository.findAll());
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/complete-setup")
-    public ResponseEntity<Void> completeSetup(
-            Principal principal,
-            @RequestParam Long teamId,
-            @RequestParam Long sectionId,
-            @RequestParam Long positionId) {
-
-        User user = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setTeam(teamRepository.findById(teamId).orElseThrow());
-        user.setSection(sectionRepository.findById(sectionId).orElseThrow());
-        user.setPosition(positionRepository.findById(positionId).orElseThrow());
-
-        userRepository.save(user);
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/whoami")
-    public ResponseEntity<Map<String, Object>> whoAmI(Principal principal) {
-        User user = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("username", user.getUsername());
-        data.put("firstLogin", user.isFirstLogin());
-        data.put("isCreateByAdmin", user.isCreateByAdmin());
-        data.put("passwordChanged", user.isPasswordChanged());
-
-        // Dodajemy informacje o polach, które mogą być null
-        data.put("team", user.getTeam() != null ? user.getTeam().getId() : null);
-        data.put("section", user.getSection() != null ? user.getSection().getId() : null);
-        data.put("position", user.getPosition() != null ? user.getPosition().getId() : null);
-
-        return ResponseEntity.ok(data);
     }
 
     @GetMapping("/summary/{userId}")

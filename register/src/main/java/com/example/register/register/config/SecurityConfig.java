@@ -81,9 +81,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/overtime/exportAll", "/api/overtime/exportOvertimeForDate").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.POST, "/api/user/avatar").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/user/changePasswordInSettings").authenticated()
-                        .requestMatchers(HttpMethod.POST,"/api/attendance/update", "/api/overtime/archive-paid", "/api/position/update-position").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers(HttpMethod.POST,"/api/attendance/update", "/api/overtime/archive-paid", "/api/positions/update-position").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers(HttpMethod.POST,"/saveNewSoftSkill").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
-                        .requestMatchers(HttpMethod.GET, "/api/user/avatar", "/api/position/{positionId}").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/user/avatar", "/api/positions/{positionId}").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/user/whoami", "/api/user/setup-data").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/user/complete-setup").authenticated()
                         .requestMatchers(HttpMethod.POST,  "/api/attendance/deleteLeave").authenticated()
@@ -91,7 +91,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/processes/update/**", "/export/processes", "/api/attendance/updateLeave")
                             .hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers("/adminPanel").hasRole("ADMIN")
-                        .requestMatchers("/averageTime", "/api/position/addNewPosition").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
+                        .requestMatchers("/averageTime", "/api/positions/addNewPosition").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers("/efficiency").hasAnyRole("ADMIN", "MANAGER", "COORDINATOR")
                         .requestMatchers("/index", "/changePassword", "/settings", "/api/notifications/count").authenticated()
                         .anyRequest().authenticated()
@@ -144,7 +144,7 @@ public class SecurityConfig {
                                 "/api/sections",
                                 "/api/sections/saveNewSection",
                                 "/export/processes",
-                                "/api/position/{positionId}",
+                                "/api/positions/{positionId}",
                                 "/api/user/all-users",
                                 "/api/saved-data/save-single",
                                 "/api/attendance/update",
@@ -166,9 +166,9 @@ public class SecurityConfig {
                                 "/app-matrix/saveSingle",
                                 "/saveNewSoftSkill",
                                 "/soft-skills/saveSingle",
-                                "/api/position/addNewPosition",
+                                "/api/positions/addNewPosition",
                                 "/saveNewAppName",
-                                "/api/position/update-position",
+                                "/api/positions/update-position",
                                 "/api/backlog/processes"
 
                         )

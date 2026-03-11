@@ -339,7 +339,8 @@ label, .restore-password, .btnContainer {
     font-weight: 600;
     letter-spacing: 0.5px;
 }
-*/
+
+
 .radio-item{
     padding: 0px 20px;
     display: flex;
@@ -751,6 +752,8 @@ input[disabled] {
 .radio-group {
   display: flex;
   flex-wrap: wrap;
+      flex-direction: column;
+      margin-bottom: 15px;
 }
 
 .radio-item {

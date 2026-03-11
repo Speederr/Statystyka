@@ -1,5 +1,6 @@
 package com.example.register.register.controller;
 
+import com.example.register.register.DTO.TeamDto;
 import com.example.register.register.model.Team;
 import com.example.register.register.repository.TeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +19,13 @@ public class TeamController {
     @Autowired
     private TeamRepository teamRepository;
 
-    // 🔹 Endpoint do pobierania wszystkich zespołów
+    // Endpoint do pobierania wszystkich zespołów
     @GetMapping
-    public ResponseEntity<List<Team>> getAllTeams() {
-        List<Team> teams = teamRepository.findAll();
+    public ResponseEntity<List<TeamDto>> getAllTeams() {
+        List<TeamDto> teams = teamRepository.findAll().stream()
+                .map(team -> new TeamDto(team.getId(), team.getTeamName()))
+                .toList();
+
         return ResponseEntity.ok(teams);
     }
 

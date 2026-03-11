@@ -74,9 +74,9 @@ public class PageController {
         User loggedUser = userService.findByUsername(username);
 
         Team team = loggedUser.getTeam();
-        List<User> usersFromTeam = userService.findByTeam(team);
+        List<User> usersFromTeam = userService.findByTeamWithSections(team);
 
-        List<Team> teams = teamRepository.findAll();
+        List<Team> teams = teamRepository.findAllWithSections();
 
         model.addAttribute("users", usersFromTeam);
         model.addAttribute("teams", teams);

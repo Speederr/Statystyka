@@ -1180,7 +1180,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             displayMessage('success', result.data.success || "Zespół został dodany!");
             document.getElementById("teamName").value = ""; // Wyczyść pole po dodaniu
-            refreshAllSetupSelects();
+
         })
         .catch(error => {
             displayMessage('error', "Wystąpił błąd połączenia z serwerem.");
@@ -1251,7 +1251,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 displayMessage('success', result.data.success || 'Sekcja została dodana!');
                 sectionForm.reset();
-                refreshAllSetupSelects();
+
             })
             .catch(error => {
                 displayMessage('error', "Wystąpił błąd połączenia z serwerem.");
@@ -1547,7 +1547,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const tableBody = document.querySelector("#employeeTable tbody");
   let positions = [];
 
-  fetch("api/position")
+  fetch("api/positions")
     .then(res => res.json())
     .then(data => {
         positions = data;
@@ -1592,7 +1592,7 @@ document.addEventListener("change", function (event) {
         requestData.append("userId", userId);
         requestData.append("positionId", positionId);
 
-        fetch("/api/position/update-position", {
+        fetch("/api/positions/update-position", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
@@ -1604,8 +1604,8 @@ document.addEventListener("change", function (event) {
             console.log("✅ Stanowisko zaktualizowane:", data);
             displayMessage("success", "Stanowisko zapisane!");
 
-            // Teraz, po udanym zapisie, pobierz świeżych userów!
-            fetch("/api/user/all-users") // lub Twój endpoint
+            // Teraz, po udanym zapisie, pobierz świeżych userów
+            fetch("/api/user/all-users")
               .then(res => res.json())
               .then(users => {
                 renderUserTable(users);  // <-- tu już jest w tym scope
@@ -2425,33 +2425,40 @@ document.addEventListener("DOMContentLoaded", () => {
 ///////////////////////////////////////// odbieranie nadgodzin ///////////////////////////////////////
 document.addEventListener("DOMContentLoaded", () => {
   const dateInput = document.getElementById("overtimeDate");
-  if (!dateInput) return;
+  if (dateInput) {
+    const toISODate = d => d.toISOString().split("T")[0];
 
-  const toISODate = d => d.toISOString().split("T")[0];
+    const today = new Date();
+    const past = new Date();
+    const future = new Date();
 
-  const today = new Date();
-  const past  = new Date();
-  const future = new Date();
+    past.setDate(today.getDate() - 7);
+    future.setDate(today.getDate() + 7);
 
-  past.setDate(today.getDate() - 7);
-  future.setDate(today.getDate() + 7);
-
-  const pastStr   = toISODate(past);
-  const todayStr  = toISODate(today);
-  const futureStr = toISODate(future);
-
-  dateInput.min   = pastStr;
-  dateInput.max   = futureStr;
-  dateInput.value = todayStr;
+    dateInput.min = toISODate(past);
+    dateInput.max = toISODate(future);
+    dateInput.value = toISODate(today);
+  }
 });
-
-const modal    = document.getElementById("confirmModal");
-const confirmText = document.getElementById("confirmText");
-const yesBtn   = document.getElementById("confirmYes");
-const noBtn    = document.getElementById("confirmNo");
 
 function askConfirmation(message) {
   return new Promise(resolve => {
+    const modal = document.getElementById("confirmModal");
+    const confirmText = document.getElementById("confirmText");
+    const yesBtn = document.getElementById("confirmYes");
+    const noBtn = document.getElementById("confirmNo");
+
+    if (!modal || !confirmText || !yesBtn || !noBtn) {
+      console.error("Brakuje elementów modala:", {
+        modal,
+        confirmText,
+        yesBtn,
+        noBtn
+      });
+      resolve(false);
+      return;
+    }
+
     confirmText.textContent = message;
     modal.classList.remove("hidden");
 
@@ -2459,6 +2466,7 @@ function askConfirmation(message) {
       modal.classList.add("hidden");
       resolve(true);
     };
+
     noBtn.onclick = () => {
       modal.classList.add("hidden");
       resolve(false);
@@ -3503,7 +3511,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const positionName = document.getElementById('positionName').value;
 
-            fetch('/api/position/addNewPosition', {
+            fetch('/api/positions/addNewPosition', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -3518,7 +3526,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (status === 200) {
                     displayMessage("success", body.message || "Pomyślnie dodano nowe stanowisko!");
                     form.reset();
-                    refreshAllSetupSelects();
+
                 } else {
                     // Obsługa błędu walidacji z backendu (np. duplikat, brak nazwy)
                     displayMessage("error", body.error || "Błąd walidacji!");
@@ -3532,121 +3540,81 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 
-let teamSectionMap = {};
-let teamSelect, sectionSelect, positionSelect;
-
-// Formularz do dokończenia rejestracji po utworzeniu usera przez endpoint /register
 document.addEventListener("DOMContentLoaded", function () {
     const path = window.location.pathname;
 
-    if (!["/index", "/adminPanel"].some(p => path.includes(p))) return;
+    if (!path.includes("/adminPanel")) return;
 
-    teamSelect = document.getElementById("team");
-    sectionSelect = document.getElementById("section");
-    positionSelect = document.getElementById("position");
-    const setupForm = document.getElementById("setupForm");
-    const modal = document.getElementById("firstLoginModal");
+    const teamSelect = document.getElementById("team");
+    const sectionSelect = document.getElementById("section");
+    const positionSelect = document.getElementById("position");
 
     if (!teamSelect || !sectionSelect || !positionSelect) return;
 
-    fetch("/api/user/setup-data")
-        .then(res => res.json())
-        .then(data => {
-            // Zespoły
-            data.teams.forEach(team => {
-                const option = new Option(team.teamName, team.id);
-                teamSelect.appendChild(option);
-                teamSectionMap[team.id] = team.sections; // przypisanie sekcji
-            });
-
-            // Stanowiska
-            data.positions.forEach(pos => {
-                const option = new Option(pos.positionName, pos.id);
-                positionSelect.appendChild(option);
-            });
-        })
-        .catch(err => console.error("❌ Błąd ładowania danych setupu:", err));
+    loadTeams();
+    loadPositions();
 
     teamSelect.addEventListener("change", function () {
-        refreshAllSetupSelects(this.value);
+        const teamId = this.value;
+
+        sectionSelect.innerHTML = "<option value=''>Wybierz sekcję</option>";
+
+        if (teamId) {
+            loadSectionsByTeam(teamId);
+        }
     });
 
-
-    // 🔁 Sprawdzenie, czy pokazać modal (pierwsze logowanie)
-    fetch("/api/user/whoami")
-        .then(res => res.json())
-        .then(user => {
-            // Sprawdź czy hasło zostało zmienione i czy pola są puste
-            if (user.passwordChanged && !user.isCreateByAdmin &&
-                (!user.team || !user.section || !user.position)) {
-                modal?.classList.remove("hidden");
-            }
-        })
-        .catch(err => console.error("❌ Błąd pobierania danych użytkownika:", err));
-
-      // 🔁 Obsługa formularza zapisu danych – tylko jeśli istnieje
-      if (setupForm) {
-        setupForm.addEventListener("submit", function (e) {
-          e.preventDefault();
-
-          const formData = new FormData(setupForm);
-
-          fetch("/api/user/complete-setup", {
-            method: "POST",
-            body: formData
-          })
+    function loadTeams() {
+        fetch("/api/teams")
             .then(res => {
-              if (res.ok) {
-                displayMessage('success', 'Dane zostały zaktualizowane!');
-                modal?.classList.add("hidden");
-                setTimeout(() => location.reload(), 3000);
-              } else {
-                displayMessage('error', 'Błąd zapisu danych.');
-              }
+                if (!res.ok) throw new Error("Błąd pobierania zespołów");
+                return res.json();
             })
-            .catch(err => {
-              console.error("❌ Błąd wysyłki danych:", err);
-              displayMessage('error', 'Wystąpił błąd połączenia.');
-            });
-        });
-      }
-});
-function refreshAllSetupSelects(selectedTeamId = null, selectedSectionId = null, selectedPositionId = null) {
-    fetch("/api/user/setup-data")
-        .then(res => res.json())
-        .then(data => {
-            // Wyczyść mapę!
-            Object.keys(teamSectionMap).forEach(k => delete teamSectionMap[k]);
+            .then(data => {
+                teamSelect.innerHTML = "<option value=''>Wybierz zespół</option>";
 
-            // Teams
-            teamSelect.innerHTML = "<option value=''>Wybierz zespół</option>";
-            data.teams.forEach(team => {
-                const option = new Option(team.teamName, team.id);
-                teamSelect.appendChild(option);
-                teamSectionMap[team.id] = team.sections;
-            });
-            if (selectedTeamId) teamSelect.value = selectedTeamId;
+                data.forEach(team => {
+                    const option = new Option(team.teamName, team.id);
+                    teamSelect.appendChild(option);
+                });
+            })
+            .catch(err => console.error("❌ Błąd ładowania zespołów:", err));
+    }
 
-            // Sections
-            sectionSelect.innerHTML = "<option value=''>Wybierz sekcję</option>";
-            if (selectedTeamId && teamSectionMap[selectedTeamId]) {
-                teamSectionMap[selectedTeamId].forEach(section => {
+    function loadPositions() {
+        fetch("/api/positions")
+            .then(res => {
+                if (!res.ok) throw new Error("Błąd pobierania stanowisk");
+                return res.json();
+            })
+            .then(data => {
+                positionSelect.innerHTML = "<option value=''>Wybierz stanowisko</option>";
+
+                data.forEach(position => {
+                    const option = new Option(position.positionName, position.id);
+                    positionSelect.appendChild(option);
+                });
+            })
+            .catch(err => console.error("❌ Błąd ładowania stanowisk:", err));
+    }
+
+    function loadSectionsByTeam(teamId) {
+        fetch(`/api/sections/by-team/${teamId}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Błąd pobierania sekcji");
+                return res.json();
+            })
+            .then(data => {
+                sectionSelect.innerHTML = "<option value=''>Wybierz sekcję</option>";
+
+                data.forEach(section => {
                     const option = new Option(section.sectionName, section.id);
                     sectionSelect.appendChild(option);
                 });
-                if (selectedSectionId) sectionSelect.value = selectedSectionId;
-            }
-
-            // Positions
-            positionSelect.innerHTML = "<option value=''>Wybierz stanowisko</option>";
-            data.positions.forEach(pos => {
-                const option = new Option(pos.positionName, pos.id);
-                positionSelect.appendChild(option);
-            });
-            if (selectedPositionId) positionSelect.value = selectedPositionId;
-        })
-        .catch(err => console.error("❌ Błąd ładowania danych setupu:", err));
-}
+            })
+            .catch(err => console.error("❌ Błąd ładowania sekcji:", err));
+    }
+});
 
 document.addEventListener("DOMContentLoaded", function () {
     const tooltipToggle = document.getElementById("tooltipToggle");

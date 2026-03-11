@@ -9,6 +9,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.util.List;
+
 @Configuration
 public class EncoderConfig {
 
@@ -29,6 +31,17 @@ public class EncoderConfig {
                                 @Value("${app.bootstrap.admin.email}") String adminEmail,
                                 @Value("${app.bootstrap.admin.password}") String adminPassword) {
         return args -> {
+            List<String> roles = List.of("ADMIN", "MANAGER", "COORDINATOR", "USER");
+
+            for (String roleName : roles) {
+                roleRepository.findByRoleName(roleName)
+                        .orElseGet(() -> {
+                            Role role = new Role();
+                            role.setRoleName(roleName);
+                            return roleRepository.save(role);
+                        });
+            }
+
             boolean adminExists = userRepository.existsByUsername(adminUsername);
 
             if (!adminExists) {
@@ -50,6 +63,13 @@ public class EncoderConfig {
                         });
 
                 Section defaultSection = sectionRepository.findBySectionName("Administracja")
+                        .map(section -> {
+                            if (section.getTeam() == null) {
+                                section.setTeam(defaultTeam);
+                                return sectionRepository.save(section);
+                            }
+                            return section;
+                        })
                         .orElseGet(() -> {
                             Section section = new Section();
                             section.setSectionName("Administracja");

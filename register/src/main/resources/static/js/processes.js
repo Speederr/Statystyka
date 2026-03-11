@@ -214,9 +214,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const leftList = document.getElementById("left-list");
     const rightList = document.getElementById("right-list");
 
-    let favoriteIds = new Set(); // 🔹 Przeniesienie zmiennej do szerszego zakresu
+    let favoriteIds = new Set();
 
-    // Pobierz ulubione procesy
     fetch(`/api/processes/favorites/${userId}`)
         .then(response => response.json())
         .then(favorites => {
@@ -235,10 +234,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 favLi.appendChild(icon);
                 rightList.appendChild(favLi);
 
-                favoriteIds.add(favProcess.id); // ✅ Teraz dostępne w całej funkcji
+                favoriteIds.add(String(favProcess.id));
             });
 
-            // 🔹 Pobierz procesy tylko dla zespołu użytkownika
             return fetch(`/api/processes/team/${userId}`);
         })
         .then(response => response.json())
@@ -246,7 +244,7 @@ document.addEventListener("DOMContentLoaded", function () {
             leftList.innerHTML = '';
 
             processes.forEach(process => {
-                if (!favoriteIds.has(process.id)) { // ✅ Teraz favoriteIds jest dostępne!
+                if (!favoriteIds.has(String(process.id))) {
                     const li = document.createElement('li');
                     li.classList.add('unchecked');
                     li.dataset.id = process.id;

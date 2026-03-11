@@ -1,5 +1,6 @@
 package com.example.register.register.controller;
 
+import com.example.register.register.DTO.SectionDto;
 import com.example.register.register.model.Attendance;
 import com.example.register.register.model.Section;
 import com.example.register.register.model.Team;
@@ -91,6 +92,15 @@ public class SectionController {
 
         // Pobranie sekcji związanych z zespołem użytkownika
         List<Section> sections = sectionRepository.findByTeamId(user.getTeam().getId());
+
+        return ResponseEntity.ok(sections);
+    }
+
+    @GetMapping("/by-team/{teamId}")
+    public ResponseEntity<List<SectionDto>> getSectionsByTeam(@PathVariable Long teamId) {
+        List<SectionDto> sections = sectionRepository.findByTeamId(teamId).stream()
+                .map(section -> new SectionDto(section.getId(), section.getSectionName()))
+                .toList();
 
         return ResponseEntity.ok(sections);
     }

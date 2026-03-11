@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PositionDTO {
+public class BusinessProcessDto {
     private Long id;
-    private String positionName;
+    private String processName;
 }

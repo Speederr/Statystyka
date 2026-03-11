@@ -29,10 +29,10 @@ public class BusinessProcess {
     private Double averageTime;
 
     @Column(name = "is_non_operational", nullable = false)
-    private boolean nonOperational; // ✅ Zmiana nazwy pola na `nonOperational`
+    private boolean nonOperational;
 
     @ManyToMany(mappedBy = "favoriteProcesses")
-    @JsonIgnore  // ⬅️ Ignorowanie serializacji w Jacksonie
+    @JsonIgnore
     private Set<User> users = new HashSet<>();
 
     @ManyToOne

@@ -174,7 +174,7 @@ public class SavedDataController {
     ) {
         String username = principal.getName();
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("U?ytkownik nie znaleziony"));
+                .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony"));
         Long teamId = user.getTeam().getId();
 
         List<SavedData> teamData = savedDataRepository.findByUser_Team_Id(teamId);

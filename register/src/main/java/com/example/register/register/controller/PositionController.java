@@ -1,11 +1,10 @@
 package com.example.register.register.controller;
 
-import com.example.register.register.DTO.PositionDTO;
+import com.example.register.register.DTO.PositionDto;
 import com.example.register.register.model.Position;
 import com.example.register.register.model.User;
 import com.example.register.register.repository.PositionRepository;
 import com.example.register.register.repository.UserRepository;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +14,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/api/position")
+@RequestMapping("/api/positions")
 @RequiredArgsConstructor
 public class PositionController {
 
@@ -23,16 +22,16 @@ public class PositionController {
     private final UserRepository userRepository;
 
     @GetMapping
-    public List<PositionDTO> getAllPositions() {
-        return positionRepository.findAll()
-                .stream()
-                .map(pos -> new PositionDTO(pos.getId(), pos.getPositionName()))
+    public ResponseEntity<List<PositionDto>> getAllPositions() {
+        List<PositionDto> positions = positionRepository.findAll().stream()
+                .map(position -> new PositionDto(position.getId(), position.getPositionName()))
                 .toList();
+        return ResponseEntity.ok(positions);
     }
 
     @PostMapping("/addNewPosition")
-    public ResponseEntity<?> createNewPosition(@RequestBody PositionDTO positionDTO) {
-        String name = positionDTO.getPositionName();
+    public ResponseEntity<?> createNewPosition(@RequestBody PositionDto positionDto) {
+        String name = positionDto.getPositionName();
         if (name == null || name.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Nazwa stanowiska jest wymagana!"));
         }
