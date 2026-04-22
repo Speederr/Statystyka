@@ -17,7 +17,9 @@ services:
       retries: 10
 
   app:
-    build: .
+    build:
+      context: ./register
+      dockerfile: Dockerfile
     container_name: statystyka-app
     depends_on:
       db:
