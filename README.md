@@ -69,6 +69,10 @@ Na Linux / macOS:
 ```bash
 ./mvnw spring-boot:run
 ```
+### Zmienne środowiskowe
+
+Konfiguracja aplikacji wykorzystuje zmienne środowiskowe, które mogą zostać zapisane w pliku `.env` umieszczonym w katalogu głównym projektu. Dotyczy to w szczególności konfiguracji połączenia z bazą danych, danych konta administratora oraz ustawień poczty e-mail.
+
 ### Aplikacja będzie dostępna pod adresem:
 
 http://localhost:8080
