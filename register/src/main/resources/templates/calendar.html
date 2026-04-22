@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urlopy</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css" />
+
+    <link rel="stylesheet" th:href="@{/css/efficiency.css}">
+    <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+    <!-- Tippy.js JS -->
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <script th:src="@{/js/json.js}" defer></script>
+    <script th:src="@{/js/filter.js}" defer></script>
+    <script th:src="@{/js/script.js}" defer></script>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="top">
+        <div class="logo">
+            <i class='bx bx-bar-chart-alt-2'></i>
+            <span>Statystyka</span>
+        </div>
+        <i class="bx bx-menu" id="btn"></i>
+
+        <div class="user">
+            <img src="" alt="User Image" class="user-img" id="user-avatar">
+            <div class="information">
+                <p class="bold"></p>
+                <p class="role"></p>
+            </div>
+        </div>
+
+        <ul>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/index}">
+                    <i class="bx bx-home"></i>
+                    <span class="nav-item">Dashboard</span>
+                </a>
+                <span class="tooltip">Dashboard</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/processes}">
+                    <i class="bx bx-windows"></i>
+                    <span class="nav-item">Procesy</span>
+                </a>
+                <span class="tooltip">Procesy</span>
+            </li>
+            <li>
+                <a th:href="@{/settings}">
+                    <i class="bx bx-cog"></i>
+                    <span class="nav-item">Ustawienia</span>
+                </a>
+                <span class="tooltip">Ustawienia</span>
+            </li>
+            <li class="notification-item">
+                <a th:href="@{/notifications}">
+                    <i class='bx bx-message'></i>
+                    <span class="nav-item">Powiadomienia</span>
+                    <span id="notification-counter" class="notification-counter" style="display: none;">0</span>
+                </a>
+                <span class="tooltip">Powiadomienia</span>
+            </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER', 'USER')">
+                <a th:href="@{/executionReport}">
+                    <i class='bx bx-archive' ></i>
+                    <span class="nav-item">Wykonanie</span>
+                </a>
+                <span class="tooltip">Wykonanie</span>
+            </li>
+
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
+                <a th:href="@{/efficiency}">
+                    <i class="bx bx-stats"></i>
+                    <span class="nav-item">Efektywność</span>
+                </a>
+                <span class="tooltip">Efektywność</span>
+            </li>
+            <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                <a th:href="@{/adminPanel}">
+                    <i class='bx bx-user-check'></i>
+                    <span class="nav-item">Panel Admina</span>
+                </a>
+                <span class="tooltip">Panel Admina</span>
+            </li>
+        </ul>
+    </div>
+    <ul>
+        <li>
+            <a th:href="@{/logout}">
+                <i class="bx bx-log-out"></i>
+                <span class="nav-item">Wyloguj</span>
+            </a>
+            <span class="tooltip">Wyloguj</span>
+        </li>
+    </ul>
+</div>
+
+<div class="main-content">
+    <div class="loader"></div>
+
+    <div class="popup"></div>
+
+    <div class="error-container" id="err-container">
+        <p th:if="${error}" class="error">
+                <span class="error-content" th:text="${error}">
+                </span>
+            <i class='bx bx-x-circle' onclick="hideError()"></i>
+        </p>
+    </div>
+
+
+    <header class="title-container">
+        <h1>Kalendarz urlopowy</h1>
+        <span id="currentDate"></span>
+    </header>
+
+    <div class="wrapper">
+        <div class="left-side overtime">
+            <button class="btn-back" type="button" th:onclick="|window.location.href='@{/index}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
+        </div>
+
+        <div class="center-side calendar">
+            <div class="selector">
+                <div class="selector-header">
+                    <span class="ts-label">Dodaj urlop</span>
+                    <i class="bx bx-chevron-down vts-arrow"></i>
+                </div>
+                <div class="selector-body">
+                    <div class="selector-date">
+                        <div class="date-container">
+                            <label class="date-label" for="startLeaveDate">Od:</label>
+                            <input class="date-input" type="date" id="startLeaveDate" name="startLeaveDate" th:value="${startLeaveDate}">
+                        </div>
+                        <div class="date-container">
+                            <label class="date-label" for="endLeaveDate">Do:</label>
+                            <input class="date-input" type="date" id="endLeaveDate" name="endLeaveDate" th:value="${endLeaveDate}">
+                        </div>
+                        <button type="submit" id="applyLeave" class="filter-button">Zapisz</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="calendar"></div>
+
+<!--    MODAL DO EDYCJI URLOPU   -->
+    <div id="editLeaveModal" class="modal-bg" style="display:none;">
+        <div class="modal-box">
+            <h2 class="modal-title">Edytuj urlop</h2>
+            <form id="editLeaveForm">
+                <div class="modal-row">
+                    <label for="editStartDate">Od:</label>
+                    <input type="date" class="edit-date-input" id="editStartDate" name="editStartDate" required>
+                </div>
+                <div class="modal-row">
+                    <label for="editEndDate">Do:</label>
+                    <input type="date" class="edit-date-input" id="editEndDate" name="editEndDate" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="modal-btn modal-btn-save">Zapisz</button>
+                    <button type="button" class="modal-btn modal-btn-cancel" id="cancelEditLeave">Anuluj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<!-- MODAL DO USUWANIA URLOPU -->
+    <div id="deleteLeaveModal" class="modal-bg" style="display:none;">
+        <div class="modal-box delete">
+            <h2 class="modal-title delete">Usuń urlop</h2>
+            <div id="deleteLeaveText">Czy na pewno chcesz usunąć urlop?</div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-save" id="deleteLeaveYes">Tak</button>
+                <button class="modal-btn modal-btn-cancel" id="deleteLeaveNo">Nie</button>
+            </div>
+        </div>
+    </div>
+
+
+    <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
+
+</div>
+
+</body>
+</html>

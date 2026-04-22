@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admina</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/adminPanel.css}">
+    <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+    <link rel="stylesheet" th:href="@{/css/modal.css}">
+
+    <script th:src="@{/js/script.js}" defer></script>
+    <script th:src="@{/js/json.js}" defer></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="top">
+        <div class="logo">
+            <i class='bx bx-bar-chart-alt-2'></i>
+            <span>Statystyka</span>
+        </div>
+        <i class="bx bx-menu" id="btn"></i>
+
+        <div class="user">
+            <img src="" alt="User Image" class="user-img" id="user-avatar">
+            <div class="information">
+                <p class="bold"></p>
+                <p class="role"></p>
+            </div>
+        </div>
+        <ul>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/index}">
+                    <i class="bx bx-home"></i>
+                    <span class="nav-item">Dashboard</span>
+                </a>
+                <span class="tooltip">Dashboard</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/processes}">
+                    <i class="bx bx-windows"></i>
+                    <span class="nav-item">Procesy</span>
+                </a>
+                <span class="tooltip">Procesy</span>
+            </li>
+            <li>
+                <a th:href="@{/settings}">
+                    <i class="bx bx-cog"></i>
+                    <span class="nav-item">Ustawienia</span>
+                </a>
+                <span class="tooltip">Ustawienia</span>
+            </li>
+            <li class="notification-item">
+                <a th:href="@{/notifications}">
+                    <i class='bx bx-message'></i>
+                    <span class="nav-item">Powiadomienia</span>
+                    <span id="notification-counter" class="notification-counter" style="display: none;">0</span>
+                </a>
+                <span class="tooltip">Powiadomienia</span>
+            </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER', 'USER')">
+                <a th:href="@{/executionReport}">
+                    <i class='bx bx-archive' ></i>
+                    <span class="nav-item">Wykonanie</span>
+                </a>
+                <span class="tooltip">Wykonanie</span>
+            </li>
+
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
+                <a th:href="@{/efficiency}">
+                    <i class="bx bx-stats"></i>
+                    <span class="nav-item">Efektywność</span>
+                </a>
+                <span class="tooltip">Efektywność</span>
+            </li>
+            <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                <a th:href="@{/adminPanel}">
+                    <i class='bx bx-user-check'></i>
+                    <span class="nav-item">Panel Admina</span>
+                </a>
+                <span class="tooltip">Panel Admina</span>
+            </li>
+        </ul>
+    </div>
+    <ul>
+        <li>
+            <a th:href="@{/logout}">
+                <i class="bx bx-log-out"></i>
+                <span class="nav-item">Wyloguj</span>
+            </a>
+            <span class="tooltip">Wyloguj</span>
+        </li>
+    </ul>
+</div>
+
+
+<div class="main-content">
+    <div class="loader"></div>
+
+    <div class="popup"></div>
+
+    <div class="error-container" id="err-container">
+        <p th:if="${error}" class="error">
+                <span class="error-content" th:text="${error}">
+                </span>
+            <i class='bx bx-x-circle' onclick="hideError()"></i>
+        </p>
+    </div>
+
+    <div th:if="${successMessage}" style="color: green; margin-top: 15px;">
+        <p th:text="${successMessage}"></p>
+    </div>
+
+    <div th:if="${errorMessage}" style="color: red; margin-top: 15px;">
+        <p th:text="${errorMessage}"></p>
+    </div>
+
+    <div th:if="${importErrors}" style="color: darkorange; margin-top: 15px;">
+        <p><strong>Błędy podczas importu:</strong></p>
+        <ul>
+            <li th:each="err : ${importErrors}" th:text="${err}"></li>
+        </ul>
+    </div>
+
+
+    <header class="title-container">
+        <h1>Uprawnienia</h1>
+        <span id="currentDate"></span>
+    </header>
+    <!-- Przycisk do otwarcia modala -->
+    <div class="mainContainer">
+        <div class="modalsBtn">
+            <button class="btn-back" data-open-modal="userModal"><i class='bx bx-user-plus' ></i>Dodaj Użytkownika</button>
+            <button class="btn-back" data-open-modal="teamModal"><i class='bx bx-list-plus'></i>Dodaj Zespół</button>
+            <button class="btn-back" data-open-modal="sectionModal"><i class='bx bx-list-plus'></i>Dodaj Sekcję</button>
+            <button class="btn-back" data-open-modal="positionModal"><i class='bx bx-list-plus'></i>Dodaj Stanowisko</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/averageTime}'|"><i class='bx bx-time'></i>Edytuj Czasy</button>
+            <button class="btn-back" onclick="openImportModal()"><i class='bx bx-time'></i>Import CSV/TXT</button>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="search-user-messages" placeholder="Wyszukaj...">
+            <i class='bx bx-x clear-icon' id="clear-search"></i>
+        </div>
+    </div>
+
+    <br/>
+
+    <div class="role">
+        <form th:action="@{/api/user/saveUsers}" method="post" id="users-form">
+            <div class="table-wrapper">
+                <table id="user-table">
+                    <thead>
+                    <tr>
+                        <th>Zaznacz</th>
+                        <th>Imię</th>
+                        <th>Nazwisko</th>
+                        <th>Login</th>
+                        <th>Email</th>
+                        <th>Zespół</th>
+                        <th>Sekcja</th>
+                        <th>Rola</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="user : ${users}">
+                        <td class="checkbox-cell">
+                            <input type="checkbox" class="checkbox-button" th:if="${!user.isSuperAdmin}"
+                                   name="selectedUsers" th:value="${user.id}">
+                        </td>
+                        <td th:text="${user.firstName}">Imię</td>
+                        <td th:text="${user.lastName}">Nazwisko</td>
+                        <td th:text="${user.username}">Login</td>
+                        <td th:text="${user.email}">Email</td>
+                        <td>
+                            <th:block th:if="${loggedUser.role.roleName == 'ADMIN'}">
+                                <select th:attr="name='teams[' + ${user.id} + ']'" class="team-select">
+                                    <option th:each="team : ${teams}"
+                                            th:value="${team.id}"
+                                            th:text="${team.teamName}"
+                                            th:selected="${team.id == user.team.id}">
+                                    </option>
+                                </select>
+                            </th:block>
+                            <th:block th:unless="${loggedUser.role.roleName == 'ADMIN'}"
+                                      th:text="${user.team.teamName}">
+                            </th:block>
+                        </td>
+                        <td class="select-cell">
+                            <select class="select-section" th:attr="name='sections[' + ${user.id} + ']'"
+                                    th:if="${user.team != null}">
+                                <option th:each="section : ${user.team.sections}"
+                                        th:value="${section.id}"
+                                        th:text="${section.sectionName}"
+                                        th:selected="${user.section != null && user.section.id == section.id}">
+                                </option>
+                            </select>
+                        </td>
+                        <td class="select-cell">
+                            <select class="select-role" th:attr="name='roles[' + ${user.id} + ']'"
+                                    th:value="${user.role.roleName}" th:if="${!user.isSuperAdmin}">
+                                <option value="ADMIN" th:selected="${user.role.roleName == 'ADMIN'}">Admin</option>
+                                <option value="MANAGER" th:selected="${user.role.roleName == 'MANAGER'}">Manager
+                                </option>
+                                <option value="COORDINATOR" th:selected="${user.role.roleName == 'COORDINATOR'}">
+                                    Coordinator
+                                </option>
+                                <option value="USER" th:selected="${user.role.roleName == 'USER'}">User</option>
+                            </select>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- WYCIĄGNIĘTE PRZYCISKI POZA TABELĘ, ALE W TYM SAMYM FORMULARZU -->
+            <div class="new-form-button-container">
+                <button type="submit" class="btn-save"><i class='bx bx-save' ></i>Zapisz</button>
+                <button type="button" id="deleteButton" class="btn-delete"><i class='bx bx-trash'></i>Usuń</button>
+
+            </div>
+        </form>
+    </div>
+
+
+    <!-- Modal do tworzenia nowego usera -->
+    <div id="userModal" class="modal hidden">
+        <div class="user-modal-content">
+            <form th:action="@{/api/user/addUser}" th:object="${user}" method="post" id="form-container">
+                <div id="title">
+                    <h3>Dodaj Użytkownika</h3>
+                    <span class="close" data-close-modal="userModal">&times;</span>
+                </div>
+
+                <div class="form-field">
+                    <label for="firstName">Imię</label>
+                    <input type="text" name="firstName" id="firstName" required>
+                </div>
+                <div class="form-field">
+                    <label for="lastName">Nazwisko</label>
+                    <input type="text" name="lastName" id="lastName" required>
+                </div>
+                <div class="form-field">
+                    <label for="username">Login</label>
+                    <input type="text" name="username" id="username" required>
+                </div>
+                <div class="form-field">
+                    <label for="email">Email</label>
+                    <input type="text" name="email" id="email" required>
+                    <div id="usernameFeedback"></div>
+                </div>
+                <div class="form-field">
+                    <label for="team">Zespół:</label>
+                    <select id="team" name="teamId">
+                        <option value="">Wybierz zespół</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="section">Sekcja:</label>
+                    <select id="section" name="sectionId">
+                        <option value="">Wybierz sekcję</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="position">Stanowisko:</label>
+                    <select id="position" name="positionId">
+                        <option value="">Wybierz stanowisko</option>
+                    </select>
+                </div>
+
+                <!-- Radio group & przycisk na pełną szerokość -->
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label>Rola</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="admin" name="id_role" value="1" required>
+                            <label for="admin">Admin</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="manager" name="id_role" value="2" required>
+                            <label for="manager">Kierownik</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="coordinator" name="id_role" value="3" required>
+                            <label for="coordinator">Koordynator</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="uzytkownik" name="id_role" value="4" required>
+                            <label for="uzytkownik">Użytkownik</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-field btnContainer" style="grid-column: 1 / -1;">
+                    <button type="submit" class="btn-save" id="submit-button"><i class='bx bxs-plus-square'></i>Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!--    Modal do dodania nowego zespołu -->
+    <div id="teamModal" class="modal hidden">
+        <div class="modal-content">
+            <form id="teamForm">
+                <div class="title">
+                    <h4>Nowy Zespół</h4>
+                    <span class="close" data-close-modal="teamModal">&times;</span>
+                </div>
+                <label for="teamName">Nazwa Zespołu</label>
+                <input class="formInput" type="text" id="teamName" required>
+
+                <div class="btnContainer">
+                    <button type="submit" class="btn-save"><i class='bx bxs-plus-square'></i>Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!--    Modal do dodania nowej sekcji   -->
+    <div id="sectionModal" class="modal hidden">
+        <div class="modal-content">
+            <form id="sectionForm">
+                <div class="title">
+                    <h4>Nowa Sekcja</h4>
+                    <span class="close" data-close-modal="sectionModal">&times;</span>
+                </div>
+
+                <label for="sectionTeam">Zespół:</label>
+                <select id="sectionTeam" name="teamId">
+                    <option value="">Wybierz zespół</option>
+                </select>
+
+                <label for="sectionName">Nazwa Sekcji</label>
+                <input class="formInput" type="text" id="sectionName" required>
+
+                <div class="btnContainer">
+                    <button type="submit" class="btn-save"><i class='bx bxs-plus-square'></i>Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!--    Modal do dodania nowego stanowiska -->
+    <div id="positionModal" class="modal hidden">
+        <div class="modal-content">
+            <form id="positionForm">
+                <div class="title">
+                    <h4>Dodaj stanowisko</h4>
+                    <span class="close" data-close-modal="positionModal">&times;</span>
+                </div>
+                <label for="positionName">Nazwa stanowiska</label>
+                <input class="formInput" type="text" id="positionName" required>
+
+                <div class="btnContainer">
+                    <button type="submit" class="btn-save"><i class='bx bxs-plus-square'></i>Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="importModal" class="modal-overlay" aria-hidden="true">
+        <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
+            <div class="custom-modal__header">
+                <div class="custom-modal__title-wrap">
+                    <div class="custom-modal__icon">
+                        <i class='bx bx-upload'></i>
+                    </div>
+                    <div>
+                        <h2 id="importModalTitle" class="custom-modal__title">Import użytkowników</h2>
+                        <p class="custom-modal__subtitle">Wgraj plik CSV lub TXT z listą użytkowników.</p>
+                    </div>
+                </div>
+
+                <button type="button" class="custom-modal__close" onclick="closeImportModal()" aria-label="Zamknij">
+                    <i class='bx bx-x'></i>
+                </button>
+            </div>
+
+            <div class="custom-modal__body">
+                <form th:action="@{/admin/users/import}" method="post" enctype="multipart/form-data" class="import-form">
+                    <div class="form-group">
+                        <label for="file" class="form-label">Plik z użytkownikami</label>
+
+                        <label for="file" class="file-dropzone" id="fileDropzone">
+                            <div class="file-dropzone__icon">
+                                <i class='bx bx-file'></i>
+                            </div>
+                            <div class="file-dropzone__content">
+                                <span class="file-dropzone__title">Kliknij, aby wybrać plik</span>
+                                <span class="file-dropzone__text">Obsługiwane formaty: .csv, .txt</span>
+                                <span class="file-dropzone__filename" id="selectedFileName">Nie wybrano pliku</span>
+                            </div>
+                        </label>
+
+                        <input
+                                type="file"
+                                id="file"
+                                name="file"
+                                accept=".txt,.csv"
+                                required
+                                class="file-input"
+                                onchange="handleFileSelect(this)"
+                        >
+                    </div>
+
+                    <div class="import-info-box">
+                        <strong>Format pliku:</strong><br>
+                        firstName;lastName;username;email;roleId;teamId;sectionId;positionId
+                    </div>
+
+                    <div class="custom-modal__footer">
+                        <button type="button" class="btn-secondary" onclick="closeImportModal()">
+                            Anuluj
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class='bx bx-upload'></i>
+                            Importuj plik
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
+</div>
+
+
+
+</body>
+</html>

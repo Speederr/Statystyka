@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Powiadomienia</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <script th:src="@{/js/json.js}" defer></script>
+    <script th:src="@{/js/script.js}" defer></script>
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="top">
+        <div class="logo">
+            <i class='bx bx-bar-chart-alt-2'></i>
+            <span>Statystyka</span>
+        </div>
+        <i class="bx bx-menu" id="btn"></i>
+
+        <div class="user">
+            <img src="" alt="User Image" class="user-img" id="user-avatar">
+            <div class="information">
+                <p class="bold"></p>
+                <p class="role"></p>
+            </div>
+        </div>
+        <ul>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/index}">
+                    <i class="bx bx-home"></i>
+                    <span class="nav-item">Dashboard</span>
+                </a>
+                <span class="tooltip">Dashboard</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/processes}">
+                    <i class="bx bx-windows"></i>
+                    <span class="nav-item">Procesy</span>
+                </a>
+                <span class="tooltip">Procesy</span>
+            </li>
+            <li>
+                <a th:href="@{/settings}">
+                    <i class="bx bx-cog"></i>
+                    <span class="nav-item">Ustawienia</span>
+                </a>
+                <span class="tooltip">Ustawienia</span>
+            </li>
+            <li class="notification-item">
+                <a th:href="@{/notifications}">
+                    <i class='bx bx-message'></i>
+                    <span class="nav-item">Powiadomienia</span>
+                    <span id="notification-counter" class="notification-counter" style="display: none;">0</span>
+                </a>
+                <span class="tooltip">Powiadomienia</span>
+            </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER', 'USER')">
+                <a th:href="@{/executionReport}">
+                    <i class='bx bx-archive' ></i>
+                    <span class="nav-item">Wykonanie</span>
+                </a>
+                <span class="tooltip">Wykonanie</span>
+            </li>
+
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
+                <a th:href="@{/efficiency}">
+                    <i class="bx bx-stats"></i>
+                    <span class="nav-item">Efektywność</span>
+                </a>
+                <span class="tooltip">Efektywność</span>
+            </li>
+            <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                <a th:href="@{/adminPanel}">
+                    <i class='bx bx-user-check'></i>
+                    <span class="nav-item">Panel Admina</span>
+                </a>
+                <span class="tooltip">Panel Admina</span>
+            </li>
+        </ul>
+    </div>
+    <ul>
+        <li>
+            <a th:href="@{/logout}">
+                <i class="bx bx-log-out"></i>
+                <span class="nav-item">Wyloguj</span>
+            </a>
+            <span class="tooltip">Wyloguj</span>
+        </li>
+    </ul>
+</div>
+
+
+<div class="main-content">
+    <div class="loader"></div>
+
+    <div class="popup"></div>
+
+    <div class="error-container" id="err-container">
+        <p th:if="${error}" class="error">
+                <span class="error-content" th:text="${error}">
+                </span>
+            <i class='bx bx-x-circle' onclick="hideError()"></i>
+        </p>
+    </div>
+
+    <header class="title-container">
+        <h1>Poczta</h1>
+        <span id="currentDate"></span>
+    </header>
+
+    <div class="inbox-container">
+        <div class="inbox-header">
+            <h2>Skrzynka odbiorcza</h2>
+            <div class="search-bar">
+                <input type="text" id="search-userMessages" placeholder="Wyszukaj...">
+                <button class="mailchimp-button" id="search-button"><i class="bx bx-search"></i></button>
+            </div>
+        </div>
+
+        <div class="inbox-actions">
+            <button class="mailchimp-button" id="new-message" th:if="${#authorization.expression('hasRole(''ADMIN'')')}"><i class='bx bx-message-add'></i> Nowa</button>
+            <button class="mailchimp-button" id="receive-message"><i class='bx bx-envelope'></i> Odebrane</button>
+            <button class="mailchimp-button" id="send-message"><i class='bx bx-send'></i> Wysłane</button>
+            <button class="mailchimp-button" id="markAsReadBtn"><i class="bx bx-check"></i> Oznacz jako przeczytane</button>
+            <button class="mailchimp-button" id="deleteMessageBtn"><i class="bx bx-trash"></i> Usuń</button>
+        </div>
+        <div class="mailchimp-button checkAll">
+            <input type="checkbox" id="select-all-checkbox">
+            <label for="select-all-checkbox" id="checkAll" >Zaznacz wszystkie</label>
+        </div>
+
+
+        <div id="message-list"></div>
+
+
+    </div>
+
+    <!-- Modal do tworzenia nowej wiadomości -->
+    <div id="newMessageModal" class="modal">
+        <div class="modal-content">
+            <div class="header">
+                <h2>Nowa wiadomość</h2>
+                <span class="close" id="closeNewMessageModal">&times;</span>
+            </div>
+                <form id="newMessageForm">
+                <div class="form__group field">
+                    <input type="input" id="recipient" class="form__field" placeholder="Do" required="">
+                    <label for="recipient" class="form__label">Do</label>
+                </div>
+
+                <div class="form__group field">
+                    <input type="input" id="subject" class="form__field" placeholder="Temat" required="">
+                    <label for="subject" class="form__label">Temat</label>
+                </div>
+
+                <div class="form__group field">
+                    <textarea id="messageContent" name="messageContent" class="form__field" required></textarea>
+                    <label for="messageContent" class="form__label"></label>
+                </div>
+                <div class="btnContainer">
+                    <button type="submit" class="btn-back">Wyślij</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Modal do wyświetlania wiadomości -->
+    <div id="messageModal" class="modal">
+        <div class="modalContainer">
+            <div class="modal-content">
+                <!-- Nagłówek z ikoną i tytułem -->
+                <div class="modal-header">
+                    <div class="modal-title-container">
+                        <i class='bx bx-envelope-open' ></i>
+                        <h2 id="modalTitle"></h2>
+                    </div>
+                    <div class="modal-header-date">
+                        <p id="modalDate" class="modal-date"></p>
+                    </div>
+                </div>
+
+                <!-- Treść wiadomości -->
+                <div class="modal-message">
+                    <p id="modalContent"></p>
+                </div>
+
+                <!-- Przycisk na dole -->
+                <div class="btnContainer">
+                    <button type="button" class="btn-back" id="closeMessageBtn">Zamknij</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
+
+</div>
+
+</body>
+</html>

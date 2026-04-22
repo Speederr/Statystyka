@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Czasy</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/averageTime.css}">
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+    <link rel="stylesheet" th:href="@{/css/modal.css}">
+
+    <script th:src="@{/js/script.js}" defer></script>
+    <script th:src="@{/js/json.js}" defer></script>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="top">
+        <div class="logo">
+            <i class='bx bx-bar-chart-alt-2'></i>
+            <span>Statystyka</span>
+        </div>
+        <i class="bx bx-menu" id="btn"></i>
+
+        <div class="user">
+            <img src="" alt="User Image" class="user-img" id="user-avatar">
+            <div class="information">
+                <p class="bold"></p>
+                <p class="role"></p>
+            </div>
+        </div>
+
+        <ul>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/index}">
+                    <i class="bx bx-home"></i>
+                    <span class="nav-item">Dashboard</span>
+                </a>
+                <span class="tooltip">Dashboard</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/processes}">
+                    <i class="bx bx-windows"></i>
+                    <span class="nav-item">Procesy</span>
+                </a>
+                <span class="tooltip">Procesy</span>
+            </li>
+            <li>
+                <a th:href="@{/settings}">
+                    <i class="bx bx-cog"></i>
+                    <span class="nav-item">Ustawienia</span>
+                </a>
+                <span class="tooltip">Ustawienia</span>
+            </li>
+            <li class="notification-item">
+                <a th:href="@{/notifications}">
+                    <i class='bx bx-message'></i>
+                    <span class="nav-item">Powiadomienia</span>
+                    <span id="notification-counter" class="notification-counter" style="display: none;">0</span>
+                </a>
+                <span class="tooltip">Powiadomienia</span>
+            </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER', 'USER')">
+                <a th:href="@{/executionReport}">
+                    <i class='bx bx-archive' ></i>
+                    <span class="nav-item">Wykonanie</span>
+                </a>
+                <span class="tooltip">Wykonanie</span>
+            </li>
+
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
+                <a th:href="@{/efficiency}">
+                    <i class="bx bx-stats"></i>
+                    <span class="nav-item">Efektywność</span>
+                </a>
+                <span class="tooltip">Efektywność</span>
+            </li>
+            <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                <a th:href="@{/adminPanel}">
+                    <i class='bx bx-user-check'></i>
+                    <span class="nav-item">Panel Admina</span>
+                </a>
+                <span class="tooltip">Panel Admina</span>
+            </li>
+        </ul>
+    </div>
+    <ul>
+        <li>
+            <a th:href="@{/logout}">
+                <i class="bx bx-log-out"></i>
+                <span class="nav-item">Wyloguj</span>
+            </a>
+            <span class="tooltip">Wyloguj</span>
+        </li>
+    </ul>
+</div>
+
+<div class="main-content">
+    <div class="loader"></div>
+
+    <div class="popup">
+        <!-- Komunikat dynamiczny -->
+        <div id="popup-userMessage" class="userMessage" style="display: none;">
+            <span></span>
+            <i class='bx bx-x-circle' onclick="this.parentElement.style.display='none'"></i>
+        </div>
+    </div>
+
+    <header class="title-container">
+        <h1>Czasy</h1>
+        <span id="currentDate"></span>
+    </header>
+    <div class="filter-container">
+        <div class="modalsBtn">
+            <button class="btn-back" type="button" th:onclick="|window.location.href='@{/efficiency}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
+        </div>
+    </div>
+
+    <div class="mainTableContainer">
+        <div class="teamFilterContainer"
+             th:if="${loggedUser.role.roleName != 'Manager' and loggedUser.role.roleName != 'Coordinator'}">
+            <select id="timeTeam" name="teamId">
+                <option value="">Wybierz zespół</option>
+                <option th:each="team : ${teams}" th:value="${team.id}" th:text="${team.teamName}"></option>
+            </select>
+        </div>
+
+        <div class="tableContainer">
+            <table>
+                <thead>
+                <tr>
+                    <th>Nazwa Procesu</th>
+                    <th>Średni czas (minuty)</th>
+                    <th>Średni czas (sekundy)</th>
+                    <th>Czy proces nieoperacyjny?</th>
+                    <th>Status użycia</th>
+                </tr>
+                </thead>
+                <tbody id="processTable">
+                <tr th:each="process : ${processes}" th:data-team="${process.team.id}">
+                    <td th:text="${process.processName}"></td>
+                    <td>
+                        <input type="text" class="time-input minutes"
+                               th:value="${process.averageTime}"
+                               th:id="'minutes_' + ${process.id}" readonly>
+                    </td>
+                    <td>
+                        <input type="text" class="time-input seconds"
+                               th:value="${#numbers.formatInteger(process.averageTime * 60, 0, 'COMMA')}"
+                               th:id="'seconds_' + ${process.id}" readonly>
+                    </td>
+                    <td class="checkbox-cell">
+                        <input type="checkbox" class="checkbox-button time-checkbox" th:id="'checkbox_' + ${process.id}" th:value="${process.id}" th:checked="${process.nonOperational}" disabled>
+                    </td>
+
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox"
+                                   th:checked="${process.active}"
+                                   th:onchange="|toggleProcessStatus(${process.id}, this.checked)|">
+                            <span class="slider round"></span>
+                        </label>
+                    </td>
+
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="editBtn">
+        <button class="btn-save" id="editButton" type="submit"><i class='bx bx-edit'></i>Edytuj</button>
+        <button class="btn-save" id="addNewProcessModalBtn" type="submit"><i class='bx bxs-plus-square'></i>Dodaj</button>
+        <button class="btn-save" id="exportToXLSX" type="submit"><i class='bx bxs-file-export'></i>XLSX</button>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="processModal" class="modal">
+    <div class="modal-content">
+        <form id="form-process-container">
+            <div id="title">
+                <h4>Nowy Proces</h4>
+                <span class="close" id="closeProcessModalBtn">&times;</span>
+            </div>
+            <label for="processName">Nazwa Procesu</label>
+            <input class="formInput" type="text" name="processName" id="processName" required>
+
+            <label for="team">Zespół</label>
+            <select class="formInput"
+                    name="teamId"
+                    id="team"
+                    required>
+                <option th:each="team : ${teams}"
+                        th:value="${team.id}"
+                        th:text="${team.teamName}">
+                </option>
+            </select>
+            <label for="averageTime">Czas</label>
+            <input type="text" name="averageTime" id="averageTime" required>
+            <div class="btnContainer">
+                <button type="submit" class="btn-save"><i class='bx bxs-plus-square'></i>Dodaj</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+</div><!-- Koniec Main content -->
+
+<input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
+
+</body>
+
+</html>

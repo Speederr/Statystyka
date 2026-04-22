@@ -1,0 +1,276 @@
+.chart-grid {
+  display: grid;
+  grid-template-columns: 69% 30%;
+  gap: 1rem;
+  align-items: center;
+
+}
+
+/* Karty wykresów */
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 10px;
+}
+
+/* Nagłówki w kartach */
+.chartsTitle {
+  font-weight: normal;
+}
+
+/* Responsywność: układ jeden pod drugim na małych ekranach */
+@media (max-width: 900px) {
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.summary-cards {
+  display: flex;
+  flex-wrap: wrap;       /* pozwala kartom zawijać się na nowe linie */
+  gap: 1rem;             /* odstęp między kartami */
+  justify-content: center; /* centruje karty w wierszu */
+}
+
+.summary-card {
+  flex: 1 1 160px;       /* rośnie, kurczy się, próbuje mieć min. 200px szerokości */
+  min-width: 160px;      /* nie pozwól, by karta była węższa */
+  padding: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-radius: 0.5rem;
+  background: #fff;
+  text-align: center;
+}
+
+/* Tekst w karcie */
+.summary-card h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.summary-card p {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #007bff;
+  margin: 0;
+}
+.modalsBtn {
+    display: flex;
+}
+
+/* --------------------------------------------------------------------------------- */
+  table.competencyMatrix {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    table.competencyMatrix th, table.competencyMatrix td {
+        border: 1px solid #7f7e7e;
+        padding: 10px;
+        text-align: center;
+    }
+    table.competencyMatrix tr:hover {
+        background-color: #ebebeb;
+    }
+    table.competencyMatrix th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+    }
+
+    table.competencyMatrix td:first-child {
+        text-align: left;
+    }
+
+    table.competencyMatrix input {
+    cursor: pointer;
+    }
+
+/* Kolory dla poziomów z delikatnym obramowaniem */
+.level-0 {
+    background-color: #f8d7da; /* jasny czerwony */
+    border: 1px solid #f5c2c7;
+}
+
+.level-1 {
+    background-color: #fff3cd; /* jasny żółty */
+}
+
+.level-2 {
+    background-color: #dbead5; /* jasny zielony */
+}
+
+.level-3 {
+    background-color: #b7d5ac; /* zielony */
+}
+
+.level-4 {
+    background-color: #93bf85; /* ciemny zielony */
+    color: white;
+}
+.right-sections {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+.vertical-info-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    padding: 20px;
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+/* dropdown */
+.filter-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.dropdown-wrapper {
+    display: flex;
+    margin-left: auto;
+    justify-content: center;
+}
+
+.multiselect-container {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  flex-grow: 1;
+}
+
+
+.select-box {
+  position: relative;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #8F9092;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 250px;
+  height: 40px;
+  user-select: none;
+
+}
+.select-box i {
+  font-size: 18px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.select-box:hover {
+    cursor: pointer;
+    background: rgb(224, 224, 226);
+    transition: 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.process-checkbox-dropdown {
+  position: absolute;
+  top: 100%; /* 🔹 Ustaw tuż pod select-boxem */
+  left: 0;
+  width: 100%;
+  background-color: #f9f9f9;
+  border-radius: 0 0 10px 10px;
+  z-index: 1000;
+  margin-top: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+
+}
+
+.process-checkbox-dropdown.show {
+  max-height: 350px;
+  min-width: 250px;
+  height: 350px;
+  width: 300px;
+  opacity: 1;
+  overflow-y: auto;
+}
+.process-checkbox-dropdown label {
+  display: block;
+  padding: 8px;
+  cursor: pointer;
+}
+.process-checkbox-dropdown label:hover {
+  background-color: #efefef;
+}
+
+.rotate {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
+.modalsBtnContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+.left-side {
+  display: flex;
+  gap: 5px; /* odstęp między przyciskami */
+}
+.right-side {
+  display: flex;
+  align-items: center;
+}
+
+
+/* Style dla modala ze strony matrix */
+
+/* Modal styles */
+/*
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+.modal-content {
+    background: #fff;
+    margin: 10% auto;
+    padding: 24px 20px;
+    border-radius: 16px;
+    width: 350px;
+    box-shadow: 0 0 12px #2222;
+}
+.modal-content label {
+    display: block;
+    margin-top: 8px;
+}
+.modal-content input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 2px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+.modal-buttons {
+    margin-top: 18px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+.modal-buttons button {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+.btn-save { background: #2e8b57; color: #fff; }
+.btn-cancel { background: #bbb; }
+*/

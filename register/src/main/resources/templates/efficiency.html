@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Efektywność</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+    <link rel="stylesheet" th:href="@{/css/efficiency.css}">
+    <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+
+
+    <script th:src="@{/js/json.js}" defer></script>
+    <script th:src="@{/js/script.js}" defer></script>
+    <script th:src="@{/js/charts.js}" defer></script>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="top">
+        <div class="logo">
+            <i class='bx bx-bar-chart-alt-2'></i>
+            <span>Statystyka</span>
+        </div>
+        <i class="bx bx-menu" id="btn"></i>
+
+        <div class="user">
+            <img src="" alt="User Image" class="user-img" id="user-avatar">
+            <div class="information">
+                <p class="bold"></p>
+                <p class="role"></p>
+            </div>
+        </div>
+        <ul>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/index}">
+                    <i class="bx bx-home"></i>
+                    <span class="nav-item">Dashboard</span>
+                </a>
+                <span class="tooltip">Dashboard</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/processes}">
+                    <i class="bx bx-windows"></i>
+                    <span class="nav-item">Procesy</span>
+                </a>
+                <span class="tooltip">Procesy</span>
+            </li>
+            <li>
+                <a th:href="@{/settings}">
+                    <i class="bx bx-cog"></i>
+                    <span class="nav-item">Ustawienia</span>
+                </a>
+                <span class="tooltip">Ustawienia</span>
+            </li>
+            <li class="notification-item">
+                <a th:href="@{/notifications}">
+                    <i class='bx bx-message'></i>
+                    <span class="nav-item">Powiadomienia</span>
+                    <span id="notification-counter" class="notification-counter" style="display: none;">0</span>
+                </a>
+                <span class="tooltip">Powiadomienia</span>
+            </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER', 'USER')">
+                <a th:href="@{/executionReport}">
+                    <i class='bx bx-archive' ></i>
+                    <span class="nav-item">Wykonanie</span>
+                </a>
+                <span class="tooltip">Wykonanie</span>
+            </li>
+
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
+                <a th:href="@{/efficiency}">
+                    <i class="bx bx-stats"></i>
+                    <span class="nav-item">Efektywność</span>
+                </a>
+                <span class="tooltip">Efektywność</span>
+            </li>
+            <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                <a th:href="@{/adminPanel}">
+                    <i class='bx bx-user-check'></i>
+                    <span class="nav-item">Panel Admina</span>
+                </a>
+                <span class="tooltip">Panel Admina</span>
+            </li>
+        </ul>
+    </div>
+    <ul>
+        <li>
+            <a th:href="@{/logout}">
+                <i class="bx bx-log-out"></i>
+                <span class="nav-item">Wyloguj</span>
+            </a>
+            <span class="tooltip">Wyloguj</span>
+        </li>
+    </ul>
+</div>
+
+
+<div class="main-content">
+    <div class="loader"></div>
+    <div class="error-container" id="err-container">
+        <p th:if="${error}" class="error">
+                <span class="error-content" th:text="${error}">
+                </span>
+            <i class='bx bx-x-circle' onclick="hideError()"></i>
+        </p>
+    </div>
+
+
+    <header class="title-container">
+        <h1>Dashboard</h1>
+        <span id="currentDate"></span>
+    </header>
+
+    <div class="modalsBtn efficiency">
+        <div class="left-main-side">
+            <button class="btn-back" th:onclick="|window.location.href='@{/details}'|"><i class='bx bx-user-circle'></i>Pracownicy</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/executionReport}'|"><i class='bx bxs-report' ></i>Raport wykonania</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/overtimeReport}'|"><i class='bx bx-time-five' ></i>Nadgodziny - podsumowanie</button>
+        </div>
+        <div class="center">
+            <button class="btn-back" th:onclick="|window.location.href='@{/analize}'|"><i class='bx bx-analyse' ></i>Analiza</button>
+        </div>
+        <div class="right-main-side">
+            <button class="btn-back" th:onclick="|window.location.href='@{/backlog}'|"><i class='bx bxs-file-plus'></i>Dodaj backlog</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/backlogDetails}'|"><i class='bx bx-detail' ></i>Backlog - szczegóły</button>
+            <button class="btn-back" th:onclick="|window.location.href='@{/averageTime}'|"><i class='bx bx-time' ></i>Edytuj czasy</button>
+        </div>
+        </div>
+
+<div class="dashboard-container">
+    <div class="dashboard-grid">
+
+        <section class="card small-card">
+            <div class="headerAvailability">
+                <h2 class="chartsTitle">Dostępność</h2>
+
+                <!-- Filtr wyboru sekcji -->
+                <div class="filter-container" id="sectionFilterContainer" style="display: block;">
+                    <select id="sectionFilter">
+                        <option value="all">Sekcja</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Ukryte pola do przechowywania danych -->
+            <p id="presentCount" th:text="${presentCount}" style="display: none;"></p>
+            <p id="onLeaveCount" th:text="${onLeaveCount}" style="display: none;"></p>
+            <p id="notLoggedCount" th:text="${notLoggedCount}" style="display: none;"></p>
+            <p id="totalEmployees" th:text="${totalEmployees}" style="display: none;"></p>
+
+            <ul id="presentList" style="display: none;">
+                <li th:each="emp : ${presentEmployees}" th:data-name="${emp.firstName + ' ' + emp.lastName}"></li>
+            </ul>
+            <ul id="onLeaveList" style="display: none;">
+                <li th:each="emp : ${onLeaveEmployees}" th:data-name="${emp.firstName + ' ' + emp.lastName}"></li>
+            </ul>
+            <ul id="notLoggedList" style="display: none;">
+                <li th:each="emp : ${notLoggedEmployees}" th:data-name="${emp.firstName + ' ' + emp.lastName}"></li>
+            </ul>
+
+            <!-- Liczba pracowników w formacie x/y osób -->
+            <p id="total-available-counter"><span id="employeeCount">0/0</span></p>
+
+
+
+            <div class="chart-content">
+                <div class="legend">
+                    <div class="legend-item">
+                        <span class="color-box" style="background-color: rgba(54, 162, 235, 0.6);"></span>
+                        Obecni: <strong><span id="legendPresentCount" th:text="${presentCount}">0</span></strong>
+                    </div>
+                    <div class="legend-item">
+                        <span class="color-box" style="background-color: rgba(75, 192, 192, 0.8);"></span>
+                        Nieobecni: <strong><span id="legendOnLeaveCount" th:text="${onLeaveCount}">0</span></strong>
+                    </div>
+                    <div class="legend-item">
+                        <span class="color-box" style="background-color: rgba(255, 99, 132, 0.8);"></span>
+                        Niezalogowani: <strong><span id="legendNotLoggedCount" th:text="${notLoggedCount}">0</span></strong>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="availabilityChart"></canvas>
+                </div>
+
+            </div>
+        </section>
+
+
+        <section class="card small-card">
+            <h2 class="chartsTitle" id="remote-chart-title">Tryb pracy</h2>
+            <!-- Ukryte dane -->
+            <p id="officeCount" th:text="${officeCount}" style="display: none;"></p>
+            <p id="homeofficeCount" th:text="${homeofficeCount}" style="display: none;"></p>
+
+            <ul id="officeList" style="display: none;">
+                <li th:each="emp : ${officeEmployees}" th:data-name="${emp.firstName + ' ' + emp.lastName}"></li>
+            </ul>
+            <ul id="homeofficeList" style="display: none;">
+                <li th:each="emp : ${homeofficeEmployees}" th:data-name="${emp.firstName + ' ' + emp.lastName}"></li>
+            </ul>
+
+            <!-- Licznik trybu pracy -->
+            <p id="total-workmode-counter"><span id="workModeCount">0/0</span></p>
+
+            <div class="chart-content">
+                <div class="legend">
+                    <div class="legend-item">
+                        <span class="color-box" style="background-color: rgba(255, 205, 86, 0.8);"></span>
+                        Biuro: <strong><span id="legendOfficeCount" th:text="${officeCount}">0</span></strong>
+                    </div>
+                    <div class="legend-item">
+                        <span class="color-box" style="background-color: rgba(153, 102, 255, 0.8);"></span>
+                        Zdalnie: <strong><span id="legendHomeofficeCount" th:text="${homeofficeCount}">0</span></strong>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="remoteWorkChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="card small-card">
+            <h2 class="chartsTitle">Efektywność</h2>
+            <div class="chart-container-bar">
+                <canvas id="weeklyChart"></canvas>
+            </div>
+        </section>
+
+        <section class="card small-card">
+            <h2 class="chartsTitle">Czas nieoperacyjny</h2>
+            <div class="chart-container-bar">
+                <canvas id="nonOperationalChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Dolne 2 karty zajmujące całą szerokość -->
+        <section class="card large-card">
+            <div class="backlog-header">
+                <h2 class="chartsTitle" >Backlog - trend</h2>
+                <div class="date-filter">
+                    <label for="startDate" class="backlog-label">Od:</label>
+                    <input type="date" id="startDate" class="backlog-date-input">
+
+                    <label for="endDate" class="backlog-label" >Do:</label>
+                    <input type="date" id="endDate" class="backlog-date-input">
+
+                    <button id="filterButton" title="Filtruj"><i class='bx bx-search'></i></button>
+                </div>
+            </div>
+            <div class="large-chart-container">
+                <canvas id="backlogChart"></canvas>
+            </div>
+        </section>
+
+<!--        <section class="card large-card">-->
+<!--            <h2 class="chartsTitle">Wpływ wolumenów</h2>-->
+<!--            <div class="chart-container">-->
+<!--                <canvas id="analysisChart"></canvas>-->
+<!--            </div>-->
+<!--        </section>-->
+
+        <!-- Tooltip poza canvasem -->
+        <div id="chartjs-tooltip" class="custom-tooltip">
+            <div class="arrow"></div>
+            <div id="tooltip-content"></div>
+        </div>
+        <div id="chartjs-tooltip-remote" class="custom-tooltip">
+            <div class="arrow"></div>
+            <div id="tooltip-content-remote"></div>
+        </div>
+
+
+    </div>
+</div>
+
+    <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
+
+</div>
+
+
+
+</body>
+</html>

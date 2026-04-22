@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Szczegóły pracownika</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+    <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+    <link rel="stylesheet" th:href="@{/css/userDetails.css}">
+
+
+    <script th:src="@{/js/script.js}" defer></script>
+    <script th:src="@{/js/filter.js}" defer></script>
+    <script th:src="@{/js/json.js}" defer></script>
+    <script th:src="@{/js/charts.js}" defer></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="top">
+        <div class="logo">
+            <i class='bx bx-bar-chart-alt-2'></i>
+            <span>Statystyka</span>
+        </div>
+        <i class="bx bx-menu" id="btn"></i>
+
+        <div class="user">
+            <img src="" alt="User Image" class="user-img" id="user-avatar">
+            <div class="information">
+                <p class="bold"></p>
+                <p class="role"></p>
+            </div>
+        </div>
+
+        <ul>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/index}">
+                    <i class="bx bx-home"></i>
+                    <span class="nav-item">Dashboard</span>
+                </a>
+                <span class="tooltip">Dashboard</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/processes}">
+                    <i class="bx bx-windows"></i>
+                    <span class="nav-item">Procesy</span>
+                </a>
+                <span class="tooltip">Procesy</span>
+            </li>
+            <li>
+                <a th:href="@{/settings}">
+                    <i class="bx bx-cog"></i>
+                    <span class="nav-item">Ustawienia</span>
+                </a>
+                <span class="tooltip">Ustawienia</span>
+            </li>
+            <li class="notification-item">
+                <a th:href="@{/notifications}">
+                    <i class='bx bx-message'></i>
+                    <span class="nav-item">Powiadomienia</span>
+                    <span id="notification-counter" class="notification-counter" style="display: none;">0</span>
+                </a>
+                <span class="tooltip">Powiadomienia</span>
+            </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
+                <a th:href="@{/efficiency}">
+                    <i class="bx bx-stats"></i>
+                    <span class="nav-item">Efektywność</span>
+                </a>
+                <span class="tooltip">Efektywność</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER', 'USER')">
+                <a th:href="@{/executionReport}">
+                    <i class='bx bx-archive' ></i>
+                    <span class="nav-item">Wykonanie</span>
+                </a>
+                <span class="tooltip">Wykonanie</span>
+            </li>
+
+            <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                <a th:href="@{/adminPanel}">
+                    <i class='bx bx-user-check'></i>
+                    <span class="nav-item">Panel Admina</span>
+                </a>
+                <span class="tooltip">Panel Admina</span>
+            </li>
+        </ul>
+    </div>
+    <ul>
+        <li>
+            <a th:href="@{/logout}">
+                <i class="bx bx-log-out"></i>
+                <span class="nav-item">Wyloguj</span>
+            </a>
+            <span class="tooltip">Wyloguj</span>
+        </li>
+    </ul>
+</div>
+
+<div class="main-content">
+
+    <div class="loader"></div>
+
+    <div class="popup">
+        <!-- Komunikat dynamiczny -->
+        <div id="popup-userMessage" class="userMessage" style="display: none;">
+            <span></span>
+            <i class='bx bx-x-circle' onclick="this.parentElement.style.display='none'"></i>
+        </div>
+    </div>
+
+    <div class="title-container">
+        <h1>Szczegóły pracownika</h1>
+        <span id="currentDate"></span>
+    </div>
+
+    <div class="main-container">
+        <div class="filter-container">
+            <div class="modalsBtn">
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/details}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/matrix/{userId}(userId=${user.id})}'|"><i class='bx bxs-user-check'></i>
+                    Matryca Kompetencji
+                </button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/app-matrix/{userId}(userId=${user.id})}'|"><i class='bx bx-desktop'></i>
+                    Aplikacje
+                </button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/soft-skills/{userId}(userId=${user.id})}'|"><i class='bx bx-conversation'></i>
+                    Kompetencje miękkie
+                </button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/executionReport}'|"><i class='bx bxs-report' ></i>
+                    Szczegóły wykonania
+                </button>
+            </div>
+            <div class="dropdown-wrapper">
+                <div class="multiselect-container">
+                    <div class="select-box" id="processUserSelect">
+                        <span id="processUserLabel">Proces</span>
+                        <i class='bx bx-chevron-down' id="processUserArrow"></i>
+                        <div class="process-checkbox-dropdown" id="processDropdownChartUser"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="btnContainer">
+                <button type="submit" class="btn-back" id="clearAllDataOnUserChart"><i class='bx bx-eraser' ></i>Wyczyść</button>
+            </div>
+         </div>
+
+
+        <div class="chart-grid">
+            <section class="card">
+                <h2 class="chartsTitle">Podsumowanie</h2>
+                <div class="chart-header">
+                    <div class="date-filter">
+                        <label for="startDate" class="backlog-label">Od:</label>
+                        <input type="date" id="startDate" class="backlog-date-input">
+
+                        <label for="endDate" class="backlog-label" >Do:</label>
+                        <input type="date" id="endDate" class="backlog-date-input">
+
+                        <button id="filterButton" title="Filtruj"><i class='bx bx-search'></i></button>
+                    </div>
+                    <div class="changeScaleBtn">
+                        <button id="increaseY" title="Zwiększ oś Y">
+                            <i class='bx bx-plus'></i>
+                        </button>
+                        <button id="decreaseY" title="Zmniejsz oś Y">
+                            <i class='bx bx-minus'></i>
+                        </button>
+                        <button id="reset" title="Resetuj ustawienia">
+                            <i class='bx bx-reset'></i>
+                        </button>
+
+                    </div>
+                </div>
+
+
+                <canvas id="barChart"></canvas>
+            </section>
+
+            <div class="right-sections">
+                <section class="card">
+                    <div class="summary-cards">
+                        <div class="summary-card">
+                            <h3>Średnia efektywność</h3>
+                            <p id="averageEfficiency">--%</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Średni czas nieoperacyjny</h3>
+                            <p id="nonOperationalHours">-- h</p>
+                        </div>
+                    </div>
+                </section>
+                <section class="card vertical-info-cards">
+                    <div class="summary-card">
+                        <h3>Imię i nazwisko</h3>
+                        <p th:text="${user.firstName + ' ' + user.lastName}"></p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Sekcja</h3>
+                        <p th:text="${user.section.sectionName}"></p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Stanowisko</h3>
+                        <p th:text="${user.position.positionName}"></p>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
+
+</body>
+
+</html>

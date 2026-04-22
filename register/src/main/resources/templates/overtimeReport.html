@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nadgodziny - podsumowanie</title>
+    <link rel="icon" th:href="@{/images/chart.ico}" type="image/x-icon">
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+    <link rel="stylesheet" th:href="@{/css/efficiency.css}">
+    <link rel="stylesheet" th:href="@{/css/sidebarCSS.css}">
+    <link rel="stylesheet" th:href="@{/css/button.css}">
+
+
+    <script th:src="@{/js/json.js}" defer></script>
+    <script th:src="@{/js/filter.js}" defer></script>
+    <script th:src="@{/js/script.js}" defer></script>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="top">
+        <div class="logo">
+            <i class='bx bx-bar-chart-alt-2'></i>
+            <span>Statystyka</span>
+        </div>
+        <i class="bx bx-menu" id="btn"></i>
+
+        <div class="user">
+            <img src="" alt="User Image" class="user-img" id="user-avatar">
+            <div class="information">
+                <p class="bold"></p>
+                <p class="role"></p>
+            </div>
+        </div>
+        <ul>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/index}">
+                    <i class="bx bx-home"></i>
+                    <span class="nav-item">Dashboard</span>
+                </a>
+                <span class="tooltip">Dashboard</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'USER')">
+                <a th:href="@{/processes}">
+                    <i class="bx bx-windows"></i>
+                    <span class="nav-item">Procesy</span>
+                </a>
+                <span class="tooltip">Procesy</span>
+            </li>
+            <li>
+                <a th:href="@{/settings}">
+                    <i class="bx bx-cog"></i>
+                    <span class="nav-item">Ustawienia</span>
+                </a>
+                <span class="tooltip">Ustawienia</span>
+            </li>
+            <li class="notification-item">
+                <a th:href="@{/notifications}">
+                    <i class='bx bx-message'></i>
+                    <span class="nav-item">Powiadomienia</span>
+                    <span id="notification-counter" class="notification-counter" style="display: none;">0</span>
+                </a>
+                <span class="tooltip">Powiadomienia</span>
+            </li>
+            <li>
+                <a th:href="@{/calendar}">
+                    <i class='bx bx-calendar-week' ></i>
+                    <span class="nav-item">Urlopy</span>
+                </a>
+                <span class="tooltip">Urlopy</span>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER', 'USER')">
+                <a th:href="@{/executionReport}">
+                    <i class='bx bx-archive' ></i>
+                    <span class="nav-item">Wykonanie</span>
+                </a>
+                <span class="tooltip">Wykonanie</span>
+            </li>
+
+            <li sec:authorize="hasAnyRole('ADMIN', 'COORDINATOR', 'MANAGER')">
+                <a th:href="@{/efficiency}">
+                    <i class="bx bx-stats"></i>
+                    <span class="nav-item">Efektywność</span>
+                </a>
+                <span class="tooltip">Efektywność</span>
+            </li>
+            <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                <a th:href="@{/adminPanel}">
+                    <i class='bx bx-user-check'></i>
+                    <span class="nav-item">Panel Admina</span>
+                </a>
+                <span class="tooltip">Panel Admina</span>
+            </li>
+        </ul>
+    </div>
+    <ul>
+        <li>
+            <a th:href="@{/logout}">
+                <i class="bx bx-log-out"></i>
+                <span class="nav-item">Wyloguj</span>
+            </a>
+            <span class="tooltip">Wyloguj</span>
+        </li>
+    </ul>
+</div>
+
+
+<div class="main-content">
+    <div class="loader"></div>
+
+    <div class="popup"></div>
+
+    <div class="error-container" id="err-container">
+        <p th:if="${error}" class="error">
+                <span class="error-content" th:text="${error}">
+                </span>
+            <i class='bx bx-x-circle' onclick="hideError()"></i>
+        </p>
+    </div>
+
+
+    <header class="title-container">
+        <h1>Nadgodziny - podsumowanie</h1>
+        <span id="currentDate"></span>
+    </header>
+
+
+    <form id="reportForm" th:action="@{/executionReport}" method="get" class="filter-form">
+        <div class="filter-container-execution-report">
+            <div class="left-side overtime">
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/efficiency}'|"><i class='bx bx-arrow-back' ></i>Powrót</button>
+                <button class="btn-back" type="button" th:onclick="|window.location.href='@{/overtimeArchive}'|"><i class='bx bx-archive' ></i>Archiwum nadgodzin</button>
+            </div>
+            <div class="center-side">
+                <div class="multiselect-container">
+                    <div class="select-box" id="overtimeSectionCustomSelect">
+                        <span id="overtimeSectionLabel">Sekcja</span>
+                        <i id="overtimeSectionArrowIcon" class='bx bx-chevron-down'></i>
+                        <div class="overtime-section-checkbox-dropdown" id="overtimeSectionDropdown"></div>
+                    </div>
+                </div>
+
+                <div class="multiselect-container">
+                    <div class="select-box" id="overtimeCustomSelect">
+                        <span id="overtimeSelectedLabel">Pracownik</span>
+                        <i id="overtimeArrowIcon" class='bx bx-chevron-down'></i>
+                        <div class="overtime-checkbox-dropdown" id="overtimeCheckboxDropdown"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="xlsx-btn">
+            <button type="button" id="clearOvertimeBtn" class="btn-back"><i class='bx bx-eraser' ></i>Wyczyść</button>
+            <button type="button" id="exportOvertimeSummaryXlsxBtn" class="btn-back"><i class='bx bxs-file-export'></i>XLSX</button>
+        </div>
+    </form>
+
+    <div class="table-container">
+        <table class="overtime-table" id="overtime-table">
+            <thead>
+                <tr>
+                    <th class="selectAllCheck">
+                        <span class="selectAllLabel">Zaznacz wszystko</span>
+                        <input type="checkbox" class="checkbox-button all">
+                    </th>
+                    <th>Szczegóły</th>
+                    <th>Imię</th>
+                    <th>Nazwisko</th>
+                    <th title="Stan płatnych nadgodzin">Nadgodziny płatne(min)</th>
+                    <th title="Stan nadgodzin do odbioru">Nadgodziny do odbioru(min)</th>
+                </tr>
+            </thead>
+                <tbody>
+                    <tr></tr>
+                </tbody>
+        </table>
+    </div>
+    <div class="bottom-button-container">
+        <div class="btn-back" id="payoutOvertimeBtn"><i class='bx bx-archive-in'></i>Archiwizuj płatne nadgodziny</div>
+    </div>
+
+    <div id="noteModal">
+        <h3 id="noteModalHeader" >Podaj notatkę do archiwizacji (opcjonalnie):</h3>
+        <textarea id="noteModalInput"></textarea>
+        <div class="modalsBtn note">
+            <button class="btn-back" id="noteModalOkBtn">OK</button>
+        </div>
+    </div>
+    <div id="noteModalOverlay" style="display:none; position:fixed; left:0;top:0;width:100vw;height:100vh;background:#0005;z-index:1000;"></div>
+
+
+    <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
+
+</div>
+
+</body>
+</html>
