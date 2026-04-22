@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16
+    container_name: statystyka-postgres
+    environment:
+      POSTGRES_DB: Statystyka
+      POSTGRES_USER: Javed
+      POSTGRES_PASSWORD: kuba
+    ports:
+      - "5432:5432"
+    volumes:
+      - statystyka_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U Javed -d Statystyka"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: statystyka-app
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/Statystyka
+      SPRING_DATASOURCE_USERNAME: Javed
+      SPRING_DATASOURCE_PASSWORD: kuba
+      APP_BOOTSTRAP_ADMIN_USERNAME: admin
+      APP_BOOTSTRAP_ADMIN_EMAIL: test@abc.pl
+      APP_BOOTSTRAP_ADMIN_PASSWORD: TymczasoweHaslo123!
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+      SPRING_MAIL_FROM: ${SPRING_MAIL_FROM}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_TRUST: smtp.gmail.com
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_CONNECTIONTIMEOUT: 60000
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_TIMEOUT: 60000
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_WRITETIMEOUT: 60000
+
+volumes:
+  statystyka_data:
