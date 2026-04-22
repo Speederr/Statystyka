@@ -128,6 +128,22 @@
         </p>
     </div>
 
+    <div th:if="${successMessage}" style="color: green; margin-top: 15px;">
+        <p th:text="${successMessage}"></p>
+    </div>
+
+    <div th:if="${errorMessage}" style="color: red; margin-top: 15px;">
+        <p th:text="${errorMessage}"></p>
+    </div>
+
+    <div th:if="${importErrors}" style="color: darkorange; margin-top: 15px;">
+        <p><strong>Błędy podczas importu:</strong></p>
+        <ul>
+            <li th:each="err : ${importErrors}" th:text="${err}"></li>
+        </ul>
+    </div>
+
+
     <header class="title-container">
         <h1>Uprawnienia</h1>
         <span id="currentDate"></span>
@@ -140,6 +156,7 @@
             <button class="btn-back" data-open-modal="sectionModal"><i class='bx bx-list-plus'></i>Dodaj Sekcję</button>
             <button class="btn-back" data-open-modal="positionModal"><i class='bx bx-list-plus'></i>Dodaj Stanowisko</button>
             <button class="btn-back" th:onclick="|window.location.href='@{/averageTime}'|"><i class='bx bx-time'></i>Edytuj Czasy</button>
+            <button class="btn-back" onclick="openImportModal()"><i class='bx bx-time'></i>Import CSV/TXT</button>
         </div>
         <div class="search-bar">
             <input type="text" id="search-user-messages" placeholder="Wyszukaj...">
@@ -362,8 +379,74 @@
         </div>
     </div>
 
+    <div id="importModal" class="modal-overlay" aria-hidden="true">
+        <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
+            <div class="custom-modal__header">
+                <div class="custom-modal__title-wrap">
+                    <div class="custom-modal__icon">
+                        <i class='bx bx-upload'></i>
+                    </div>
+                    <div>
+                        <h2 id="importModalTitle" class="custom-modal__title">Import użytkowników</h2>
+                        <p class="custom-modal__subtitle">Wgraj plik CSV lub TXT z listą użytkowników.</p>
+                    </div>
+                </div>
+
+                <button type="button" class="custom-modal__close" onclick="closeImportModal()" aria-label="Zamknij">
+                    <i class='bx bx-x'></i>
+                </button>
+            </div>
+
+            <div class="custom-modal__body">
+                <form th:action="@{/admin/users/import}" method="post" enctype="multipart/form-data" class="import-form">
+                    <div class="form-group">
+                        <label for="file" class="form-label">Plik z użytkownikami</label>
+
+                        <label for="file" class="file-dropzone" id="fileDropzone">
+                            <div class="file-dropzone__icon">
+                                <i class='bx bx-file'></i>
+                            </div>
+                            <div class="file-dropzone__content">
+                                <span class="file-dropzone__title">Kliknij, aby wybrać plik</span>
+                                <span class="file-dropzone__text">Obsługiwane formaty: .csv, .txt</span>
+                                <span class="file-dropzone__filename" id="selectedFileName">Nie wybrano pliku</span>
+                            </div>
+                        </label>
+
+                        <input
+                                type="file"
+                                id="file"
+                                name="file"
+                                accept=".txt,.csv"
+                                required
+                                class="file-input"
+                                onchange="handleFileSelect(this)"
+                        >
+                    </div>
+
+                    <div class="import-info-box">
+                        <strong>Format pliku:</strong><br>
+                        firstName;lastName;username;email;roleId;teamId;sectionId;positionId
+                    </div>
+
+                    <div class="custom-modal__footer">
+                        <button type="button" class="btn-secondary" onclick="closeImportModal()">
+                            Anuluj
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class='bx bx-upload'></i>
+                            Importuj plik
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <input type="hidden" id="userId" th:value="${userId != null ? userId : ''}">
 </div>
+
+
 
 </body>
 </html>

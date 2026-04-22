@@ -384,4 +384,42 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
+
+    function openImportModal() {
+        const modal = document.getElementById('importModal');
+        if (!modal) return;
+
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeImportModal() {
+        const modal = document.getElementById('importModal');
+        if (!modal) return;
+
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('importModal');
+
+        if (!modal) {
+            return;
+        }
+
+        modal.addEventListener('click', function (event) {
+            if (event.target === modal) {
+                closeImportModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+                closeImportModal();
+            }
+        });
+    });
 //console.log("Skrypt SCRIPT został załadowany");

@@ -1,5 +1,6 @@
 package com.example.register.register.service;
 
+import com.example.register.register.DTO.CreateUserRequest;
 import com.example.register.register.DTO.UserTableDto;
 import com.example.register.register.model.*;
 import com.example.register.register.repository.*;
@@ -15,7 +16,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -172,4 +178,139 @@ public class UserService implements UserDetailsService {
         return userRepository.findByTeamWithSections(team);
     }
 
+    public UserImportResult importUsersFromFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Plik jest pusty.");
+        }
+
+        UserImportResult result = new UserImportResult();
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+
+            String line;
+            int lineNumber = 0;
+            boolean headerSkipped = false;
+
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+
+                if (!headerSkipped) {
+                    headerSkipped = true;
+                    continue; // pomijamy nagłówek
+                }
+
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+
+                try {
+                    CreateUserRequest request = parseLine(line, lineNumber);
+                    createUserInBulk(request);
+                    result.addSuccess();
+                } catch (Exception e) {
+                    result.addError("Linia " + lineNumber + ": " + e.getMessage());
+                }
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Nie udało się odczytać pliku.", e);
+        }
+
+        return result;
+    }
+
+    private CreateUserRequest parseLine(String line, int lineNumber) {
+        String[] parts = line.split(";");
+
+        if (parts.length != 8) {
+            throw new IllegalArgumentException(
+                    "nieprawidłowa liczba kolumn. Oczekiwano 8, otrzymano: " + parts.length
+            );
+        }
+
+        try {
+            return new CreateUserRequest(
+                    parts[0].trim(),
+                    parts[1].trim(),
+                    parts[2].trim(),
+                    parts[3].trim(),
+                    Long.parseLong(parts[4].trim()),
+                    Long.parseLong(parts[5].trim()),
+                    Long.parseLong(parts[6].trim()),
+                    Long.parseLong(parts[7].trim())
+            );
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("roleId, teamId, sectionId lub positionId nie są liczbą.");
+        }
+    }
+
+    private void validateBeforeCreate(CreateUserRequest request) {
+        if (request.firstName() == null || request.firstName().isBlank()) {
+            throw new IllegalArgumentException("imię jest puste.");
+        }
+
+        if (request.lastName() == null || request.lastName().isBlank()) {
+            throw new IllegalArgumentException("nazwisko jest puste.");
+        }
+
+        if (request.username() == null || request.username().isBlank()) {
+            throw new IllegalArgumentException("username jest pusty.");
+        }
+
+        if (request.email() == null || request.email().isBlank()) {
+            throw new IllegalArgumentException("email jest pusty.");
+        }
+
+        if (userRepository.existsByUsername(request.username().trim())) {
+            throw new IllegalArgumentException("username już istnieje: " + request.username());
+        }
+
+        if (userRepository.existsByEmail(request.email().trim())) {
+            throw new IllegalArgumentException("email już istnieje: " + request.email());
+        }
+    }
+
+
+    public void createUserInBulk(CreateUserRequest request) {
+        validateBeforeCreate(request);
+
+        String temporaryPassword = generateTemporaryPassword();
+
+        Role role = roleRepository.findById(request.roleId())
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono roli o ID: " + request.roleId()));
+
+        Team team = teamRepository.findById(request.teamId())
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono zespołu o ID: " + request.teamId()));
+
+        Section section = sectionRepository.findById(request.sectionId())
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono sekcji o ID: " + request.sectionId()));
+
+        Position position = positionRepository.findById(request.positionId())
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono stanowiska o ID: " + request.positionId()));
+
+        User user = new User();
+        user.setFirstName(request.firstName().trim());
+        user.setLastName(request.lastName().trim());
+        user.setUsername(request.username().trim());
+        user.setEmail(request.email().trim());
+        user.setPassword(passwordEncoder.encode(temporaryPassword));
+        user.setRole(role);
+        user.setTeam(team);
+        user.setSection(section);
+        user.setPosition(position);
+        user.setFirstLogin(true);
+        user.setCreateByAdmin(true);
+        user.setPasswordChanged(false);
+
+        userRepository.save(user);
+
+        emailService.sendUserCreationMail(
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                temporaryPassword
+        );
+    }
 }
